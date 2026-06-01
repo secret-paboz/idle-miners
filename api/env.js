@@ -15,8 +15,8 @@ export default function handler(req, res) {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
     console.error("[env.js] Missing required environment variables.");
   }
-  if (!process.env.SUPABASE_SERVICE_KEY) {
-    console.error("[env.js] WARNING: SUPABASE_SERVICE_KEY not set. api/save.js will not work.");
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("[env.js] WARNING: SUPABASE_SERVICE_ROLE_KEY not set. api/save.js will not work.");
   }
   if (!process.env.HMAC_SECRET) {
     console.error("[env.js] WARNING: HMAC_SECRET not set. api/verify.js will not work.");
