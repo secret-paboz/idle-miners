@@ -1,7 +1,6 @@
 {
   "rewrites": [
     { "source": "/api/env", "destination": "/api/env.js" },
-    { "source": "/api/verify", "destination": "/api/verify.js" },
     { "source": "/api/save",   "destination": "/api/save.js"   },
     { "source": "/(.*)",    "destination": "/index.html" }
   ]
