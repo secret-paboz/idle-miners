@@ -1,12 +1,6 @@
 // ============================================================
 // MAIN.JS — Entry point
 // Game loop, event listeners, and initialization sequence
-//
-// HackShield changes (v2):
-//   - bootHackShield(userId) called after login in boot()
-//   - bootHackShield(userId) called after SIGNED_IN auth event
-//   - clearHackShield() called on logout
-//   - Game loop blocked if HackShield detects a suspended token
 // ============================================================
 
 import { state, initState, saveState } from "./state.js";
@@ -59,7 +53,6 @@ import {
   gmSetRebirths, gmSetPrestigeTokens,
   gmSetCashEarned,
 } from "./gm.js";
-import { bootHackShield, clearHackShield } from "./hackshield.js";
 
 // ============================================================
 // SECTION 1 — BOOT SEQUENCE
@@ -81,16 +74,9 @@ async function boot() {
       showToast("Cloud save loaded.", "info", 3000);
     }
 
-    // HackShield: acquire session token for logged-in player
-    const userId = await _getSupabaseUserId();
-    if (userId) {
-      await bootHackShield(userId);
-    }
-
   } else {
     if (!state.nickname) loginAsGuest();
     window.__gmVerified = false;
-    // Guests don't get HackShield tokens — bootHackShield not called
   }
 
   // Show offline progress toast on login
@@ -112,18 +98,6 @@ async function boot() {
   });
 
   checkAndAwardTimedCrates();
-}
-
-// Helper: get the current Supabase userId without importing supabase.js directly
-async function _getSupabaseUserId() {
-  try {
-    const client = window.supabaseClient;
-    if (!client) return null;
-    const { data } = await client.auth.getSession();
-    return data?.session?.user?.id || null;
-  } catch {
-    return null;
-  }
 }
 
 // ============================================================
@@ -227,9 +201,7 @@ function bindMineEvents() {
 
 function handleSell() {
   const result = sellOre();
-  if (result.rateLimited) {
-    showToast("Slow down!", "error", 1500);
-  } else if (result.cashEarned > 0) {
+  if (result.cashEarned > 0) {
     animateSell(result.cashEarned);
   } else {
     showToast("Nothing to sell!", "error", 1500);
@@ -684,10 +656,6 @@ async function handleLogin() {
   const result = await loginUser(email, password);
 
   if (result.success) {
-    // HackShield: acquire token for newly logged-in player
-    const userId = await _getSupabaseUserId();
-    if (userId) await bootHackShield(userId);
-
     showToast(result.message, "success", 3000);
     renderHUD();
     renderSettingsPanel();
@@ -720,10 +688,6 @@ async function handleRegister() {
   const result = await registerUser(playerId, password, nickname, email);
 
   if (result.success) {
-    // HackShield: acquire token for newly registered player
-    const userId = await _getSupabaseUserId();
-    if (userId) await bootHackShield(userId);
-
     showToast(result.message, "success", 6000);
     const modal = document.getElementById("register-modal");
     if (modal) modal.remove();
@@ -741,9 +705,6 @@ async function handleLogout() {
     confirmText: "Log Out",
     cancelText:  "Cancel",
     onConfirm:   async () => {
-      // HackShield: clear token from memory on logout
-      clearHackShield();
-
       await logoutUser();
       showToast("Logged out.", "info", 2000);
       renderHUD();
@@ -756,16 +717,9 @@ async function handleAuthChange(direction) {
   if (direction === "in") {
     const winner = await resolveConflict();
     if (winner === "cloud") await cloudLoad();
-
-    // HackShield: re-acquire token on auth state change
-    const userId = await _getSupabaseUserId();
-    if (userId) await bootHackShield(userId);
-
     renderHUD();
     renderSettingsPanel();
   } else {
-    // HackShield: clear token when signed out
-    clearHackShield();
     loginAsGuest();
     renderHUD();
     renderSettingsPanel();

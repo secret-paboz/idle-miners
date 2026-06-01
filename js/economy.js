@@ -1,19 +1,11 @@
 // ============================================================
 // ECONOMY.JS — All game math, formulas, and loop logic
-//
-// HackShield changes (v2):
-//   - checkRateLimit() guard added to: sellOre, upgradePickaxe,
-//     upgradeBackpack, upgradePet, activateAbility, doRebirth,
-//     doPrestige, switchDimension
-//   - tickMining() is intentionally NOT rate-limited — it is
-//     called by the trusted game loop only, never by user input
 // ============================================================
 
 import { state, saveState, resetStateForRebirth, resetStateForPrestige } from "./state.js";
 import { getMineTier, rollOre, xpRequiredForLevel, ORE_TYPES } from "./data/mines-data.js";
 import { getDimension } from "./data/dimensions-data.js";
 import { PETS_DATA, RARITY_CONFIG } from "./data/pets-data.js";
-import { checkRateLimit } from "./hackshield.js";
 
 // ============================================================
 // SECTION 1 — UPGRADE COST FORMULAS
@@ -198,11 +190,6 @@ export function tickMining() {
 // Sell all ore in backpack
 // Returns: { cashEarned, oreType }
 export function sellOre() {
-  // HackShield: rate limit sell actions
-  if (!checkRateLimit("sell")) {
-    return { cashEarned: 0, rateLimited: true };
-  }
-
   if (state.ore <= 0) return { cashEarned: 0 };
 
   const oreId  = state.currentOreId || "dirt";
@@ -257,11 +244,6 @@ export function tryAutoSell() {
 // Upgrade pickaxe
 // Returns: { success, newLevel, cost, message }
 export function upgradePickaxe() {
-  // HackShield: rate limit upgrade actions
-  if (!checkRateLimit("upgradePickaxe")) {
-    return { success: false, message: "Slow down! Too many upgrades at once." };
-  }
-
   const cost = pickaxeUpgradeCost(state.pickaxeLevel);
   if (state.cash < cost) {
     return { success: false, message: `Need $${formatNumber(cost)}` };
@@ -280,11 +262,6 @@ export function upgradePickaxe() {
 // Upgrade backpack
 // Returns: { success, newLevel, cost, message }
 export function upgradeBackpack() {
-  // HackShield: rate limit upgrade actions
-  if (!checkRateLimit("upgradeBackpack")) {
-    return { success: false, message: "Slow down! Too many upgrades at once." };
-  }
-
   const cost = backpackUpgradeCost(state.backpackLevel);
   if (state.cash < cost) {
     return { success: false, message: `Need $${formatNumber(cost)}` };
@@ -303,11 +280,6 @@ export function upgradeBackpack() {
 // Upgrade a pet (costs shards, flat rate)
 // Returns: { success, newLevel, cost, message }
 export function upgradePet(petId, levels = 1) {
-  // HackShield: rate limit pet upgrade actions
-  if (!checkRateLimit("upgradePet")) {
-    return { success: false, message: "Slow down! Too many upgrades at once." };
-  }
-
   const petData  = PETS_DATA[petId];
   const petState = state.pets[petId];
   if (!petData || !petState || !petState.owned) {
@@ -339,12 +311,6 @@ export function upgradePet(petId, levels = 1) {
 // Activate legendary pet ability
 // Returns: { success, message, duration }
 export function activateAbility(petId) {
-  // HackShield: abilities have their own built-in cooldown,
-  // but rate limit to prevent spam calls trying to bypass it
-  if (!checkRateLimit("upgradePet")) {
-    return { success: false, message: "Slow down!" };
-  }
-
   const petData  = PETS_DATA[petId];
   const petState = state.pets[petId];
 
@@ -409,11 +375,6 @@ export function canPrestige() {
 }
 
 export function doRebirth() {
-  // HackShield: hard limit — one rebirth per 10 seconds
-  if (!checkRateLimit("rebirth")) {
-    return { success: false, message: "Slow down!" };
-  }
-
   if (!canRebirth()) {
     return { success: false, message: "Need pickaxe & backpack at level 200." };
   }
@@ -422,11 +383,6 @@ export function doRebirth() {
 }
 
 export function doPrestige() {
-  // HackShield: hard limit — one prestige per 10 seconds
-  if (!checkRateLimit("prestige")) {
-    return { success: false, message: "Slow down!" };
-  }
-
   if (!canPrestige()) {
     return { success: false, message: "Need 25 rebirths + level 200 gear." };
   }
