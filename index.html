@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Idle Miners — browser-based idle mining game">
+  <title>Idle Miners</title>
+
+  <!-- ── Fonts ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ── Icons (Font Awesome 6 free) ── -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- ── Supabase CDN (must load before main.js) ── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- ── Env vars injected by Vercel serverless function ── -->
+  <script src="/api/env"></script>
+
+  <!-- ── Styles ── -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/panels.css">
+  <link rel="stylesheet" href="css/modals.css">
+  <link rel="stylesheet" href="css/settings.css">
+</head>
+
+<body class="dim-earth">
+<div id="app">
+
+  <!-- ============================================================
+       HUD — Always-visible top bar
+       ============================================================ -->
+  <header id="hud">
+
+    <div class="hud-stat">
+      <span class="hud-stat-value" id="hud-cash">$0</span>
+      <span class="hud-stat-label">Cash</span>
+    </div>
+
+    <div class="hud-stat">
+      <span class="hud-stat-value" id="hud-shards">0 ✦</span>
+      <span class="hud-stat-label">Shards</span>
+    </div>
+
+    <span id="hud-nickname">Guest</span>
+    <span id="hud-guest-badge" style="display:none">GUEST</span>
+
+    <div class="hud-stat" style="margin-left:auto">
+      <span class="hud-stat-value" id="hud-level">Lv.1</span>
+      <span class="hud-stat-label" id="hud-dimension">Earth</span>
+    </div>
+
+    <div class="hud-stat">
+      <span class="hud-stat-value" id="hud-rebirths">0 ↺</span>
+      <span class="hud-stat-label">Rebirths</span>
+    </div>
+
+    <!-- XP bar stretches across bottom of HUD -->
+    <div id="hud-xp-bar">
+      <div id="hud-xp-fill" style="width:0%"></div>
+    </div>
+
+  </header>
+
+  <!-- ============================================================
+       MAIN CONTENT — Scrollable panel area
+       ============================================================ -->
+  <main id="content">
+
+    <!-- ── MINE PANEL ── -->
+    <section id="panel-mine" class="panel active">
+
+      <div class="card">
+        <div class="card-title">Backpack</div>
+        <div id="ore-bar-wrap">
+          <div class="ore-bar-track">
+            <div class="ore-bar-fill" id="ore-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="ore-bar-label">
+            <span id="ore-current">0</span>
+            <span id="ore-max">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Stats</div>
+        <div class="stats-grid">
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Mining Power</div>
+            <div class="stat-cell-value" id="stat-mining-power">0/s</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Ore Value</div>
+            <div class="stat-cell-value" id="stat-ore-value">$0</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Ore Type</div>
+            <div class="stat-cell-value" id="stat-ore-type">Dirt</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Dimension</div>
+            <div class="stat-cell-value" id="stat-dimension">Earth</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Dim Bonus</div>
+            <div class="stat-cell-value" id="stat-dimension-multi">1x</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Blocks Mined</div>
+            <div class="stat-cell-value" id="stat-blocks-mined">0</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Pickaxe</div>
+            <div class="stat-cell-value" id="stat-pickaxe-level">Lv.1</div>
+          </div>
+
+          <div class="stat-cell">
+            <div class="stat-cell-label">Backpack</div>
+            <div class="stat-cell-value" id="stat-backpack-level">Lv.1</div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Actions</div>
+        <div class="mine-actions">
+
+          <button id="btn-sell" class="btn-primary">
+            <i class="fa-solid fa-coins"></i>
+            Sell
+            <span id="btn-sell-amount" style="font-size:11px;opacity:0.75"></span>
+          </button>
+
+          <button id="btn-upgrade-pickaxe" class="upgrade-btn">
+            <span class="upgrade-btn-label">Pickaxe</span>
+            <span class="upgrade-btn-level" id="btn-pickaxe-level">Lv.1</span>
+            <span class="upgrade-btn-cost"  id="btn-pickaxe-cost">$15</span>
+          </button>
+
+          <button id="btn-upgrade-backpack" class="upgrade-btn">
+            <span class="upgrade-btn-label">Backpack</span>
+            <span class="upgrade-btn-level" id="btn-backpack-level">Lv.1</span>
+            <span class="upgrade-btn-cost"  id="btn-backpack-cost">$25</span>
+          </button>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Boosters</div>
+        <div id="booster-badges"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Dimensions</div>
+        <div id="dimension-selector"></div>
+      </div>
+
+    </section>
+    <!-- /panel-mine -->
+
+    <!-- ── PETS PANEL ── -->
+    <section id="panel-pets" class="panel">
+
+      <div class="card">
+        <div class="card-title">Hunt &amp; Fish</div>
+        <div class="pets-actions">
+
+          <button id="btn-hunt" class="hunt-fish-btn">
+            <i class="fa-solid fa-khanda" style="font-size:22px"></i>
+            <span class="hunt-fish-label">Hunt</span>
+            <span class="hunt-fish-timer" id="btn-hunt-timer">Ready!</span>
+          </button>
+
+          <button id="btn-fish" class="hunt-fish-btn">
+            <i class="fa-solid fa-fish" style="font-size:22px"></i>
+            <span class="hunt-fish-label">Fish</span>
+            <span class="hunt-fish-timer" id="btn-fish-timer">Ready!</span>
+          </button>
+
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Your Pets</div>
+        <div id="pet-grid"></div>
+      </div>
+
+    </section>
+    <!-- /panel-pets -->
+
+    <!-- ── CRATES PANEL ── -->
+    <section id="panel-crates" class="panel">
+
+      <div class="card">
+        <div class="card-title">Timed Crates</div>
+        <div class="crate-timers">
+          <div id="timer-hourly"></div>
+          <div id="timer-daily"></div>
+          <div id="timer-weekly"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Inventory</div>
+        <div id="crate-inventory"></div>
+      </div>
+
+    </section>
+    <!-- /panel-crates -->
+
+    <!-- ── PRESTIGE PANEL ── -->
+    <section id="panel-prestige" class="panel">
+
+      <!-- Rebirth -->
+      <div class="card rebirth-section">
+        <div class="card-title">Rebirth</div>
+
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
+          Resets cash, ore, level &amp; gear. Keeps pets, shards &amp; crates.
+          Earns +10% permanent sell value.
+        </div>
+
+        <div style="font-size:13px;margin-bottom:4px" id="rebirth-count">Rebirths: 0</div>
+        <div style="font-size:12px;color:var(--accent);margin-bottom:12px" id="rebirth-bonus">+0% sell value</div>
+
+        <div style="font-size:12px;color:var(--text-muted)" id="rebirth-pickaxe-progress">Pickaxe: 1 / 200</div>
+        <div class="progress-bar"><div class="progress-fill" id="rebirth-pickaxe-bar" style="width:0%"></div></div>
+
+        <div style="font-size:12px;color:var(--text-muted)" id="rebirth-backpack-progress">Backpack: 1 / 200</div>
+        <div class="progress-bar"><div class="progress-fill" id="rebirth-backpack-bar" style="width:0%"></div></div>
+
+        <button id="btn-rebirth" class="btn-rebirth" disabled>Rebirth</button>
+      </div>
+
+      <!-- Prestige -->
+      <div class="card prestige-section">
+        <div class="card-title">Prestige</div>
+
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
+          Resets everything including rebirths. Awards 1 Prestige Token
+          for the shop below.
+        </div>
+
+        <div class="prestige-status-row">
+          <span style="font-size:13px" id="prestige-count">Prestiges: 0</span>
+          <span class="prestige-token-badge">
+            <i class="fa-solid fa-medal"></i>
+            <span id="prestige-tokens">0 tokens</span>
+          </span>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-muted)" id="prestige-rebirths-progress">Rebirths: 0 / 25</div>
+        <div class="progress-bar"><div class="progress-fill" id="prestige-rebirths-bar" style="width:0%"></div></div>
+
+        <div style="font-size:12px;color:var(--text-muted)" id="prestige-pickaxe-progress">Pickaxe: 1 / 200</div>
+        <div class="progress-bar"><div class="progress-fill" id="prestige-pickaxe-bar" style="width:0%"></div></div>
+
+        <div style="font-size:12px;color:var(--text-muted)" id="prestige-backpack-progress">Backpack: 1 / 200</div>
+        <div class="progress-bar"><div class="progress-fill" id="prestige-backpack-bar" style="width:0%"></div></div>
+
+        <button id="btn-prestige" class="btn-prestige" disabled>Prestige</button>
+      </div>
+
+      <!-- Prestige Shop -->
+      <div class="card">
+        <div class="card-title">Prestige Shop</div>
+        <div id="prestige-shop"></div>
+      </div>
+
+    </section>
+    <!-- /panel-prestige -->
+
+
+    <!-- ── SETTINGS PANEL ── -->
+    <section id="panel-settings" class="panel">
+
+      <div class="card settings-section">
+        <div class="card-title">Account</div>
+        <div id="settings-auth"></div>
+      </div>
+
+      <div class="card settings-section">
+        <div class="card-title">Save &amp; Data</div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn-ghost" id="btn-force-save">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Save Now
+          </button>
+          <button class="btn-ghost" style="color:var(--color-error);border-color:var(--color-error)" id="btn-reset-save">
+            <i class="fa-solid fa-trash"></i> Delete Save Data
+          </button>
+        </div>
+
+      </div>
+
+      <div class="card settings-section">
+        <div class="card-title">About</div>
+        <div style="font-size:13px;color:var(--text-muted);line-height:1.8">
+          <div>Idle Miners — browser idle game</div>
+          <div>Inspired by the Discord Idle Miner bot</div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
+            Icons: Font Awesome 6 Free
+          </div>
+        </div>
+      </div>
+
+    </section>
+    <!-- /panel-settings -->
+
+  </main>
+  <!-- /content -->
+
+  <!-- ============================================================
+       TAB BAR — Bottom navigation
+       ============================================================ -->
+  <nav id="tab-bar">
+
+    <button class="tab-btn active" id="tab-mine">
+      <i class="fa-solid fa-helmet-safety"></i>
+      Mine
+    </button>
+
+    <button class="tab-btn" id="tab-pets">
+      <i class="fa-solid fa-paw"></i>
+      Pets
+    </button>
+
+    <button class="tab-btn" id="tab-crates">
+      <i class="fa-solid fa-gift"></i>
+      Crates
+    </button>
+
+    <button class="tab-btn" id="tab-prestige">
+      <i class="fa-solid fa-rotate"></i>
+      Prestige
+    </button>
+
+    <button class="tab-btn" id="tab-settings">
+      <i class="fa-solid fa-gear"></i>
+      Settings
+    </button>
+
+  </nav>
+
+
+  <!-- ============================================================
+       FLOATING LEADERBOARD BUTTON
+       ============================================================ -->
+  <button id="btn-leaderboard-float" aria-label="Leaderboard">
+    <i class="fa-solid fa-trophy"></i>
+  </button>
+
+  <!-- ============================================================
+       LEADERBOARD MODAL
+       ============================================================ -->
+  <div id="leaderboard-modal" class="lb-modal-overlay" style="display:none">
+    <div class="lb-modal">
+      <div class="lb-modal-header">
+        <span class="lb-modal-title"><i class="fa-solid fa-trophy"></i> Leaderboard</span>
+        <button class="lb-modal-close" id="btn-leaderboard-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="leaderboard-tabs"></div>
+      <div id="leaderboard-table">
+        <div class="lb-empty">Select a category above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /app -->
+
+<!-- ============================================================
+     ENTRY POINT — ES Module
+     ============================================================ -->
+<script type="module" src="js/main.js"></script>
+
+</body>
+</html>
