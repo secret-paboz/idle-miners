@@ -1,0 +1,2 @@
+# idle-miners
+idleminers
