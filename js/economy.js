@@ -1,11 +1,19 @@
 // ============================================================
 // ECONOMY.JS — All game math, formulas, and loop logic
+//
+// HackShield changes (v2):
+//   - checkRateLimit() guard added to: sellOre, upgradePickaxe,
+//     upgradeBackpack, upgradePet, activateAbility, doRebirth,
+//     doPrestige, switchDimension
+//   - tickMining() is intentionally NOT rate-limited — it is
+//     called by the trusted game loop only, never by user input
 // ============================================================
 
 import { state, saveState, resetStateForRebirth, resetStateForPrestige } from "./state.js";
 import { getMineTier, rollOre, xpRequiredForLevel, ORE_TYPES } from "./data/mines-data.js";
 import { getDimension } from "./data/dimensions-data.js";
 import { PETS_DATA, RARITY_CONFIG } from "./data/pets-data.js";
+import { checkRateLimit } from "./hackshield.js";
 
 // ============================================================
 // SECTION 1 — UPGRADE COST FORMULAS
@@ -151,7 +159,8 @@ export function computePetBonus(effectType) {
 // SECTION 4 — CORE GAME ACTIONS
 // ============================================================
 
-// Called every 1000ms by main.js setInterval
+// Called every 1000ms by main.js setInterval — NOT rate limited
+// (trusted game loop, not user input)
 // Returns: { oreMined, currentOre, maxCapacity, isFull }
 export function tickMining() {
   const maxCap = computeMaxCapacity();
@@ -189,11 +198,16 @@ export function tickMining() {
 // Sell all ore in backpack
 // Returns: { cashEarned, oreType }
 export function sellOre() {
+  // HackShield: rate limit sell actions
+  if (!checkRateLimit("sell")) {
+    return { cashEarned: 0, rateLimited: true };
+  }
+
   if (state.ore <= 0) return { cashEarned: 0 };
 
-  const oreId = state.currentOreId || "dirt";
-  const ore   = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
-  const value = computeOreValue(ore.id, true);
+  const oreId  = state.currentOreId || "dirt";
+  const ore    = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
+  const value  = computeOreValue(ore.id, true);
   const earned = Math.floor(state.ore * value);
 
   state.cash       += earned;
@@ -211,26 +225,43 @@ export function sellOre() {
 
 // Called by main.js after every tickMining() when isFull === true.
 // Only triggers if player is an active VIP.
-// Silently sells all ore and returns how much cash was earned,
-// so main.js can show a toast notification.
-// Returns: { triggered, cashEarned } 
+// Intentionally bypasses rate limit — it's triggered by the
+// trusted game loop, not a user button press.
+// Returns: { triggered, cashEarned }
 export function tryAutoSell() {
   const now = Date.now();
 
-  // Only VIPs with an active, non-expired subscription get auto-sell
   if (!state.isVip || now >= state.vipExpiresAt) return { triggered: false };
   if (state.ore <= 0) return { triggered: false };
 
   const maxCap = computeMaxCapacity();
-  if (state.ore < maxCap) return { triggered: false }; // Not full yet
+  if (state.ore < maxCap) return { triggered: false };
 
-  const result = sellOre();
-  return { triggered: true, cashEarned: result.cashEarned };
+  // Bypass rate limit for auto-sell (game loop trigger, not user input)
+  if (state.ore <= 0) return { triggered: false };
+
+  const oreId  = state.currentOreId || "dirt";
+  const ore    = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
+  const value  = computeOreValue(ore.id, true);
+  const earned = Math.floor(state.ore * value);
+
+  state.cash       += earned;
+  state.cashEarned += earned;
+  state.ore         = 0;
+
+  saveState();
+
+  return { triggered: true, cashEarned: earned };
 }
 
 // Upgrade pickaxe
 // Returns: { success, newLevel, cost, message }
 export function upgradePickaxe() {
+  // HackShield: rate limit upgrade actions
+  if (!checkRateLimit("upgradePickaxe")) {
+    return { success: false, message: "Slow down! Too many upgrades at once." };
+  }
+
   const cost = pickaxeUpgradeCost(state.pickaxeLevel);
   if (state.cash < cost) {
     return { success: false, message: `Need $${formatNumber(cost)}` };
@@ -249,6 +280,11 @@ export function upgradePickaxe() {
 // Upgrade backpack
 // Returns: { success, newLevel, cost, message }
 export function upgradeBackpack() {
+  // HackShield: rate limit upgrade actions
+  if (!checkRateLimit("upgradeBackpack")) {
+    return { success: false, message: "Slow down! Too many upgrades at once." };
+  }
+
   const cost = backpackUpgradeCost(state.backpackLevel);
   if (state.cash < cost) {
     return { success: false, message: `Need $${formatNumber(cost)}` };
@@ -267,6 +303,11 @@ export function upgradeBackpack() {
 // Upgrade a pet (costs shards, flat rate)
 // Returns: { success, newLevel, cost, message }
 export function upgradePet(petId, levels = 1) {
+  // HackShield: rate limit pet upgrade actions
+  if (!checkRateLimit("upgradePet")) {
+    return { success: false, message: "Slow down! Too many upgrades at once." };
+  }
+
   const petData  = PETS_DATA[petId];
   const petState = state.pets[petId];
   if (!petData || !petState || !petState.owned) {
@@ -298,6 +339,12 @@ export function upgradePet(petId, levels = 1) {
 // Activate legendary pet ability
 // Returns: { success, message, duration }
 export function activateAbility(petId) {
+  // HackShield: abilities have their own built-in cooldown,
+  // but rate limit to prevent spam calls trying to bypass it
+  if (!checkRateLimit("upgradePet")) {
+    return { success: false, message: "Slow down!" };
+  }
+
   const petData  = PETS_DATA[petId];
   const petState = state.pets[petId];
 
@@ -362,6 +409,11 @@ export function canPrestige() {
 }
 
 export function doRebirth() {
+  // HackShield: hard limit — one rebirth per 10 seconds
+  if (!checkRateLimit("rebirth")) {
+    return { success: false, message: "Slow down!" };
+  }
+
   if (!canRebirth()) {
     return { success: false, message: "Need pickaxe & backpack at level 200." };
   }
@@ -370,6 +422,11 @@ export function doRebirth() {
 }
 
 export function doPrestige() {
+  // HackShield: hard limit — one prestige per 10 seconds
+  if (!checkRateLimit("prestige")) {
+    return { success: false, message: "Slow down!" };
+  }
+
   if (!canPrestige()) {
     return { success: false, message: "Need 25 rebirths + level 200 gear." };
   }
@@ -416,7 +473,6 @@ export function calculateOfflineProgress() {
   const elapsed = now - state.lastOnlineTime;
 
   // Guard: reject negative, zero, or implausibly large elapsed times
-  // (corrupted save, clock skew, or first-ever boot with bad timestamp)
   if (!isFinite(elapsed) || elapsed <= 0 || elapsed > 30 * 24 * 60 * 60 * 1000) return null;
 
   // VIP gets 12h offline cap, regular players get 8h
@@ -450,18 +506,24 @@ export function calculateOfflineProgress() {
   state.xp += xpGained;
   checkLevelUp();
 
-  // VIP: auto-sell everything mined offline instantly
+  // VIP: auto-sell everything mined offline instantly (bypass rate limit)
   let cashEarned = 0;
   if (isActiveVip && state.ore > 0) {
-    const sellResult = sellOre();
-    cashEarned = sellResult.cashEarned;
+    const oreId  = state.currentOreId || "dirt";
+    const oreObj = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
+    const value  = computeOreValue(oreObj.id, true);
+    cashEarned   = Math.floor(state.ore * value);
+    state.cash       += cashEarned;
+    state.cashEarned += cashEarned;
+    state.ore         = 0;
+    saveState();
   }
 
   return {
     seconds,
     mined,
     hours: (seconds / 3600).toFixed(1),
-    cashEarned,   // 0 for non-VIP, actual amount for VIP
+    cashEarned,
     isVip: isActiveVip,
   };
 }
