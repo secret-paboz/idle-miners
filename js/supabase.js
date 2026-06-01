@@ -2,9 +2,17 @@
 // SUPABASE.JS — Cloud save gateway
 // Initializes the Supabase client and exposes save/load logic
 // Must load before auth.js and leaderboard.js
+//
+// HackShield changes (v2):
+//   - cloudSave() now POSTs to api/save.js instead of writing
+//     directly to Supabase. The server validates the data and
+//     writes using the service role key.
+//   - The Supabase anon client is still used for: auth, cloudLoad,
+//     resolveConflict, leaderboard, and VIP management (GM only).
 // ============================================================
 
-import { state, saveState } from "./state.js";
+import { state, saveState }              from "./state.js";
+import { getSessionToken, hasValidToken, isDevToolsOpen, getSuspicionScore } from "./hackshield.js";
 
 // ============================================================
 // SECTION 1 — SUPABASE INITIALIZATION
@@ -47,10 +55,13 @@ export function initSupabase() {
 }
 
 // ============================================================
-// SECTION 2 — CLOUD SAVE (upsert player_saves)
+// SECTION 2 — CLOUD SAVE (via api/save.js — HackShield)
+// No longer writes directly to Supabase from the client.
+// All saves are validated server-side before being written.
 // ============================================================
 
 export async function cloudSave() {
+  // Guests always save locally only — no cloud, no token needed
   if (state.isGuest) {
     saveState();
     return { success: true, message: "Saved locally (guest)." };
@@ -64,41 +75,63 @@ export async function cloudSave() {
 
   try {
     const { data: sessionData } = await client.auth.getSession();
-    const userId = sessionData?.session?.user?.id;
+    const userId  = sessionData?.session?.user?.id;
+    const jwt     = sessionData?.session?.access_token;
 
-    if (!userId) {
+    if (!userId || !jwt) {
       saveState();
       return { success: false, message: "Not logged in — saved locally." };
     }
 
-    saveState();
-
-    const row = {
-      id:         userId,
-      nickname:   state.nickname,
-      game_data:  JSON.stringify(state),
-      updated_at: new Date().toISOString(),
-    };
-
-    const { error } = await client
-      .from("player_saves")
-      .upsert(row, { onConflict: "id" });
-
-    if (error) {
-      console.warn("Cloud save failed:", error.message);
-      return { success: false, message: "Cloud save failed — local backup kept." };
+    // HackShield: require a valid session token
+    if (!hasValidToken()) {
+      saveState();
+      console.warn("[cloudSave] No valid HackShield token — skipping cloud save.");
+      return { success: false, message: "Session token expired. Please reload." };
     }
 
-    return { success: true, message: "Game saved to cloud." };
+    // Always save locally first as a backup
+    saveState();
+
+    const { token, issuedAt } = getSessionToken();
+
+    // Build the save payload — strip non-serialisable fields
+    const gameData = JSON.parse(JSON.stringify(state));
+
+    // Attach HackShield metadata (used by server for logging, not validation)
+    gameData.__hs = {
+      devTools:  isDevToolsOpen(),
+      suspicion: getSuspicionScore(),
+    };
+
+    const res = await fetch("/api/save", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({ userId, token, issuedAt, gameData }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      console.warn("[cloudSave] Server rejected save:", result.message, result.errors || "");
+      return { success: false, message: result.message || "Cloud save failed — local backup kept." };
+    }
+
+    return { success: true, message: "Game saved." };
 
   } catch (err) {
     saveState();
+    console.warn("[cloudSave] Unexpected error:", err.message);
     return { success: false, message: "Cloud save error — saved locally." };
   }
 }
 
 // ============================================================
 // SECTION 3 — CLOUD LOAD (fetch player_saves)
+// Still reads directly via anon client — reads are safe.
 // ============================================================
 
 export async function cloudLoad() {
@@ -221,6 +254,7 @@ export function getCloudStatus() {
 
 // ============================================================
 // SECTION 7 — VIP MANAGEMENT (GM only)
+// Still uses anon client — GMs are server-verified (role = 99).
 // ============================================================
 
 // Grant VIP to a player by their Player ID string (e.g. "Piererra")
@@ -238,7 +272,6 @@ export async function grantVipByPlayerId(playerId, durationDays) {
   try {
     const cleanId = playerId.trim().toLowerCase();
 
-    // Look up the player by their player_id column
     const { data, error } = await client
       .from("player_saves")
       .select("id, nickname, is_vip, vip_expires_at")
@@ -249,7 +282,6 @@ export async function grantVipByPlayerId(playerId, durationDays) {
       return { success: false, message: `Player "${cleanId}" not found.` };
     }
 
-    // Stack duration on top of existing VIP time if still active
     const now        = Date.now();
     const addMs      = durationDays * 24 * 60 * 60 * 1000;
     const currentExp = (data.is_vip && data.vip_expires_at > now)
@@ -346,9 +378,9 @@ export async function checkVipByPlayerId(playerId) {
       return { success: false, message: `Player "${cleanId}" not found.` };
     }
 
-    const now      = Date.now();
-    const isVip    = data.is_vip === true && (data.vip_expires_at ?? 0) > now;
-    const expDate  = isVip
+    const now     = Date.now();
+    const isVip   = data.is_vip === true && (data.vip_expires_at ?? 0) > now;
+    const expDate = isVip
       ? new Date(data.vip_expires_at).toLocaleDateString()
       : null;
 
