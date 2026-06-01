@@ -1,6 +1,12 @@
 // ============================================================
 // MAIN.JS — Entry point
 // Game loop, event listeners, and initialization sequence
+//
+// HackShield changes (v2):
+//   - bootHackShield(userId) called after login in boot()
+//   - bootHackShield(userId) called after SIGNED_IN auth event
+//   - clearHackShield() called on logout
+//   - Game loop blocked if HackShield detects a suspended token
 // ============================================================
 
 import { state, initState, saveState } from "./state.js";
@@ -53,6 +59,7 @@ import {
   gmSetRebirths, gmSetPrestigeTokens,
   gmSetCashEarned,
 } from "./gm.js";
+import { bootHackShield, clearHackShield } from "./hackshield.js";
 
 // ============================================================
 // SECTION 1 — BOOT SEQUENCE
@@ -73,9 +80,17 @@ async function boot() {
       await cloudLoad();
       showToast("Cloud save loaded.", "info", 3000);
     }
+
+    // HackShield: acquire session token for logged-in player
+    const userId = await _getSupabaseUserId();
+    if (userId) {
+      await bootHackShield(userId);
+    }
+
   } else {
     if (!state.nickname) loginAsGuest();
     window.__gmVerified = false;
+    // Guests don't get HackShield tokens — bootHackShield not called
   }
 
   // Show offline progress toast on login
@@ -99,6 +114,18 @@ async function boot() {
   checkAndAwardTimedCrates();
 }
 
+// Helper: get the current Supabase userId without importing supabase.js directly
+async function _getSupabaseUserId() {
+  try {
+    const client = window.supabaseClient;
+    if (!client) return null;
+    const { data } = await client.auth.getSession();
+    return data?.session?.user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================
 // SECTION 2 — GAME LOOP
 // ============================================================
@@ -113,7 +140,7 @@ const SUBMIT_LB_EVERY   = 300;
 
 // Throttle auto-sell toast — don't spam it every tick
 let lastAutoSellToast = 0;
-const AUTO_SELL_TOAST_COOLDOWN = 15 * 1000; // Show toast at most once per 15s
+const AUTO_SELL_TOAST_COOLDOWN = 15 * 1000;
 
 function startGameLoop() {
   if (gameLoopInterval) clearInterval(gameLoopInterval);
@@ -200,7 +227,9 @@ function bindMineEvents() {
 
 function handleSell() {
   const result = sellOre();
-  if (result.cashEarned > 0) {
+  if (result.rateLimited) {
+    showToast("Slow down!", "error", 1500);
+  } else if (result.cashEarned > 0) {
     animateSell(result.cashEarned);
   } else {
     showToast("Nothing to sell!", "error", 1500);
@@ -325,13 +354,9 @@ function handlePrestige() {
 let currentLbCategory = "rebirths";
 
 function bindLeaderboardEvents() {
-  // Floating button opens modal
   on("btn-leaderboard-float", "click", handleOpenLeaderboard);
-
-  // Close button
   on("btn-leaderboard-close", "click", handleCloseLeaderboard);
 
-  // Overlay click to close
   const overlay = document.getElementById("leaderboard-modal");
   if (overlay) {
     overlay.addEventListener("click", (e) => {
@@ -339,7 +364,6 @@ function bindLeaderboardEvents() {
     });
   }
 
-  // Tab clicks inside modal (delegated to leaderboard-tabs)
   on("leaderboard-tabs", "click", handleLeaderboardTabClick);
 }
 
@@ -369,7 +393,6 @@ function bindSettingsEvents() {
 }
 
 async function handleForceSave() {
-  // Guest accounts cannot cloud save — show clear error instead of silent fail
   if (state.isGuest) {
     showToast("❌ Cloud saves require a registered account. Register to keep your progress!", "error", 4000);
     return;
@@ -401,7 +424,6 @@ function bindGMEvents() {
 }
 
 async function handleGMClick(e) {
-  // Leaderboard visibility toggle
   if (e.target.id === "btn-gm-lb-toggle") {
     const hidden = toggleGMLeaderboardVisibility();
     showToast(hidden ? "Hidden from leaderboard." : "Visible on leaderboard.", "info", 2000);
@@ -409,25 +431,21 @@ async function handleGMClick(e) {
     return;
   }
 
-  // VIP grant
   if (e.target.id === "btn-gm-grant-vip") {
     await handleGMGrantVip();
     return;
   }
 
-  // VIP revoke
   if (e.target.id === "btn-gm-revoke-vip") {
     await handleGMRevokeVip();
     return;
   }
 
-  // VIP check
   if (e.target.id === "btn-gm-check-vip") {
     await handleGMCheckVip();
     return;
   }
 
-  // Stat set actions
   const setBtn = e.target.closest("[data-gm-action]");
   if (!setBtn) return;
 
@@ -558,39 +576,33 @@ function bindDelegatedEvents() {
 }
 
 async function handleDelegatedClick(e) {
-  // Show register modal
   if (e.target.id === "btn-show-register") {
     e.preventDefault();
     showRegisterModal();
     return;
   }
 
-  // Close register modal
   if (e.target.id === "btn-close-register") {
     const modal = document.getElementById("register-modal");
     if (modal) modal.remove();
     return;
   }
 
-  // Login
   if (e.target.id === "btn-login") {
     await handleLogin();
     return;
   }
 
-  // Register (inside modal)
   if (e.target.id === "btn-register") {
     await handleRegister();
     return;
   }
 
-  // Logout
   if (e.target.id === "btn-logout") {
     await handleLogout();
     return;
   }
 
-  // Dimension switch
   const dimBtn = e.target.closest("[data-dim]");
   if (dimBtn && !dimBtn.disabled) {
     const { switchDimension } = await import("./economy.js");
@@ -603,7 +615,6 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  // Open single crate
   const crateBtn = e.target.closest("[data-crate]");
   if (crateBtn && !crateBtn.disabled) {
     const result = openCrate(crateBtn.dataset.crate);
@@ -611,7 +622,6 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  // Open all of one crate type
   const crateAllBtn = e.target.closest("[data-crate-all]");
   if (crateAllBtn && !crateAllBtn.disabled) {
     const results = openAllOfType(crateAllBtn.dataset.crateAll);
@@ -622,14 +632,12 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  // Claim timed crate
   const claimBtn = e.target.closest("[data-claim]");
   if (claimBtn && !claimBtn.disabled) {
     renderCratesPanel();
     return;
   }
 
-  // Upgrade pet
   const petUpgradeBtn = e.target.closest("[data-pet-upgrade]");
   if (petUpgradeBtn) {
     const result = upgradePet(petUpgradeBtn.dataset.petUpgrade);
@@ -639,7 +647,6 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  // Activate legendary pet ability
   const abilityBtn = e.target.closest("[data-pet-ability]");
   if (abilityBtn) {
     const result = activateAbility(abilityBtn.dataset.petAbility);
@@ -648,7 +655,6 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  // Buy prestige upgrade
   const prestigeBtn = e.target.closest("[data-prestige-upgrade]");
   if (prestigeBtn && !prestigeBtn.disabled) {
     const result = purchasePrestigeUpgrade(prestigeBtn.dataset.prestigeUpgrade);
@@ -678,6 +684,10 @@ async function handleLogin() {
   const result = await loginUser(email, password);
 
   if (result.success) {
+    // HackShield: acquire token for newly logged-in player
+    const userId = await _getSupabaseUserId();
+    if (userId) await bootHackShield(userId);
+
     showToast(result.message, "success", 3000);
     renderHUD();
     renderSettingsPanel();
@@ -710,6 +720,10 @@ async function handleRegister() {
   const result = await registerUser(playerId, password, nickname, email);
 
   if (result.success) {
+    // HackShield: acquire token for newly registered player
+    const userId = await _getSupabaseUserId();
+    if (userId) await bootHackShield(userId);
+
     showToast(result.message, "success", 6000);
     const modal = document.getElementById("register-modal");
     if (modal) modal.remove();
@@ -727,6 +741,9 @@ async function handleLogout() {
     confirmText: "Log Out",
     cancelText:  "Cancel",
     onConfirm:   async () => {
+      // HackShield: clear token from memory on logout
+      clearHackShield();
+
       await logoutUser();
       showToast("Logged out.", "info", 2000);
       renderHUD();
@@ -739,9 +756,16 @@ async function handleAuthChange(direction) {
   if (direction === "in") {
     const winner = await resolveConflict();
     if (winner === "cloud") await cloudLoad();
+
+    // HackShield: re-acquire token on auth state change
+    const userId = await _getSupabaseUserId();
+    if (userId) await bootHackShield(userId);
+
     renderHUD();
     renderSettingsPanel();
   } else {
+    // HackShield: clear token when signed out
+    clearHackShield();
     loginAsGuest();
     renderHUD();
     renderSettingsPanel();
