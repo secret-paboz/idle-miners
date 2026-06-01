@@ -1,0 +1,556 @@
+/* ============================================================
+   PANELS.CSS — Mine, Pets, Crates, Prestige panel styles
+   ============================================================ */
+
+/* ============================================================
+   SECTION 1 — MINE PANEL
+   ============================================================ */
+
+/* Ore bar */
+#ore-bar-wrap {
+  margin-bottom: 16px;
+}
+
+.ore-bar-track {
+  height:        20px;
+  background:    var(--border);
+  border-radius: 99px;
+  overflow:      hidden;
+  position:      relative;
+}
+
+.ore-bar-fill {
+  height:        100%;
+  background:    linear-gradient(90deg, #78909c, #90a4ae);
+  border-radius: 99px;
+  transition:    width 0.5s ease;
+  position:      relative;
+}
+
+.ore-bar-fill.high { background: linear-gradient(90deg, #43a047, #66bb6a); }
+.ore-bar-fill.full {
+  background: linear-gradient(90deg, #e53935, #ff7043);
+  animation:  pulseBar 1s ease-in-out infinite;
+}
+
+@keyframes pulseBar {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+.ore-bar-label {
+  display:         flex;
+  justify-content: space-between;
+  font-size:       12px;
+  color:           var(--text-muted);
+  margin-top:      4px;
+}
+
+/* Stats grid */
+.stats-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   8px;
+  margin-bottom:         14px;
+}
+
+.stat-cell {
+  background:    var(--bg-secondary);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       10px 12px;
+}
+
+.stat-cell-label {
+  font-size:      11px;
+  color:          var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-cell-value {
+  font-size:   15px;
+  font-weight: 700;
+  color:       var(--text-primary);
+  margin-top:  2px;
+}
+
+/* Mine action buttons row */
+.mine-actions {
+  display:       flex;
+  gap:           10px;
+  margin-bottom: 14px;
+}
+
+.mine-actions > * { flex: 1; }
+
+/* Sell button */
+#btn-sell {
+  padding:       12px;
+  background:    linear-gradient(135deg, #43a047, #2e7d32);
+  color:         #fff;
+  font-weight:   700;
+  font-size:     15px;
+  border-radius: var(--radius-md);
+  text-align:    center;
+  transition:    transform var(--transition), box-shadow var(--transition);
+}
+
+#btn-sell:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(67,160,71,0.4); }
+
+#btn-sell.pulse {
+  animation: sellPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 18px rgba(67,160,71,0.5);
+}
+
+@keyframes sellPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(67,160,71,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(67,160,71,0.8); }
+}
+
+/* Upgrade buttons */
+.upgrade-btn {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  padding:        10px 8px;
+  background:     var(--bg-card);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-md);
+  transition:     border-color var(--transition), background var(--transition);
+}
+
+.upgrade-btn.can-afford {
+  border-color: var(--accent);
+  background:   var(--accent-dim);
+}
+
+.upgrade-btn-label { font-size: 11px; color: var(--text-muted); }
+.upgrade-btn-level { font-size: 14px; font-weight: 700; }
+.upgrade-btn-cost  { font-size: 12px; color: var(--accent); margin-top: 2px; }
+
+/* Dimension selector */
+#dimension-selector {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        6px;
+  margin-top: 10px;
+}
+
+.dim-btn {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  padding:        8px 12px;
+  background:     var(--bg-secondary);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-md);
+  font-size:      12px;
+  transition:     border-color var(--transition), background var(--transition);
+  min-width:      72px;
+}
+
+.dim-btn.active {
+  border-color: var(--accent);
+  background:   var(--accent-dim);
+  color:        var(--accent);
+}
+
+.dim-btn.locked { opacity: 0.4; cursor: not-allowed; }
+
+.dim-name  { font-weight: 600; }
+.dim-multi { font-size: 11px; color: var(--text-muted); }
+.dim-lock  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* Booster badges */
+#booster-badges {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        6px;
+  margin-top: 10px;
+}
+
+.booster-badge {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       5px 10px;
+  background:    var(--bg-card);
+  border:        1px solid var(--border-bright);
+  border-radius: 99px;
+  font-size:     12px;
+}
+
+.booster-text {
+  font-size:   12px;
+  font-weight: 600;
+  color:       var(--text-primary);
+}
+
+.booster-badge.booster-vip {
+  border-color: rgba(255,193,7,0.5);
+  background:   rgba(255,193,7,0.08);
+}
+
+.booster-badge.booster-vip .booster-text { color: #ffc107; }
+
+.booster-timer { color: var(--text-muted); font-size: 11px; }
+.no-boosters   { font-size: 12px; color: var(--text-muted); }
+
+/* ============================================================
+   SECTION 2 — PETS PANEL
+   ============================================================ */
+
+.pets-actions {
+  display:       flex;
+  gap:           10px;
+  margin-bottom: 16px;
+}
+
+.hunt-fish-btn {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  padding:        12px;
+  background:     var(--bg-card);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-lg);
+  transition:     border-color var(--transition), background var(--transition);
+}
+
+.hunt-fish-btn.ready {
+  border-color: var(--color-success);
+  background:   rgba(76,175,80,0.1);
+}
+
+.hunt-fish-btn.on-cooldown { opacity: 0.65; }
+
+.hunt-fish-label { font-size: 13px; font-weight: 600; }
+.hunt-fish-timer { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+/* Pet grid */
+#pet-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   10px;
+}
+
+.pet-card {
+  background:      var(--bg-card);
+  border:          1px solid var(--border);
+  border-radius:   var(--radius-lg);
+  padding:         12px 10px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             6px;
+  position:        relative;
+  transition:      border-color var(--transition);
+}
+
+.pet-card.owned {
+  border-color: var(--rarity-color, var(--border));
+  box-shadow:   0 0 12px color-mix(in srgb, var(--rarity-color, transparent) 20%, transparent);
+}
+
+.pet-card.unowned { opacity: 0.45; }
+
+.pet-header {
+  width:           100%;
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+}
+
+.pet-rarity-badge {
+  font-size:      9px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color:          #000;
+  padding:        2px 6px;
+  border-radius:  99px;
+}
+
+.pet-level {
+  font-size:   11px;
+  font-weight: 600;
+  color:       var(--text-muted);
+}
+
+.pet-icon {
+  width:           52px;
+  height:          52px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.pet-icon img { width: 100%; height: 100%; object-fit: contain; }
+
+.pet-name   { font-size: 13px; font-weight: 700; text-align: center; }
+.pet-effect { font-size: 10px; color: var(--text-muted); text-align: center; }
+
+.pet-upgrade-row {
+  width:           100%;
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  margin-top:      4px;
+}
+
+.pet-shard-cost { font-size: 10px; color: var(--text-muted); }
+
+.pet-upgrade-btn {
+  font-size:     11px;
+  font-weight:   600;
+  padding:       4px 10px;
+  background:    var(--accent-dim);
+  color:         var(--accent);
+  border:        1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  transition:    background var(--transition);
+}
+
+.pet-upgrade-btn:hover { background: var(--accent); color: #000; }
+
+.pet-ability-btn {
+  width:         100%;
+  font-size:     11px;
+  font-weight:   600;
+  padding:       6px;
+  border-radius: var(--radius-sm);
+  background:    rgba(255,193,7,0.12);
+  border:        1px solid #ffc107;
+  color:         #ffc107;
+  text-align:    center;
+  transition:    background var(--transition);
+}
+
+.pet-ability-btn.active      { background: rgba(255,193,7,0.3); }
+.pet-ability-btn.on-cooldown { opacity: 0.5; cursor: not-allowed; }
+
+.pet-unowned-label {
+  font-size:  10px;
+  color:      var(--text-muted);
+  font-style: italic;
+}
+
+/* ============================================================
+   SECTION 3 — CRATES PANEL
+   ============================================================ */
+
+.crate-timers {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+  margin-bottom:  16px;
+}
+
+.crate-timer {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         10px 14px;
+  background:      var(--bg-card);
+  border:          1px solid var(--border);
+  border-radius:   var(--radius-md);
+  gap:             10px;
+}
+
+.crate-timer.ready   { border-color: var(--color-success); }
+.crate-timer.waiting { border-color: var(--border); opacity: 0.8; }
+.crate-timer.waiting .timer-value { color: var(--text-muted); font-size: 12px; }
+
+.timer-label { font-size: 13px; font-weight: 600; flex: 1; }
+.timer-value { font-size: 12px; color: var(--text-muted); }
+
+.btn-claim-crate {
+  font-size:     12px;
+  font-weight:   600;
+  padding:       5px 12px;
+  border-radius: var(--radius-sm);
+  background:    var(--color-success);
+  color:         #fff;
+  transition:    opacity var(--transition);
+}
+
+.btn-claim-crate.disabled {
+  opacity:    0.35;
+  cursor:     not-allowed;
+  background: var(--bg-secondary);
+  color:      var(--text-muted);
+}
+
+/* Crate inventory */
+#crate-inventory {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.crate-card {
+  display:       flex;
+  align-items:   center;
+  gap:           12px;
+  padding:       12px 14px;
+  background:    var(--bg-card);
+  border:        1px solid var(--crate-color, var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow:    0 0 8px var(--crate-glow, transparent);
+}
+
+.crate-icon {
+  font-size:   22px;
+  color:       var(--crate-color);
+  width:       32px;
+  text-align:  center;
+  flex-shrink: 0;
+}
+
+.crate-info  { flex: 1; min-width: 0; }
+.crate-name  { font-size: 13px; font-weight: 700; }
+.crate-desc  { font-size: 11px; color: var(--text-muted); }
+.crate-count { font-size: 18px; font-weight: 700; color: var(--crate-color); min-width: 28px; text-align: center; }
+
+.crate-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+
+.btn-open-crate,
+.btn-open-all-crate {
+  font-size:     11px;
+  font-weight:   600;
+  padding:       5px 10px;
+  border-radius: var(--radius-sm);
+  white-space:   nowrap;
+  transition:    background var(--transition), color var(--transition);
+}
+
+.btn-open-crate {
+  background: var(--crate-color, var(--accent));
+  color:      #000;
+}
+
+.btn-open-all-crate {
+  background: transparent;
+  border:     1px solid var(--crate-color, var(--border));
+  color:      var(--crate-color);
+}
+
+.btn-open-crate.disabled,
+.btn-open-all-crate.disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ============================================================
+   SECTION 4 — PRESTIGE PANEL
+   ============================================================ */
+
+.rebirth-section,
+.prestige-section {
+  margin-bottom: 20px;
+}
+
+.prestige-status-row {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  margin-bottom:   10px;
+}
+
+.prestige-token-badge {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  background:    rgba(255,193,7,0.12);
+  border:        1px solid #ffc107;
+  border-radius: 99px;
+  padding:       4px 12px;
+  font-size:     13px;
+  font-weight:   700;
+  color:         #ffc107;
+}
+
+.btn-rebirth,
+.btn-prestige {
+  width:         100%;
+  padding:       13px;
+  font-size:     15px;
+  font-weight:   700;
+  border-radius: var(--radius-md);
+  margin-top:    10px;
+  transition:    opacity var(--transition), box-shadow var(--transition);
+  background:    var(--bg-card);
+  color:         var(--text-muted);
+  border:        1px solid var(--border);
+}
+
+.btn-rebirth.eligible {
+  background: linear-gradient(135deg, #7b1fa2, #ab47bc);
+  color:      #fff;
+  border:     none;
+  box-shadow: 0 4px 18px rgba(171,71,188,0.4);
+}
+
+.btn-prestige.eligible {
+  background: linear-gradient(135deg, #f57f17, #ffc107);
+  color:      #000;
+  border:     none;
+  box-shadow: 0 4px 18px rgba(255,193,7,0.4);
+}
+
+/* Prestige shop */
+#prestige-shop {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.prestige-card {
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:       14px;
+  transition:    border-color var(--transition), box-shadow var(--transition);
+}
+
+.prestige-card.can-afford {
+  border-color: var(--prestige-color, var(--accent));
+  box-shadow:   0 0 14px var(--prestige-glow, transparent);
+}
+
+.prestige-card.maxed { opacity: 0.6; }
+
+.prestige-card-header {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  margin-bottom: 6px;
+}
+
+.prestige-card-header i { font-size: 18px; }
+.prestige-name          { font-weight: 700; flex: 1; }
+.prestige-level         { font-size: 12px; color: var(--text-muted); }
+.prestige-desc          { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+
+.prestige-effect {
+  display:       flex;
+  gap:           8px;
+  font-size:     12px;
+  margin-bottom: 10px;
+}
+
+.effect-current { color: var(--text-secondary); }
+.effect-next    { color: var(--prestige-color, var(--accent)); }
+
+.btn-buy-prestige {
+  width:         100%;
+  padding:       9px;
+  border-radius: var(--radius-sm);
+  font-weight:   600;
+  font-size:     13px;
+  background:    var(--prestige-color, var(--accent));
+  color:         #000;
+  transition:    opacity var(--transition);
+}
+
+.btn-buy-prestige.disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-buy-prestige.maxed    { background: var(--bg-secondary); color: var(--text-muted); cursor: default; }

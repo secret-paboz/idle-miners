@@ -1,0 +1,193 @@
+/* ============================================================
+   LAYOUT.CSS — App shell, HUD, tab bar, panels, scrollbar
+   ============================================================ */
+
+/* ============================================================
+   SECTION 1 — APP SHELL
+   ============================================================ */
+
+#app {
+  display:        flex;
+  flex-direction: column;
+  height:         100dvh;
+  max-width:      480px;
+  margin:         0 auto;
+  position:       relative;
+  overflow:       hidden;
+}
+
+/* ============================================================
+   SECTION 2 — HUD (top bar)
+   ============================================================ */
+
+#hud {
+  position:      sticky;
+  top:           0;
+  z-index:       100;
+  height:        var(--hud-height);
+  background:    var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display:       flex;
+  align-items:   center;
+  padding:       0 12px;
+  gap:           10px;
+  flex-shrink:   0;
+}
+
+.hud-stat {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  min-width:      48px;
+}
+
+.hud-stat-value {
+  font-size:   13px;
+  font-weight: 700;
+  color:       var(--text-primary);
+  white-space: nowrap;
+}
+
+.hud-stat-label {
+  font-size:      10px;
+  color:          var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#hud-nickname {
+  flex:          1;
+  font-size:     13px;
+  font-weight:   600;
+  color:         var(--accent);
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+  transition:    color 0.5s ease;
+}
+
+#hud-guest-badge {
+  font-size:     10px;
+  background:    var(--bg-card);
+  border:        1px solid var(--border-bright);
+  border-radius: 20px;
+  padding:       2px 8px;
+  color:         var(--text-muted);
+  white-space:   nowrap;
+}
+
+/* XP bar — stretches across bottom of HUD */
+#hud-xp-bar {
+  position:   absolute;
+  bottom:     0;
+  left:       0;
+  right:      0;
+  height:     3px;
+  background: var(--border);
+}
+
+#hud-xp-fill {
+  height:        100%;
+  background:    linear-gradient(90deg, var(--accent), #ff6b35);
+  transition:    width 0.4s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+#hud-xp-label {
+  display: none; /* shown on hover or wider layouts */
+}
+
+/* ============================================================
+   SECTION 3 — MAIN CONTENT AREA
+   ============================================================ */
+
+#content {
+  flex:           1;
+  overflow-y:     auto;
+  overflow-x:     hidden;
+  scroll-behavior: smooth;
+  padding-bottom: calc(var(--tabbar-height) + 12px);
+}
+
+#content::-webkit-scrollbar       { width: 3px; }
+#content::-webkit-scrollbar-track { background: transparent; }
+#content::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+/* ============================================================
+   SECTION 4 — PANELS
+   ============================================================ */
+
+.panel {
+  display:   none;
+  padding:   16px 14px;
+  animation: fadeIn 0.2s ease;
+}
+
+.panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   SECTION 5 — TAB BAR (bottom nav)
+   ============================================================ */
+
+#tab-bar {
+  position:        fixed;
+  bottom:          0;
+  left:            50%;
+  transform:       translateX(-50%);
+  width:           100%;
+  max-width:       480px;
+  height:          var(--tabbar-height);
+  background:      var(--bg-secondary);
+  border-top:      1px solid var(--border);
+  display:         flex;
+  align-items:     center;
+  justify-content: space-around;
+  z-index:         100;
+  flex-shrink:     0;
+}
+
+.tab-btn {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             3px;
+  padding:         6px 10px;
+  border-radius:   var(--radius-md);
+  color:           var(--text-muted);
+  font-size:       10px;
+  font-weight:     500;
+  transition:      color var(--transition), background var(--transition);
+  min-width:       52px;
+}
+
+.tab-btn i { font-size: 20px; }
+
+.tab-btn.active {
+  color:      var(--accent);
+  background: var(--accent-dim);
+}
+
+.tab-btn:hover:not(.active) {
+  color:      var(--text-secondary);
+  background: var(--bg-card);
+}
+
+/* ============================================================
+   SECTION 6 — SAFE AREA (iPhone notch support)
+   ============================================================ */
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #tab-bar {
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  }
+  .toast {
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 14px);
+  }
+}

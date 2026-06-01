@@ -1,0 +1,524 @@
+/* ============================================================
+   SETTINGS.CSS — Auth forms, settings panel, GM panel, VIP
+   ============================================================ */
+
+/* ============================================================
+   SECTION 1 — SETTINGS PANEL
+   ============================================================ */
+
+.settings-section { margin-bottom: 22px; }
+
+.settings-logged-in {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         14px;
+  background:      var(--bg-card);
+  border:          1px solid var(--border);
+  border-radius:   var(--radius-lg);
+}
+
+.settings-logged-in-wrap {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.settings-user-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             10px;
+  flex-wrap:       wrap;
+}
+
+.settings-user {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  font-size:   14px;
+}
+
+.btn-logout {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       7px 14px;
+  border:        1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  color:         var(--color-error);
+  font-size:     13px;
+  font-weight:   600;
+  transition:    background var(--transition);
+}
+
+.btn-logout:hover { background: rgba(244,67,54,0.12); }
+
+.settings-guest-label {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       12px 14px;
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size:     13px;
+  color:         var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   SECTION 2 — AUTH FORMS (Login / Register)
+   ============================================================ */
+
+.auth-forms {
+  display:        flex;
+  flex-direction: column;
+  gap:            16px;
+}
+
+.auth-form {
+  background:     var(--bg-card);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-lg);
+  padding:        16px;
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.auth-form h3 { font-size: 15px; font-weight: 700; }
+
+.auth-form input {
+  width:         100%;
+  padding:       10px 12px;
+  background:    var(--bg-input);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  color:         var(--text-primary);
+  font-size:     14px;
+  transition:    border-color var(--transition);
+}
+
+.auth-form input:focus       { border-color: var(--accent); }
+.auth-form input::placeholder { color: var(--text-muted); }
+
+.btn-auth {
+  padding:       11px;
+  background:    var(--accent);
+  color:         #000;
+  font-weight:   700;
+  font-size:     14px;
+  border-radius: var(--radius-md);
+  transition:    opacity var(--transition);
+}
+
+.btn-auth:hover { opacity: 0.88; }
+
+.auth-message {
+  font-size:  12px;
+  color:      var(--color-error);
+  min-height: 16px;
+}
+
+/* Guest wrapper */
+.settings-guest {
+  display:        flex;
+  flex-direction: column;
+  gap:            14px;
+}
+
+/* Switch link below login form */
+.auth-switch {
+  font-size:  12px;
+  color:      var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.auth-switch a,
+#btn-show-register {
+  color:           var(--accent);
+  text-decoration: none;
+  font-weight:     600;
+  transition:      opacity var(--transition);
+}
+
+.auth-switch a:hover,
+#btn-show-register:hover {
+  opacity:         0.8;
+  text-decoration: underline;
+}
+
+/* ============================================================
+   SECTION 3 — REGISTER MODAL
+   ============================================================ */
+
+.register-modal-box { max-width: 360px; }
+
+.register-fields {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  margin-bottom:  12px;
+}
+
+.register-fields input {
+  width:         100%;
+  padding:       10px 12px;
+  background:    var(--bg-input);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  color:         var(--text-primary);
+  font-size:     14px;
+  font-family:   inherit;
+  transition:    border-color var(--transition);
+}
+
+.register-fields input:focus       { border-color: var(--accent); outline: none; }
+.register-fields input::placeholder { color: var(--text-muted); }
+
+/* ============================================================
+   SECTION 4 — VIP SYSTEM
+   ============================================================ */
+
+/* Static gold pill badge */
+.vip-badge {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            4px;
+  margin-left:    6px;
+  padding:        2px 7px;
+  font-size:      10px;
+  font-weight:    800;
+  letter-spacing: 0.08em;
+  color:          #000;
+  background:     #ffc107;
+  border:         1px solid rgba(255,215,0,0.9);
+  border-radius:  99px;
+  vertical-align: middle;
+  line-height:    1.5;
+  box-shadow:     0 0 6px rgba(255,193,7,0.5);
+}
+
+/* HUD VIP badge — slightly smaller */
+#hud-vip-badge,
+.vip-badge-hud {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            3px;
+  margin-left:    6px;
+  padding:        1px 6px;
+  font-size:      9px;
+  font-weight:    800;
+  letter-spacing: 0.08em;
+  color:          #000;
+  background:     #ffc107;
+  border:         1px solid rgba(255,215,0,0.9);
+  border-radius:  99px;
+  vertical-align: middle;
+  line-height:    1.6;
+  flex-shrink:    0;
+}
+
+/* Leaderboard VIP badge — with pulse */
+.vip-badge-lb {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            3px;
+  margin-right:   5px;
+  padding:        2px 6px;
+  font-size:      10px;
+  font-weight:    800;
+  letter-spacing: 0.06em;
+  color:          #000;
+  background:     #ffc107;
+  border:         1px solid rgba(255,215,0,0.9);
+  border-radius:  99px;
+  vertical-align: middle;
+  box-shadow:     0 0 6px rgba(255,193,7,0.6);
+  flex-shrink:    0;
+}
+
+/* Reusable shiny shimmer animation for VIP badges */
+.vip-pulse {
+  position:   relative;
+  overflow:   hidden;
+  animation:  vipShine 2.8s ease-in-out infinite;
+}
+
+/* Shimmer sweep pseudo-element */
+.vip-pulse::after {
+  content:        "";
+  position:       absolute;
+  top:            -50%;
+  left:           -75%;
+  width:          50%;
+  height:         200%;
+  background:     linear-gradient(
+    105deg,
+    transparent            30%,
+    rgba(255,255,255,0.55) 50%,
+    transparent            70%
+  );
+  transform:      skewX(-15deg);
+  animation:      vipShimmerSweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+  border-radius:  inherit;
+}
+
+@keyframes vipShimmerSweep {
+  0%   { left: -75%; opacity: 0; }
+  15%  { opacity: 1; }
+  50%  { left: 130%; opacity: 1; }
+  51%  { opacity: 0; }
+  100% { left: 130%; opacity: 0; }
+}
+
+@keyframes vipShine {
+  0%, 100% {
+    box-shadow: 0 0 5px  rgba(255,193,7,0.55),
+                0 0 10px rgba(255,193,7,0.25);
+  }
+  50% {
+    box-shadow: 0 0 8px  rgba(255,215,0,0.9),
+                0 0 18px rgba(255,193,7,0.45);
+  }
+}
+
+/* VIP status card (shown to active VIP players) */
+.vip-status-card {
+  position:      relative;
+  overflow:      hidden;
+  border-radius: var(--radius-md);
+  padding:       14px 14px 12px;
+  border:        1px solid rgba(255,193,7,0.5);
+  background:    rgba(255,193,7,0.07);
+}
+
+/* Animated pulse ring behind content */
+.vip-card-pulse {
+  position:       absolute;
+  inset:          -2px;
+  border-radius:  inherit;
+  border:         2px solid rgba(255,193,7,0.0);
+  animation:      vipCardPulse 2.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index:        0;
+}
+
+@keyframes vipCardPulse {
+  0%, 100% {
+    border-color: rgba(255,193,7,0.0);
+    box-shadow:   inset 0 0 0px rgba(255,193,7,0);
+  }
+  50% {
+    border-color: rgba(255,215,0,0.7);
+    box-shadow:   inset 0 0 18px rgba(255,193,7,0.12),
+                  0 0 18px rgba(255,193,7,0.18);
+  }
+}
+
+/* Card content sits above pulse ring */
+.vip-status-card > *:not(.vip-card-pulse) {
+  position: relative;
+  z-index:  1;
+}
+
+.vip-status-header {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  margin-bottom: 10px;
+  flex-wrap:     wrap;
+}
+
+.vip-status-title {
+  font-size:   13px;
+  font-weight: 700;
+  color:       #ffc107;
+}
+
+.vip-expiry {
+  font-size:   11px;
+  color:       var(--text-muted);
+  margin-left: auto;
+}
+
+.vip-perks-list {
+  list-style:     none;
+  display:        flex;
+  flex-direction: column;
+  gap:            5px;
+}
+
+.vip-perks-list li {
+  display:     flex;
+  align-items: center;
+  gap:         7px;
+  font-size:   12px;
+  color:       var(--text-secondary);
+}
+
+.vip-perks-list li i {
+  color:       var(--color-success);
+  font-size:   11px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SECTION 5 — GM PANEL
+   ============================================================ */
+
+.gm-panel {
+  margin-top:  24px;
+  padding:     16px;
+  background:  rgba(255,193,7,0.06);
+  border:      1px solid rgba(255,193,7,0.3);
+  border-radius: 12px;
+}
+
+.gm-panel-header {
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
+  font-size:      13px;
+  font-weight:    700;
+  color:          #ffc107;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom:  14px;
+}
+
+.gm-panel-header i { font-size: 16px; }
+
+.gm-section-label {
+  font-size:      10px;
+  font-weight:    600;
+  color:          var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin:         12px 0 6px;
+}
+
+.btn-gm-toggle {
+  width:         100%;
+  padding:       8px 12px;
+  border-radius: 8px;
+  border:        1px solid rgba(255,255,255,0.1);
+  font-size:     12px;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    background 0.2s, color 0.2s;
+}
+
+.gm-toggle-on {
+  background:   rgba(76,175,80,0.15);
+  color:        #4caf50;
+  border-color: rgba(76,175,80,0.3);
+}
+
+.gm-toggle-off {
+  background:   rgba(244,67,54,0.15);
+  color:        #f44336;
+  border-color: rgba(244,67,54,0.3);
+}
+
+.gm-grid {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.gm-row {
+  display:     grid;
+  grid-template-columns: 1fr 90px 48px;
+  align-items: center;
+  gap:         6px;
+}
+
+.gm-row label {
+  font-size: 12px;
+  color:     var(--text-muted);
+}
+
+.gm-input {
+  padding:       5px 8px;
+  background:    rgba(255,255,255,0.07);
+  border:        1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color:         var(--text-primary);
+  font-size:     12px;
+  width:         100%;
+  box-sizing:    border-box;
+}
+
+.gm-input:focus {
+  outline:      none;
+  border-color: #ffc107;
+}
+
+.btn-gm-set {
+  padding:       5px 0;
+  background:    rgba(255,193,7,0.15);
+  border:        1px solid rgba(255,193,7,0.35);
+  border-radius: 6px;
+  color:         #ffc107;
+  font-size:     11px;
+  font-weight:   700;
+  cursor:        pointer;
+  transition:    background 0.15s;
+}
+
+.btn-gm-set:hover { background: rgba(255,193,7,0.28); }
+
+.gm-message {
+  margin-top:  10px;
+  font-size:   12px;
+  min-height:  16px;
+  color:       #4caf50;
+}
+
+/* GM VIP management */
+.gm-vip-section {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+  margin-top:     4px;
+}
+
+.gm-vip-row {
+  display: flex;
+  gap:     8px;
+}
+
+.gm-vip-input { flex: 1; }
+.gm-vip-days  { width: 72px; flex-shrink: 0; }
+
+.gm-vip-actions {
+  display: flex;
+  gap:     6px;
+}
+
+.btn-gm-vip {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             5px;
+  padding:         7px 4px;
+  border-radius:   6px;
+  font-size:       11px;
+  font-weight:     700;
+  cursor:          pointer;
+  transition:      background 0.15s, opacity 0.15s;
+  border:          1px solid;
+}
+
+.btn-gm-grant  { background: rgba(76,175,80,0.15);  border-color: rgba(76,175,80,0.4);  color: #4caf50; }
+.btn-gm-revoke { background: rgba(244,67,54,0.15);  border-color: rgba(244,67,54,0.4);  color: #f44336; }
+.btn-gm-check  { background: rgba(66,165,245,0.15); border-color: rgba(66,165,245,0.4); color: #42a5f5; }
+
+.btn-gm-grant:hover  { background: rgba(76,175,80,0.28);  }
+.btn-gm-revoke:hover { background: rgba(244,67,54,0.28);  }
+.btn-gm-check:hover  { background: rgba(66,165,245,0.28); }
