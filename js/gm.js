@@ -38,7 +38,7 @@ export async function isGameMaster() {
       .single();
 
     if (error || !data) return false;
-    return data.role === 99;
+    return Number(data.role) === 99;
   } catch {
     return false;
   }
