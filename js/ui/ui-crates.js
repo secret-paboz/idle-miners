@@ -53,7 +53,7 @@ function renderCrateInventory() {
 // SECTION 3 — TIMED CRATE COUNTDOWNS
 // ============================================================
 
-function renderCrateTimers() {
+export function renderCrateTimers() {
   const now    = Date.now();
   const timers = [
     { key: "lastHourlyTime", id: "timer-hourly", label: "Hourly Crate", interval: 60 * 60 * 1000          },
