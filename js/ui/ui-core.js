@@ -1,6 +1,13 @@
 // ============================================================
 // UI-CORE.JS — Shared utilities, tab navigation, toast, modal
 // All other UI modules import their helpers from here.
+//
+// CHANGED (toast system):
+// - showToast() now deduplicates: if the same message is
+//   already in the queue, it's skipped entirely.
+// - If the queue has 3+ items backed up, duration is cut to
+//   800ms so rapid upgrades don't create a 30-second backlog.
+// - processToastQueue() fade delay reduced from 400ms to 150ms.
 // ============================================================
 
 import { state } from "../state.js";
@@ -33,7 +40,6 @@ export async function switchTab(tabId) {
   if (activePanel) activePanel.classList.add("active");
   if (activeBtn)   activeBtn.classList.add("active");
 
-  // Lazy import each panel renderer to avoid circular dependencies
   switch (tabId) {
     case "mine": {
       const { renderMinePanel } = await import("./ui-mine.js");
@@ -78,7 +84,16 @@ export async function loadAndRenderLeaderboard(category = "rebirths") {
 let toastQueue   = [];
 let toastShowing = false;
 
-export function showToast(message, type = "info", duration = 3000) {
+// Max duration used when queue is backed up (3+ items waiting)
+const TOAST_DURATION_NORMAL = 2000;
+const TOAST_DURATION_FAST   = 800;
+const TOAST_FADE_MS         = 150;  // was 400ms
+
+export function showToast(message, type = "info", duration = TOAST_DURATION_NORMAL) {
+  // Skip if the exact same message is already queued or showing
+  const isDuplicate = toastQueue.some(t => t.message === message);
+  if (isDuplicate) return;
+
   toastQueue.push({ message, type, duration });
   if (!toastShowing) processToastQueue();
 }
@@ -86,7 +101,11 @@ export function showToast(message, type = "info", duration = 3000) {
 function processToastQueue() {
   if (!toastQueue.length) { toastShowing = false; return; }
   toastShowing = true;
+
+  // If queue is backed up, use fast duration for next toast
+  const backlogged = toastQueue.length >= 3;
   const { message, type, duration } = toastQueue.shift();
+  const effectiveDuration = backlogged ? TOAST_DURATION_FAST : duration;
 
   let toast = document.getElementById("toast");
   if (!toast) {
@@ -100,8 +119,8 @@ function processToastQueue() {
 
   setTimeout(() => {
     toast.classList.remove("show");
-    setTimeout(processToastQueue, 400);
-  }, duration);
+    setTimeout(processToastQueue, TOAST_FADE_MS);
+  }, effectiveDuration);
 }
 
 // ============================================================
@@ -162,7 +181,7 @@ export function showOfflineProgress(result) {
 }
 
 // ============================================================
-// SECTION 6 — BOOT SPINNER
+// SECTION 5 — BOOT SPINNER
 // ============================================================
 
 export function showBootSpinner(message = "Loading...") {
@@ -189,7 +208,7 @@ export function hideBootSpinner() {
 }
 
 // ============================================================
-// SECTION 5 — DOM HELPERS (exported for use by all UI modules)
+// SECTION 6 — DOM HELPERS
 // ============================================================
 
 export function setText(id, value) {
