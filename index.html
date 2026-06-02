@@ -359,6 +359,26 @@
   </button>
 
   <!-- ============================================================
+       FLOATING GM BUTTON (only visible to Game Masters)
+       ============================================================ -->
+  <button id="btn-gm-float" aria-label="GM Panel" style="display:none">
+    <i class="fa-solid fa-shield-halved"></i>
+  </button>
+
+  <!-- ============================================================
+       GM PANEL OVERLAY
+       ============================================================ -->
+  <div id="gm-modal" class="gm-modal-overlay" style="display:none">
+    <div class="gm-modal">
+      <div class="gm-modal-header">
+        <span class="gm-modal-title"><i class="fa-solid fa-shield-halved"></i> Game Master Panel</span>
+        <button class="gm-modal-close" id="btn-gm-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="gm-panel-content"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
        LEADERBOARD MODAL
        ============================================================ -->
   <div id="leaderboard-modal" class="lb-modal-overlay" style="display:none">
