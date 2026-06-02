@@ -16,7 +16,7 @@ import { renderMinePanel, animateMiningTick } from "./ui/ui-mine.js";
 import { renderPetCooldowns } from "./ui/ui-pets.js";
 import { renderCratesPanel, renderCrateTimers } from "./ui/ui-crates.js";
 import { renderPrestigePanel } from "./ui/ui-prestige.js";
-import { renderSettingsPanel } from "./ui/ui-settings.js";
+import { renderSettingsPanel, renderGMPanel } from "./ui/ui-settings.js";
 import { initSupabase, cloudLoad, resolveConflict, startAutoSave } from "./supabase.js";
 import { restoreSession, loginAsGuest, onAuthChange } from "./auth.js";
 import { submitLeaderboardScore } from "./leaderboard.js";
