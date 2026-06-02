@@ -1,6 +1,6 @@
 # ⛏️ Idle Miners
 
-A browser-based idle mining game inspired by the Discord Idle Miner bot. Mine ore, upgrade your gear, collect pets, open crates, and prestige your way through 9 dimensions.
+A browser-based idle mining game inspired by the Discord Idle Miner bot. Mine ore automatically, upgrade your gear, collect pets, open crates, and prestige your way through 9 dimensions.
 
 **Live site:** https://idle-miners.vercel.app
 
@@ -24,7 +24,7 @@ A browser-based idle mining game inspired by the Discord Idle Miner bot. Mine or
 - Ore mines automatically every second
 - 13 ore types from Dirt → Ancient Debris, each with higher base value
 - 13 mine tiers unlock as you level up (Surface Mine → Ancient Ruins)
-- Pickaxe and Backpack upgrades scale with a 1.15x cost curve
+- Pickaxe and Backpack upgrades scale with a 1.15× cost curve
 - XP and levelling system — higher level = better ore tiers
 - Offline progress calculated on return (capped at 8h for regular players, 12h for VIP)
 
@@ -37,15 +37,15 @@ Unlock a new dimension every 3 Rebirths. Each one multiplies all ore value.
 
 | Dimension | Rebirths Needed | Value Multiplier |
 |---|---|---|
-| Earth | 0 | 1x |
-| Deep Cave | 3 | 2.5x |
-| Snow | 6 | 5x |
-| Nether | 9 | 10x |
-| Crimson Forest | 12 | 18x |
-| Warped Forest | 15 | 30x |
-| The End | 18 | 50x |
-| The Void | 21 | 80x |
-| The Aether | 24 | 150x |
+| Earth | 0 | 1× |
+| Deep Cave | 3 | 2.5× |
+| Snow | 6 | 5× |
+| Nether | 9 | 10× |
+| Crimson Forest | 12 | 18× |
+| Warped Forest | 15 | 30× |
+| The End | 18 | 50× |
+| The Void | 21 | 80× |
+| The Aether | 24 | 150× |
 
 </details>
 
@@ -59,7 +59,7 @@ Hunt and Fish to find pets. Each rarity buffs a different stat.
 | Common | +Backpack capacity | Chicken, Cow, Pig, Sheep |
 | Uncommon | +Mining speed | Creeper, Zombie, Skeleton, Spider |
 | Rare | +Sell value | Blaze, Enderman, Guardian |
-| Legendary | Special ability | Wither (Rage — 2x mining for 60s), Ender Dragon (Wings — 2x sell for 60s) |
+| Legendary | Special passive | Wither (+mining bonus), Ender Dragon (+sell bonus) |
 
 Pets are upgraded with Shards and have a max level cap per rarity.
 
@@ -127,7 +127,7 @@ VIP status is stored server-side in Supabase and expires automatically. Players 
 - Play as **Guest** — progress saved to localStorage only
 - **Register** an account to enable cloud saves via Supabase
 - On login, cloud and local saves are compared — the newer one wins
-- **Auto-save** runs every 60 seconds for logged-in players
+- **Auto-save** runs every 30 seconds for logged-in players
 - **Logout** fully wipes local data — the cloud copy is always the source of truth
 - All cloud saves are validated server-side before being written
 
@@ -145,7 +145,7 @@ Global leaderboard for logged-in players across 4 categories:
 - Cash Earned
 - Pets Owned
 
-Each player's nickname is colored by their current **dimension color**. VIP players are marked with a pulsing **👑 VIP** badge. Hidden players are completely invisible to all viewers — enforced server-side via Supabase RLS, not clientside filtering.
+Each player's nickname is colored by their current dimension color. VIP players are marked with a pulsing **👑 VIP** badge. Hidden players are completely invisible to all viewers — enforced server-side via Supabase RLS, not client-side filtering.
 
 </details>
 
@@ -166,7 +166,7 @@ GMs have access to a hidden panel in the Settings tab for server-side management
 | Set Pickaxe / Backpack level | Override gear levels |
 | Set Rebirths / Prestige Tokens | Override progression milestones |
 | Set Total Cash Earned | Override leaderboard stat |
-| Leaderboard visibility toggle | Hide/show GM account — enforced serverside via Supabase |
+| Leaderboard visibility toggle | Hide/show GM account — enforced server-side via Supabase RLS |
 | Grant VIP | Give VIP to any player by Player ID for N days |
 | Revoke VIP | Remove VIP from any player immediately |
 | Check VIP | Look up current VIP status for any player |
@@ -221,14 +221,76 @@ idle-miners/
 
 ---
 
-## 🚀 Deployment (Vercel)
+## ☁️ Supabase Setup
 
-<details>
-<summary><strong>Setup steps</strong></summary>
+This project uses a single Supabase table: `player_saves`.
 
-1. Fork or clone this repo
-2. Connect it to [Vercel](https://vercel.com)
-3. Add these **Environment Variables** in your Vercel project settings:
+### 1. Create the table
+
+Run this SQL in your Supabase project → **SQL Editor**:
+
+```sql
+create table public.player_saves (
+  id               uuid primary key references auth.users(id) on delete cascade,
+  player_id        text unique not null,
+  nickname         text not null default 'Player',
+  game_data        jsonb,
+  role             integer not null default 0,
+  is_vip           boolean not null default false,
+  vip_expires_at   bigint not null default 0,
+  updated_at       timestamptz not null default now()
+);
+```
+
+**Column reference:**
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | `uuid` | Matches the Supabase Auth user ID — primary key |
+| `player_id` | `text` | Unique player-chosen ID used for VIP management and leaderboard |
+| `nickname` | `text` | Display name shown in HUD and leaderboard |
+| `game_data` | `jsonb` | Full serialized game state |
+| `role` | `integer` | `0` = player, `99` = Game Master |
+| `is_vip` | `boolean` | Whether VIP is currently active |
+| `vip_expires_at` | `bigint` | VIP expiry as a Unix timestamp (ms). `0` = no VIP |
+| `updated_at` | `timestamptz` | Timestamp of last cloud save |
+
+---
+
+### 2. Enable Row Level Security (RLS)
+
+```sql
+-- Enable RLS
+alter table public.player_saves enable row level security;
+
+-- Players can read their own row
+create policy "Players can read own save"
+  on public.player_saves for select
+  using (auth.uid() = id);
+
+-- Players can insert their own row
+create policy "Players can insert own save"
+  on public.player_saves for insert
+  with check (auth.uid() = id);
+
+-- Players can update their own row
+create policy "Players can update own save"
+  on public.player_saves for update
+  using (auth.uid() = id);
+
+-- Leaderboard: only show players who have not hidden themselves (role != 99)
+create policy "Leaderboard visible rows"
+  on public.player_saves for select
+  using (role != 99 or auth.uid() = id);
+```
+
+> The GM hide toggle sets `role = 99` — the RLS policy above ensures hidden accounts are invisible to all other players at the database level, not just filtered client-side.
+
+---
+
+### 3. Add environment variables
+
+Add these to your **Vercel project settings** → Environment Variables:
 
 | Variable | Where to find it |
 |---|---|
@@ -236,11 +298,16 @@ idle-miners/
 | `SUPABASE_ANON_KEY` | Supabase project → Settings → API |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API (service_role key) |
 
-4. Deploy — Vercel serves `api/env.js` as a serverless function that injects the env vars at runtime. `api/save.js` validates all cloud saves server-side before writing to the database.
+---
+
+## 🚀 Deployment (Vercel)
+
+1. Fork or clone this repo
+2. Connect it to [Vercel](https://vercel.com)
+3. Add the three environment variables above
+4. Deploy — `api/env.js` injects the keys at runtime so they never ship in the client bundle. `api/save.js` validates all cloud saves server-side before writing to the database.
 
 > **Note:** `package.json` must be present in the repo root so Vercel installs `@supabase/supabase-js` for the serverless functions.
-
-</details>
 
 ---
 
@@ -260,224 +327,9 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 
 ---
 
-## 📋 Changelog
-
-<details>
-<summary><strong>v1.7.0 — Ore Sprites, Mine UI/UX Polish</strong></summary>
-
-### 🎨 Feature: Ore sprite floating text
-- Mining tick animation now shows `[sprite] +N OreName` instead of a plain `+N` number.
-- 13 ore sprites (dirt, stone, coal, copper, iron, gold, redstone, lapis, emerald, diamond, obsidian, netherite, ancientDebris) served from `/sprites/` as 24×24px optimized PNGs (down from 216×196px originals — 96% size reduction).
-- Floating text uses `display: flex` with `align-items: center` so the sprite and label sit inline.
-- `image-rendering: pixelated` keeps sprites crisp at small size.
-- Sell float animation unchanged — still shows `+$N` in green with no sprite.
-
-**Files changed:** `js/ui/ui-mine.js` · `css/components.css`
-**Assets added:** `sprites/` *(13 PNG files, 24×24px)*
-
----
-
-### 🗑️ Removed: Ore Type stat cell
-- The "Ore Type" stat cell has been removed from the Stats grid in the Mine panel.
-- Ore type is now communicated through the floating text sprite on every mining tick — showing it twice was redundant.
-- Stats grid reflows cleanly from 8 to 7 cells in the existing 2-column layout.
-
-**Files changed:** `index.html` · `js/ui/ui-mine.js`
-
----
-
-### ✨ Improvement: Ore bar glow states
-- `high` state (≥75% full) now emits a soft green glow (`box-shadow: 0 0 8px rgba(67,160,71,0.5)`).
-- `full` state (100%) now emits a red glow (`box-shadow: 0 0 12px rgba(229,57,53,0.6)`) in addition to the existing pulse animation.
-- Both transitions are smooth via `transition: box-shadow 0.3s ease`.
-
-**Files changed:** `css/panels.css`
-
----
-
-### ✨ Improvement: Upgrade button affordability glow
-- `.upgrade-btn.can-afford` now includes a subtle gold `box-shadow` (`0 0 10px rgba(255,193,7,0.2)`) in addition to the existing border and background tint.
-- More readable on Android dark screens where border color alone is easy to miss.
-
-**Files changed:** `css/panels.css`
-
----
-
-### ✨ Improvement: Sell button layout
-- Sell button now uses `flex-direction: column` so the ore count sits cleanly below the label.
-- Ore amount and estimated value use distinct opacity levels for better visual hierarchy.
-
-**Files changed:** `css/panels.css`
-
-</details>
-
-<details>
-<summary><strong>v1.6.0 — Server-side Save Validation & GM Role Enforcement</strong></summary>
-
-### 🛡️ Feature: Server-side math validation on all cloud saves
-- All cloud saves for logged-in players now go through `api/save.js` — a Vercel serverless function that validates save data before writing to Supabase.
-- The server recalculates the theoretical maximum possible stats using the player's own submitted values (pickaxe level, backpack level, pets, boosters, prestige upgrades, rebirths, VIP status) and rejects any save where submitted values exceed what's mathematically achievable.
-- Checks performed: ore vs backpack capacity, cash earned vs lifetime sell ceiling, blocks mined vs 30-day continuous max, shards hard cap, dimension count vs rebirth count, all field types and ranges.
-- Saves still write locally first as a backup — if the server rejects the save, the player keeps their local copy and sees a warning.
-
-**Files changed:** `api/save.js` *(rewritten)* · `js/supabase.js`
-
----
-
-### 🛡️ Feature: GM role verified server-side on every save
-- When a save request arrives at `api/save.js`, the server fetches the player's `role` from Supabase using the service role key.
-- If `role === 99` (Game Master) — math validation is skipped entirely, save is written as-is.
-- If `role !== 99` — full math validation runs. A non-GM player cannot bypass this by editing localStorage or browser memory.
-
-**Files changed:** `api/save.js`
-
----
-
-### 🗑️ Removed: HackShield token system
-- Removed `api/verify.js`, `js/hackshield.js`, and all token-based session validation.
-- The token system caused save rollbacks when tabs went idle, phones locked screens, or sessions exceeded 90 minutes.
-- Replaced entirely by the server-side math validation approach above.
-
-**Files deleted:** `api/verify.js` · `js/hackshield.js`
-**Files changed:** `js/main.js` · `js/economy.js` · `js/supabase.js`
-
----
-
-### 🐛 Fix: Cloud saves failing silently (missing package.json)
-- Added `package.json` declaring `@supabase/supabase-js` as a dependency so Vercel installs it for the serverless function.
-
-**Files added:** `package.json`
-
-</details>
-
-<details>
-<summary><strong>v1.5.0 — Bug Fixes, UX Polish & Stability</strong></summary>
-
-### 🐛 Fix: Dimension icons not displaying
-- `renderDimensionSelector()` was only outputting the dimension name — the `icon` field was never rendered.
-- Also fixed: `fa-earth-americas` (Font Awesome Pro) replaced with `fa-globe` (Font Awesome 6 Free).
-
-**Files changed:** `js/data/dimensions-data.js` · `js/ui/ui-mine.js`
-
----
-
-### ✨ Improvement: VIP badge shimmer animation
-- Replaced pulsing gold glow with a diagonal shimmer sweep on a 2.8s loop.
-
-**Files changed:** `css/settings.css`
-
----
-
-### ✨ Improvement: Live ore bar updates
-- Added `renderMinePanel()` to the game loop (`RENDER_MINE_EVERY = 2` ticks).
-
-**Files changed:** `js/main.js`
-
----
-
-### 🐛 Fix: Ore type mismatch on sell toast
-- `sellOre()` was calling `rollOre()` for the toast — a fresh random roll unrelated to what was mined.
-- Fixed by adding `currentOreId` to state, updated by `tickMining()` on every tick.
-
-**Files changed:** `js/state.js` · `js/economy.js` · `js/ui/ui-mine.js`
-
----
-
-### 🛡️ Fix: Offline progress guard against corrupted timestamps
-- Added validation rejecting elapsed times that are non-finite, zero/negative, or over 30 days.
-
-**Files changed:** `js/economy.js`
-
----
-
-### ✨ Improvement: Boot loading spinner
-- Added full-screen spinner overlay during `boot()`.
-
-**Files changed:** `js/main.js` · `js/ui/ui-core.js` · `css/components.css`
-
-</details>
-
-<details>
-<summary><strong>v1.4.0 — CSS Refactor: Modular Stylesheet Architecture</strong></summary>
-
-### 🎨 Refactor: style.css split into 6 focused files under css/
-
-| File | Responsibility |
-|---|---|
-| `variables.css` | Design tokens, CSS reset, base elements, dimension themes |
-| `layout.css` | App shell, HUD, content area, tab bar, safe area |
-| `components.css` | Cards, progress bars, buttons, shared animations |
-| `panels.css` | Mine, Pets, Crates, Prestige panel styles |
-| `modals.css` | Toast, confirm modal, leaderboard modal, floating FAB |
-| `settings.css` | Auth forms, settings panel, GM panel, VIP system |
-
-**Files changed:** `css/` *(6 new files)* · `index.html` · ~~`style.css`~~ *(deleted)*
-
-</details>
-
-<details>
-<summary><strong>v1.3.0 — UI Refactor: Modular Architecture</strong></summary>
-
-### 🏗️ Refactor: ui.js split into dedicated modules
-
-| File | Responsibility |
-|---|---|
-| `ui-core.js` | Shared DOM helpers, tab navigation, toast, modal |
-| `ui-hud.js` | Top HUD bar |
-| `ui-mine.js` | Mine panel + animations |
-| `ui-pets.js` | Pets panel |
-| `ui-crates.js` | Crates panel |
-| `ui-prestige.js` | Prestige panel + shop |
-| `ui-settings.js` | Settings, register modal, GM panel, leaderboard |
-
-**Files changed:** `js/ui/` *(7 new files)* · `js/main.js` · ~~`js/ui.js`~~ *(deleted)*
-
-</details>
-
-<details>
-<summary><strong>v1.2.0 — Security Fixes & Visual Identity</strong></summary>
-
-- 🔒 **Fix:** Logout now wipes localStorage
-- 🔒 **Fix:** GM leaderboard hide enforced server-side via Supabase RLS
-- 👑 **Feature:** VIP badge in HUD with shimmer animation
-- 🎨 **Feature:** Dimension-colored nicknames in HUD and leaderboard
-- 👑 **Feature:** VIP badge in leaderboard rows
-
-**Files changed:** `auth.js` · `leaderboard.js` · `gm.js` · `ui.js` · `style.css`
-
-</details>
-
-<details>
-<summary><strong>v1.1.0 — Leaderboard & VIP Polish</strong></summary>
-
-- Leaderboard moved from tab to floating trophy button + bottom-sheet modal
-- VIP card animated gold ring pulse in Settings
-- GM leaderboard hide toggle now persists in localStorage
-
-**Files changed:** `gm.js` · `state.js` · `index.html` · `main.js` · `ui.js` · `style.css`
-
-</details>
-
-<details>
-<summary><strong>v1.0.0 — Initial Release</strong></summary>
-
-- Idle mining game loop (1s tick, auto-mine, sell, upgrade)
-- 13 ore types, 13 mine tiers, 9 dimensions
-- 13 pets across 4 rarities with hunt/fish cooldowns and legendary abilities
-- Crate system: hourly / daily / weekly timed crates + common/rare/legendary drops
-- Rebirth and Prestige progression with a 4-upgrade prestige shop
-- Guest mode (localStorage) + registered accounts (Supabase cloud save)
-- Global leaderboard (Rebirths, Blocks Mined, Cash Earned, Pets Owned)
-- VIP system with 2× sell, auto-sell, 12h offline mining
-- Game Master panel with stat overrides and VIP management
-- Deployed on Vercel with serverless env var injection
-
-</details>
-
----
-
 ## 🙏 Credits
 
+- Developed by [Piererra](https://www.facebook.com/piererra)
 - Icons: [Font Awesome 6 Free](https://fontawesome.com)
 - Game icons: [game-icons.net](https://game-icons.net) via jsDelivr CDN (CC BY 3.0)
 - Inspired by the [Discord Idle Miner bot](https://theidleminerbot.com)
