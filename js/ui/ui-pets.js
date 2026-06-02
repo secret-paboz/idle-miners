@@ -1,7 +1,13 @@
 // ============================================================
 // UI-PETS.JS — Pets panel renderer
 // Covers: hunt/fish cooldown buttons, pet grid with
-//         owned/unowned states, upgrade rows, legendary abilities
+//         owned/unowned states, upgrade rows
+//
+// CHANGED:
+// - Removed all legendary ability button rendering (abilityHTML)
+// - Removed canActivate / pet.ability checks
+// - Legendary pets now show their passive effect label instead
+// - Removed getActiveAbilities import (function deleted in pets.js)
 // ============================================================
 
 import { state } from "../state.js";
@@ -48,6 +54,26 @@ function renderPetCooldowns() {
 // SECTION 3 — PET GRID
 // ============================================================
 
+// Returns a human-readable passive effect label for each pet.
+function getPetEffectLabel(pet) {
+  const level = state.pets[pet.id]?.level || 1;
+
+  switch (pet.rarity) {
+    case "common":
+      return `+${(pet.modifier * level * 100).toFixed(0)}% backpack capacity`;
+    case "uncommon":
+      return `+${(pet.modifier * level * 100).toFixed(0)}% mining speed`;
+    case "rare":
+      return `+${(pet.modifier * level * 100).toFixed(0)}% sell value`;
+    case "legendary":
+      // Legendary shows which passive pool it feeds and current bonus
+      const effectName = pet.legendaryEffect === "mining" ? "mining speed" : "sell value";
+      return `+${(pet.modifier * level * 100).toFixed(0)}% ${effectName} (passive)`;
+    default:
+      return pet.description;
+  }
+}
+
 function renderPetGrid() {
   const container = document.getElementById("pet-grid");
   if (!container) return;
@@ -64,27 +90,11 @@ function renderPetGrid() {
   const allPets = [...owned, ...unowned];
 
   container.innerHTML = allPets.map(({ petId, pet, petState }) => {
-    const rarity      = RARITY_CONFIG[pet.rarity];
-    const isOwned     = petState?.owned;
-    const level       = petState?.level || 0;
-    const isLegend    = pet.rarity === "legendary";
-    const canActivate = isLegend && isOwned;
+    const rarity  = RARITY_CONFIG[pet.rarity];
+    const isOwned = petState?.owned;
+    const level   = petState?.level || 0;
 
-    let abilityHTML = "";
-    if (canActivate && pet.ability) {
-      const lastUsed   = state[pet.ability.timeKey] || 0;
-      const onCD       = Date.now() - lastUsed < pet.ability.cooldown;
-      const remaining  = onCD ? Math.ceil((pet.ability.cooldown - (Date.now() - lastUsed)) / 1000) : 0;
-      const buffActive = state.buffs[pet.ability.buffKey];
-
-      abilityHTML = `
-        <button class="pet-ability-btn ${buffActive ? "active" : ""} ${onCD && !buffActive ? "on-cooldown" : ""}"
-                data-pet-ability="${petId}">
-          <i class="${pet.ability.icon}"></i>
-          ${buffActive ? "Active" : onCD ? formatCooldown(remaining) : pet.ability.name}
-        </button>
-      `;
-    }
+    const effectLabel = isOwned ? getPetEffectLabel(pet) : pet.description;
 
     return `
       <div class="pet-card ${isOwned ? "owned" : "unowned"} rarity-${pet.rarity}"
@@ -97,13 +107,12 @@ function renderPetGrid() {
           <i class="${pet.icon}" style="color:${rarity.color}"></i>
         </div>
         <div class="pet-name">${pet.name}</div>
-        <div class="pet-effect">${pet.description}</div>
+        <div class="pet-effect">${effectLabel}</div>
         ${isOwned ? `
           <div class="pet-upgrade-row">
             <span class="pet-shard-cost">✦ ${shardCost(pet.rarity)}/lv</span>
             <button class="pet-upgrade-btn" data-pet-upgrade="${petId}">Upgrade</button>
           </div>
-          ${abilityHTML}
         ` : `
           <div class="pet-unowned-label">Not yet obtained</div>
         `}
