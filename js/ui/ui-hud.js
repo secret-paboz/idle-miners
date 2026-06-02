@@ -8,6 +8,7 @@ import { state } from "../state.js";
 import { formatNumber } from "../economy.js";
 import { getDimension } from "../data/dimensions-data.js";
 import { setText, setStyle, xpForLevel } from "./ui-core.js";
+import { isGameMasterSync } from "../gm.js";
 
 export function renderHUD() {
   const isActiveVip = state.isVip && Date.now() < state.vipExpiresAt;
@@ -52,4 +53,8 @@ export function renderHUD() {
 
   const guestBadge = document.getElementById("hud-guest-badge");
   if (guestBadge) guestBadge.style.display = state.isGuest ? "inline-flex" : "none";
+
+  // Show GM tab button only for game masters
+  const gmTab = document.getElementById("tab-gm");
+  if (gmTab) gmTab.style.display = isGameMasterSync() ? "flex" : "none";
 }
