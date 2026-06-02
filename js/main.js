@@ -21,7 +21,6 @@ import { initSupabase, cloudLoad, resolveConflict, startAutoSave } from "./supab
 import { restoreSession, loginAsGuest, onAuthChange } from "./auth.js";
 import { submitLeaderboardScore } from "./leaderboard.js";
 import { addCrate } from "./crates.js";
-import { isGameMaster } from "./gm.js";
 
 import { bindMineEvents }        from "./handlers/mine.js";
 import { bindPetEvents }         from "./handlers/pets.js";
@@ -50,8 +49,6 @@ async function boot() {
       await cloudLoad();
       showToast("Cloud save loaded.", "info", 3000);
     }
-    // Re-check GM after all cloud work is done
-    window.__gmVerified = await isGameMaster();
   } else {
     if (!state.nickname) loginAsGuest();
     window.__gmVerified = false;
