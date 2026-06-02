@@ -58,6 +58,7 @@ async function boot() {
   if (offlineResult) showOfflineProgress(offlineResult);
 
   renderHUD();
+  renderGMPanel();
   switchTab("mine");
   initTabs();
   startGameLoop();
