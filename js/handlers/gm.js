@@ -29,15 +29,13 @@ export function bindGMEvents() {
   on("tab-gm",             "click", handleToggleGMModal);
   on("btn-gm-close",       "click", handleToggleGMModal);
 
-  const overlay = document.getElementById("gm-modal");
-  if (overlay) {
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) handleToggleGMModal();
+  const gmModal = document.getElementById("gm-modal");
+  if (gmModal) {
+    gmModal.addEventListener("click", (e) => {
+      if (e.target === gmModal) handleToggleGMModal();
     });
+    gmModal.addEventListener("click", handleGMClick);
   }
-
-  const settingsPanel = document.getElementById("panel-settings");
-  if (settingsPanel) settingsPanel.addEventListener("click", handleGMClick);
 }
 
 function handleToggleGMModal() {
