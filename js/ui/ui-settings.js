@@ -82,7 +82,6 @@ export function renderSettingsPanel() {
     `;
   }
 
-  renderGMPanel();
 }
 
 // ============================================================
@@ -130,23 +129,22 @@ export function showRegisterModal() {
 // ============================================================
 
 export function renderGMPanel() {
-  const existing = document.getElementById("gm-panel");
-  if (existing) existing.remove();
-  if (!isGameMasterSync()) return;
+  const floatBtn = document.getElementById("btn-gm-float");
+  const container = document.getElementById("gm-panel-content");
 
-  const container = document.getElementById("panel-settings");
+  if (!isGameMasterSync()) {
+    if (floatBtn) floatBtn.style.display = "none";
+    return;
+  }
+
+  // Show the floating GM button
+  if (floatBtn) floatBtn.style.display = "flex";
+
   if (!container) return;
 
   const hidden = isGMHiddenFromLeaderboard();
-  const panel  = document.createElement("div");
-  panel.id        = "gm-panel";
-  panel.className = "gm-panel";
-  panel.innerHTML = `
-    <div class="gm-panel-header">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span>Game Master Panel</span>
-    </div>
 
+  container.innerHTML = `
     <div class="gm-section-label">Leaderboard</div>
     <button class="btn-gm-toggle ${hidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-lb-toggle">
       ${hidden ? "Hidden from leaderboard" : "Visible on leaderboard"}
@@ -197,8 +195,6 @@ export function renderGMPanel() {
       <div class="gm-message" id="gm-vip-message"></div>
     </div>
   `;
-
-  container.appendChild(panel);
 }
 
 // ============================================================
