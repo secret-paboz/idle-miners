@@ -60,7 +60,6 @@ function renderMineStats() {
 
   setText("stat-mining-power",    formatNumber(power) + "/s");
   setText("stat-ore-value",       "$" + formatNumber(value) + "/ore");
-  setText("stat-ore-type",        oreSample.name  || "Dirt");
   setText("stat-dimension",       dimension?.name || "Earth");
   setText("stat-dimension-multi", dimension?.valueMulti + "x");
   setText("stat-pickaxe-level",   "Lv." + state.pickaxeLevel);
@@ -158,7 +157,11 @@ export function animateMiningTick(oreMined, oreType) {
   toggleClass("btn-upgrade-pickaxe",  "can-afford", cash >= pickaxeCost(state.pickaxeLevel));
   toggleClass("btn-upgrade-backpack", "can-afford", cash >= backpackCost(state.backpackLevel));
 
-  if (oreMined > 0) spawnFloatingText("+" + formatNumber(oreMined), "ore-float");
+  if (oreMined > 0) {
+    const oreId   = state.currentOreId || "dirt";
+    const oreName = ORE_TYPES[oreId]?.name || "Ore";
+    spawnFloatingText("+" + formatNumber(oreMined), oreName, oreId, "ore-float");
+  }
 }
 
 export function animateSell(cashEarned) {
@@ -169,16 +172,26 @@ export function animateSell(cashEarned) {
     void cashEl.offsetWidth;
     cashEl.classList.add("cash-flash");
   }
-  spawnFloatingText("+" + formatNumber(cashEarned), "sell-float");
+  spawnFloatingText("+" + formatNumber(cashEarned), "", "", "sell-float");
   showToast(`Sold for $${formatNumber(cashEarned)}!`, "success", 2000);
 }
 
-function spawnFloatingText(text, className) {
+function spawnFloatingText(amount, oreName, oreId, className) {
   const minePanel = document.getElementById("panel-mine");
   if (!minePanel) return;
+
   const el = document.createElement("div");
-  el.className   = `floating-text ${className}`;
-  el.textContent = text;
+  el.className = `floating-text ${className}`;
+
+  if (oreId) {
+    el.innerHTML = `
+      <img src="/sprites/${oreId}.png" class="float-sprite" alt="${oreName}">
+      <span>${amount} ${oreName}</span>
+    `;
+  } else {
+    el.textContent = amount;
+  }
+
   minePanel.appendChild(el);
   setTimeout(() => el.remove(), 1200);
 }
