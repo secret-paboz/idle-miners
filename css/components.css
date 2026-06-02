@@ -102,20 +102,33 @@
 .floating-text {
   position:       absolute;
   pointer-events: none;
-  font-size:      14px;
+  font-size:      13px;
   font-weight:    700;
   animation:      floatUp 1.2s ease forwards;
   z-index:        200;
   left:           50%;
   top:            40%;
+  display:        flex;
+  align-items:    center;
+  gap:            5px;
+  white-space:    nowrap;
+  text-shadow:    0 1px 4px rgba(0,0,0,0.6);
 }
 
-.ore-float  { color: #90a4ae; }
+.float-sprite {
+  width:        20px;
+  height:       20px;
+  object-fit:   contain;
+  image-rendering: pixelated;
+  flex-shrink:  0;
+}
+
+.ore-float  { color: #e0e0e0; }
 .sell-float { color: var(--color-success); }
 
 @keyframes floatUp {
   0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-55px); }
 }
 
 /* ============================================================
