@@ -1,9 +1,6 @@
 // ============================================================
 // api/save.js — Server-side save validator
 //
-// Replaces the old HackShield token system.
-// No tokens, no fragile client state.
-//
 // Pipeline:
 //   1. Verify JWT — confirm the request comes from a real session
 //   2. Fetch player role from Supabase
@@ -16,6 +13,20 @@
 //      and time played → reject the save.
 //   4. Write to Supabase via service role key
 //
+// CHANGED:
+// - Removed ABILITY_BUFF_MULTI constant (rage/wings no longer exist)
+// - maxMiningPower() — removed rage buff multiplier
+// - maxOreValue()    — removed wings buff multiplier
+// - Legendary pets now feed into mining/sell bonus pools
+//   using their legendaryEffect field (matches economy.js)
+// - RARITY_EFFECT updated: legendary maps to null (handled per-pet)
+// - PET_DEFS updated: wither → legendaryEffect "mining",
+//   enderdragon → legendaryEffect "sell"
+// - computePetBonuses() updated to handle legendary per-pet effect
+// - prestigeTokens max cap reduced from 999 to match flat-1-token
+//   cost: at 20 levels × 4 upgrades = 80 tokens needed to max all.
+//   Cap stays at 999 (generous, fine as-is).
+//
 // POST /api/save
 // Headers: Authorization: Bearer <supabase_jwt>
 // Body: { userId, gameData }
@@ -24,7 +35,6 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// ── Admin client (service role — never exposed to client) ───
 function getAdminClient() {
   const url        = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,28 +43,24 @@ function getAdminClient() {
 }
 
 // ============================================================
-// SECTION 1 — GAME CONSTANTS (mirrors client-side data files)
-// Keep in sync with:
-//   js/data/mines-data.js
-//   js/data/dimensions-data.js
-//   js/data/pets-data.js
+// SECTION 1 — GAME CONSTANTS
+// Keep in sync with client-side data files.
 // ============================================================
 
-const MAX_ORE_BASE_VALUE      = 5000;   // ancientDebris
-const MAX_DIMENSION_MULTI     = 150.0;  // aether
-const MAX_PICKAXE_LEVEL       = 200;
-const MAX_BACKPACK_LEVEL      = 200;
+const MAX_ORE_BASE_VALUE         = 5000;   // ancientDebris
+const MAX_DIMENSION_MULTI        = 150.0;  // aether
+const MAX_PICKAXE_LEVEL          = 200;
+const MAX_BACKPACK_LEVEL         = 200;
 const MAX_PRESTIGE_UPGRADE_LEVEL = 20;
-const MAX_REBIRTHS            = 999;
-const MAX_PRESTIGES           = 999;
-const MAX_PRESTIGE_TOKENS     = 999;
-const MAX_LEVEL               = 10000;
-const MAX_PET_SELL_BONUS      = 20.0;
-const MAX_PET_MINING_BONUS    = 20.0;
-const MAX_PET_BACKPACK_BONUS  = 20.0;
-const MAX_BOOSTER_MULTI       = 10.0;
-const ABILITY_BUFF_MULTI      = 2.0;
-const VIP_SELL_MULTI          = 2.0;
+const MAX_REBIRTHS               = 999;
+const MAX_PRESTIGES              = 999;
+const MAX_PRESTIGE_TOKENS        = 999;
+const MAX_LEVEL                  = 10000;
+const MAX_PET_SELL_BONUS         = 20.0;
+const MAX_PET_MINING_BONUS       = 20.0;
+const MAX_PET_BACKPACK_BONUS     = 20.0;
+const MAX_BOOSTER_MULTI          = 10.0;
+const VIP_SELL_MULTI             = 2.0;
 
 const VALID_DIMENSIONS = [
   "earth", "cave", "snow", "nether",
@@ -65,7 +71,8 @@ const VALID_PRESTIGE_KEYS = [
   "merchantLevel", "greedLevel", "speedLevel", "storageLevel"
 ];
 
-// Pet definitions mirrored from pets-data.js
+// Mirrored from pets-data.js
+// legendaryEffect: which bonus pool the legendary pet feeds into
 const PET_DEFS = {
   chicken:     { rarity: "common",    modifier: 0.05, maxLevel: 50 },
   cow:         { rarity: "common",    modifier: 0.06, maxLevel: 50 },
@@ -78,10 +85,11 @@ const PET_DEFS = {
   blaze:       { rarity: "rare",      modifier: 0.12, maxLevel: 40 },
   enderman:    { rarity: "rare",      modifier: 0.13, maxLevel: 40 },
   guardian:    { rarity: "rare",      modifier: 0.15, maxLevel: 40 },
-  wither:      { rarity: "legendary", modifier: 0.20, maxLevel: 30 },
-  enderdragon: { rarity: "legendary", modifier: 0.20, maxLevel: 30 },
+  wither:      { rarity: "legendary", modifier: 0.20, maxLevel: 30, legendaryEffect: "mining" },
+  enderdragon: { rarity: "legendary", modifier: 0.20, maxLevel: 30, legendaryEffect: "sell"   },
 };
 
+// For common/uncommon/rare — legendary handled per-pet via legendaryEffect
 const RARITY_EFFECT = {
   common:    "backpack",
   uncommon:  "mining",
@@ -102,13 +110,19 @@ function computePetBonuses(pets) {
     const def = PET_DEFS[petId];
     if (!def) continue;
 
-    const level  = Math.min(petState.level || 1, def.maxLevel);
-    const bonus  = def.modifier * level;
-    const effect = RARITY_EFFECT[def.rarity];
+    const level = Math.min(petState.level || 1, def.maxLevel);
+    const bonus = def.modifier * level;
 
-    if (effect === "backpack") backpackBonus += bonus;
-    if (effect === "mining")   miningBonus   += bonus;
-    if (effect === "sell")     sellBonus     += bonus;
+    if (def.rarity === "legendary") {
+      // Legendary: use per-pet legendaryEffect field
+      if (def.legendaryEffect === "mining") miningBonus  += bonus;
+      if (def.legendaryEffect === "sell")   sellBonus    += bonus;
+    } else {
+      const effect = RARITY_EFFECT[def.rarity];
+      if (effect === "backpack") backpackBonus += bonus;
+      if (effect === "mining")   miningBonus   += bonus;
+      if (effect === "sell")     sellBonus     += bonus;
+    }
   }
 
   return { miningBonus, backpackBonus, sellBonus };
@@ -116,18 +130,17 @@ function computePetBonuses(pets) {
 
 // ============================================================
 // SECTION 3 — THEORETICAL MAX CALCULATORS
-// These use the player's OWN submitted stats as inputs,
-// then apply every possible buff/booster on top.
-// The result is the absolute ceiling of what's achievable.
+// Uses player's OWN submitted stats as inputs, then applies
+// every possible booster on top as a generous ceiling.
 // ============================================================
 
 function maxMiningPower(d, petBonuses) {
   const speedPrestige = Math.min(d.prestigeUpgrades?.speedLevel || 0, MAX_PRESTIGE_UPGRADE_LEVEL);
   const base          = Math.min(d.pickaxeLevel, MAX_PICKAXE_LEVEL) + speedPrestige;
   const petBonus      = Math.min(petBonuses.miningBonus, MAX_PET_MINING_BONUS);
+  // No rage buff multiplier — legendary pets are now passive
   let power = base * (1 + petBonus);
-  power *= ABILITY_BUFF_MULTI; // rage buff
-  power *= MAX_BOOSTER_MULTI;  // speed booster
+  power *= MAX_BOOSTER_MULTI;  // speed booster (crate)
   return Math.ceil(power);
 }
 
@@ -140,19 +153,19 @@ function maxCapacity(d, petBonuses) {
 
 function maxOreValue(d, petBonuses) {
   const rebirths    = Math.min(d.rebirths || 0, MAX_REBIRTHS);
-  const greedLevel  = Math.min(d.prestigeUpgrades?.greedLevel   || 0, MAX_PRESTIGE_UPGRADE_LEVEL);
-  const merchantLvl = Math.min(d.prestigeUpgrades?.merchantLevel || 0, MAX_PRESTIGE_UPGRADE_LEVEL);
+  const greedLevel  = Math.min(d.prestigeUpgrades?.greedLevel    || 0, MAX_PRESTIGE_UPGRADE_LEVEL);
+  const merchantLvl = Math.min(d.prestigeUpgrades?.merchantLevel  || 0, MAX_PRESTIGE_UPGRADE_LEVEL);
   const petBonus    = Math.min(petBonuses.sellBonus, MAX_PET_SELL_BONUS);
 
+  // No wings buff multiplier — legendary pets are now passive
   let value = MAX_ORE_BASE_VALUE
     * MAX_DIMENSION_MULTI
-    * (1 + rebirths * 0.10)
-    * (1 + greedLevel * 0.02)
+    * (1 + rebirths    * 0.10)
+    * (1 + greedLevel  * 0.02)
     * (1 + merchantLvl * 0.05)
     * (1 + petBonus);
 
-  value *= ABILITY_BUFF_MULTI; // wings buff
-  value *= MAX_BOOSTER_MULTI;  // sell booster
+  value *= MAX_BOOSTER_MULTI;  // sell booster (crate)
   value *= VIP_SELL_MULTI;     // VIP bonus
 
   return Math.ceil(value);
@@ -174,18 +187,18 @@ function validateGameData(d) {
   }
 
   // ── Basic field checks ────────────────────────────────
-  num(d.cash,          0, Number.MAX_SAFE_INTEGER, "cash");
-  num(d.cashEarned,    0, Number.MAX_SAFE_INTEGER, "cashEarned");
-  num(d.shards,        0, 1_000_000,               "shards");
-  num(d.ore,           0, Number.MAX_SAFE_INTEGER, "ore");
-  num(d.level,         1, MAX_LEVEL,               "level");
-  num(d.xp,            0, Number.MAX_SAFE_INTEGER, "xp");
-  num(d.blocksMined,   0, Number.MAX_SAFE_INTEGER, "blocksMined");
-  num(d.pickaxeLevel,  1, MAX_PICKAXE_LEVEL,       "pickaxeLevel");
-  num(d.backpackLevel, 1, MAX_BACKPACK_LEVEL,       "backpackLevel");
-  num(d.rebirths,      0, MAX_REBIRTHS,            "rebirths");
-  num(d.prestiges,     0, MAX_PRESTIGES,           "prestiges");
-  num(d.prestigeTokens,0, MAX_PRESTIGE_TOKENS,     "prestigeTokens");
+  num(d.cash,           0, Number.MAX_SAFE_INTEGER, "cash");
+  num(d.cashEarned,     0, Number.MAX_SAFE_INTEGER, "cashEarned");
+  num(d.shards,         0, 1_000_000,               "shards");
+  num(d.ore,            0, Number.MAX_SAFE_INTEGER, "ore");
+  num(d.level,          1, MAX_LEVEL,               "level");
+  num(d.xp,             0, Number.MAX_SAFE_INTEGER, "xp");
+  num(d.blocksMined,    0, Number.MAX_SAFE_INTEGER, "blocksMined");
+  num(d.pickaxeLevel,   1, MAX_PICKAXE_LEVEL,       "pickaxeLevel");
+  num(d.backpackLevel,  1, MAX_BACKPACK_LEVEL,       "backpackLevel");
+  num(d.rebirths,       0, MAX_REBIRTHS,             "rebirths");
+  num(d.prestiges,      0, MAX_PRESTIGES,            "prestiges");
+  num(d.prestigeTokens, 0, MAX_PRESTIGE_TOKENS,      "prestigeTokens");
 
   if (!d.prestigeUpgrades || typeof d.prestigeUpgrades !== "object") {
     errors.push("prestigeUpgrades: missing or invalid");
@@ -227,8 +240,7 @@ function validateGameData(d) {
     errors.push(`ore: ${d.ore} exceeds max backpack capacity ${cap}`);
   }
 
-  // Max cash from a single sell = capacity * oreValue
-  // Allow 10,000 full sells worth as a lifetime ceiling (very generous)
+  // Max lifetime cash: capacity * oreValue * 10,000 full sells
   const maxLifetimeCash = cap * oreVal * 10_000;
   if (d.cashEarned > maxLifetimeCash) {
     errors.push(`cashEarned: ${d.cashEarned} exceeds theoretical lifetime max ${maxLifetimeCash}`);
