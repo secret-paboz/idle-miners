@@ -200,7 +200,7 @@ export async function resolveConflict() {
 // ============================================================
 
 let autoSaveInterval = null;
-const AUTO_SAVE_MS   = 60 * 1000;
+const AUTO_SAVE_MS   = 30 * 1000;  // was 60s — halved to save more frequently
 
 export function startAutoSave() {
   if (autoSaveInterval) clearInterval(autoSaveInterval);
