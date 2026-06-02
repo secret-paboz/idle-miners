@@ -1,9 +1,18 @@
 // ============================================================
 // PETS.JS — Hunt, fish, and loot RNG mechanics
+//
+// CHANGED:
+// - doFish() cash reward is now dynamic — scales with
+//   state.rebirths and current ore value instead of flat $50.
+//   Formula: base $50 * (1 + rebirths * 0.10) * dimMultiplier
+//   This matches how ore sell value scales with rebirths.
+// - getActiveAbilities() removed — no more active abilities.
+//   Legendary pets are now passive (handled in economy.js).
 // ============================================================
 
 import { state, saveState } from "./state.js";
 import { PETS_DATA, HUNT_TABLE, FISH_TABLE, COOLDOWNS } from "./data/pets-data.js";
+import { getDimension } from "./data/dimensions-data.js";
 
 function rollWeighted(table) {
   const totalWeight = table.reduce((sum, entry) => sum + entry.weight, 0);
@@ -29,6 +38,17 @@ function formatCooldown(ms) {
   const seconds = totalSeconds % 60;
   if (minutes > 0) return `${minutes}m ${seconds}s`;
   return `${seconds}s`;
+}
+
+// Calculate dynamic fish cash reward.
+// Scales with rebirths and current dimension multiplier.
+// Base $50 * rebirth bonus * dimension multiplier.
+// Capped so early players still get a meaningful but small reward.
+function calcFishCashReward() {
+  const rebirthMod = 1 + (state.rebirths * 0.10);
+  const dimension  = getDimension(state.dimension);
+  const dimMod     = dimension.valueMulti || 1;
+  return Math.floor(50 * rebirthMod * dimMod);
 }
 
 export function doHunt() {
@@ -117,17 +137,20 @@ export function doFish() {
   }
 
   if (rolled.type === "cash") {
-    state.cash       += rolled.amount;
-    state.cashEarned += rolled.amount;
+    // Dynamic cash reward — scales with rebirths + dimension
+    const amount = calcFishCashReward();
+    state.cash       += amount;
+    state.cashEarned += amount;
     saveState();
     return {
       success: true,
-      result:  { type: "cash", amount: rolled.amount, label: rolled.label },
-      message: `${rolled.label}! +$${rolled.amount}.`,
+      result:  { type: "cash", amount, label: rolled.label },
+      message: `${rolled.label}! +$${amount}.`,
       cooldownRemaining: 0,
     };
   }
 
+  // junk
   saveState();
   return {
     success: true,
@@ -193,31 +216,4 @@ export function getUndiscoveredPets() {
 
 export function getPetsByRarity(rarity) {
   return Object.values(PETS_DATA).filter(p => p.rarity === rarity);
-}
-
-export function getActiveAbilities() {
-  const active = [];
-  const now    = Date.now();
-
-  if (state.buffs.rageActive && now < state.buffs.rageEndsAt) {
-    active.push({
-      name:      "Rage",
-      endsAt:    state.buffs.rageEndsAt,
-      remaining: Math.ceil((state.buffs.rageEndsAt - now) / 1000),
-      icon:      "fa-solid fa-fire",   // FIX: was ti ti-flame
-      color:     "#ff1744",
-    });
-  }
-
-  if (state.buffs.wingsActive && now < state.buffs.wingsEndsAt) {
-    active.push({
-      name:      "Wings",
-      endsAt:    state.buffs.wingsEndsAt,
-      remaining: Math.ceil((state.buffs.wingsEndsAt - now) / 1000),
-      icon:      "fa-solid fa-wind",   // FIX: was ti ti-wings
-      color:     "#ea80fc",
-    });
-  }
-
-  return active;
 }
