@@ -129,6 +129,7 @@ VIP status is stored server-side in Supabase and expires automatically. Players 
 - On login, cloud and local saves are compared — the newer one wins
 - **Auto-save** runs every 60 seconds for logged-in players
 - **Logout** fully wipes local data — the cloud copy is always the source of truth
+- All cloud saves are validated server-side before being written
 
 > Guests cannot cloud save or appear on the leaderboard.
 
@@ -154,7 +155,7 @@ Each player's nickname is colored by their current **dimension color**. VIP play
 
 GMs have access to a hidden panel in the Settings tab for server-side management.
 
-**GM status is never stored client-side.** It is verified at runtime by reading the `role` column from Supabase — role `99` = Game Master. This prevents any client-side manipulation.
+**GM status is never stored client-side.** It is verified at runtime by reading the `role` column from Supabase — role `99` = Game Master. This prevents any client-side manipulation. The server also checks this role on every save request — if a non-GM player submits values that exceed mathematical limits, the save is rejected.
 
 **Available GM actions:**
 
@@ -181,8 +182,10 @@ GMs have access to a hidden panel in the Settings tab for server-side management
 idle-miners/
 ├── index.html              # App shell + tab layout
 ├── vercel.json             # Routing config
+├── package.json            # Node dependencies (required for api/save.js)
 ├── api/
-│   └── env.js              # Serverless env var injector (keeps keys out of client bundle)
+│   ├── env.js              # Serverless env var injector (keeps keys out of client bundle)
+│   └── save.js             # Serverless save validator (math checks + GM role verification)
 ├── css/
 │   ├── variables.css       # Design tokens, CSS reset, base elements, dimension themes
 │   ├── layout.css          # App shell, HUD, content area, tab bar, safe area
@@ -195,7 +198,7 @@ idle-miners/
     ├── state.js            # Global game state + localStorage save/load
     ├── economy.js          # All game math (mining, selling, upgrades)
     ├── auth.js             # Login, register, logout, guest mode
-    ├── supabase.js         # Cloud save + auto-save (60s interval)
+    ├── supabase.js         # Cloud save gateway — POSTs to api/save.js
     ├── gm.js               # Game Master role check + GM actions
     ├── pets.js             # Hunt, fish, pet abilities
     ├── crates.js           # Crate opening + booster logic
@@ -230,10 +233,11 @@ idle-miners/
 |---|---|
 | `SUPABASE_URL` | Supabase project → Settings → API |
 | `SUPABASE_ANON_KEY` | Supabase project → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase project → Settings → API (service_role key) |
 
-4. Deploy — Vercel serves `api/env.js` as a serverless function that injects the env vars at runtime, keeping them out of your client-side bundle.
+4. Deploy — Vercel serves `api/env.js` as a serverless function that injects the env vars at runtime. `api/save.js` validates all cloud saves server-side before writing to the database.
 
-> **Note:** Static placeholder patterns like `%%SUPABASE_URL%%` do NOT work on Vercel. The `api/env.js` serverless approach is required.
+> **Note:** `package.json` must be present in the repo root so Vercel installs `@supabase/supabase-js` for the serverless functions.
 
 </details>
 
@@ -256,6 +260,47 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 ---
 
 ## 📋 Changelog
+
+<details>
+<summary><strong>v1.6.0 — Server-side Save Validation & GM Role Enforcement</strong></summary>
+
+### 🛡️ Feature: Server-side math validation on all cloud saves
+- All cloud saves for logged-in players now go through `api/save.js` — a Vercel serverless function that validates save data before writing to Supabase.
+- The server recalculates the theoretical maximum possible stats using the player's own submitted values (pickaxe level, backpack level, pets, boosters, prestige upgrades, rebirths, VIP status) and rejects any save where submitted values exceed what's mathematically achievable.
+- Checks performed: ore vs backpack capacity, cash earned vs lifetime sell ceiling, blocks mined vs 30-day continuous max, shards hard cap, dimension count vs rebirth count, all field types and ranges.
+- Saves still write locally first as a backup — if the server rejects the save, the player keeps their local copy and sees a warning.
+
+**Files changed:** `api/save.js` *(rewritten)* · `js/supabase.js`
+
+---
+
+### 🛡️ Feature: GM role verified server-side on every save
+- When a save request arrives at `api/save.js`, the server fetches the player's `role` from Supabase using the service role key.
+- If `role === 99` (Game Master) — math validation is skipped entirely, save is written as-is. GMs can set any values they need.
+- If `role !== 99` — full math validation runs. A non-GM player cannot bypass this by editing localStorage or browser memory.
+- Previously, GM-set values (high cash, custom levels, etc.) could be falsely flagged by client-side guards. Now GMs are fully exempt server-side.
+
+**Files changed:** `api/save.js`
+
+---
+
+### 🗑️ Removed: HackShield token system
+- Removed `api/verify.js`, `js/hackshield.js`, and all token-based session validation.
+- The token system caused save rollbacks when tabs went idle, phones locked screens, or sessions exceeded 90 minutes — the token expired in memory and saves were silently skipped, causing the game to reload from an older cloud save on next boot.
+- Replaced entirely by the server-side math validation approach above, which requires only a valid Supabase JWT (auto-managed by the Supabase client) and no additional in-memory state.
+
+**Files deleted:** `api/verify.js` · `js/hackshield.js`
+**Files changed:** `js/main.js` · `js/economy.js` · `js/supabase.js`
+
+---
+
+### 🐛 Fix: Cloud saves failing silently (missing package.json)
+- `api/save.js` imports `@supabase/supabase-js` but no `package.json` existed in the repo root. Vercel had no instruction to install the dependency, causing the serverless function to crash on every invocation — making both manual saves and auto-saves fail silently for all logged-in players.
+- Fixed by adding `package.json` declaring `@supabase/supabase-js` as a dependency.
+
+**Files added:** `package.json`
+
+</details>
 
 <details>
 <summary><strong>v1.5.0 — Bug Fixes, UX Polish & Stability</strong></summary>
@@ -289,25 +334,20 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 ### 🐛 Fix: Ore type mismatch on sell toast
 - `sellOre()` was calling `rollOre()` to determine the ore type shown in the sell toast — a fresh random roll that had no relation to what was actually mined into the backpack.
 - Fixed by adding `currentOreId` to game state, updated by `tickMining()` on every tick.
-- `sellOre()` now reads `state.currentOreId` directly, so the ore type in the toast always matches what was sold.
-- `renderMineStats()` also updated to use `state.currentOreId` instead of computing the most-weighted ore from the tier table.
 
 **Files changed:** `js/state.js` · `js/economy.js` · `js/ui/ui-mine.js`
 
 ---
 
 ### 🛡️ Fix: Offline progress guard against corrupted timestamps
-- `calculateOfflineProgress()` previously only checked `if (!state.lastOnlineTime)` before computing elapsed time. A corrupted, negative, or clock-skewed timestamp could produce an astronomically large elapsed value, flooding the player with fake offline ore on load.
-- Added a validation guard that rejects elapsed times that are: non-finite, zero or negative, or greater than 30 days. Any of these conditions returns `null` immediately.
+- Added a validation guard that rejects elapsed times that are non-finite, zero or negative, or greater than 30 days.
 
 **Files changed:** `js/economy.js`
 
 ---
 
 ### ✨ Improvement: Boot loading spinner
-- During `boot()`, the game was silently awaiting Supabase session restore and cloud load with no visual feedback. On slow connections this appeared as a blank or broken screen.
-- Added a full-screen spinner overlay that displays while the game initialises. Shows `"Starting up..."` on first load, switching to `"Loading save..."` when a cloud load is in progress. Fades out smoothly once the game is ready.
-- `showBootSpinner()` and `hideBootSpinner()` added to `ui-core.js`. Spinner styles added to `components.css`.
+- Added a full-screen spinner overlay during `boot()` with `"Starting up..."` and `"Loading save..."` states.
 
 **Files changed:** `js/main.js` · `js/ui/ui-core.js` · `css/components.css`
 
@@ -318,38 +358,18 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 
 ### 🎨 Refactor: style.css split into 6 focused files under css/
 
-The monolithic `style.css` (1,892 lines) has been replaced with six dedicated stylesheets housed in a new `css/` directory. Each file owns a single layer of the UI, making future edits faster to locate and safer to change without side effects.
-
-**New file structure under `css/`:**
+The monolithic `style.css` (1,892 lines) has been replaced with six dedicated stylesheets housed in a new `css/` directory.
 
 | File | Responsibility |
 |---|---|
-| `variables.css` | All `:root` design tokens (colors, spacing, radius, transitions, layout heights), CSS reset, base element styles (`button`, `input`, `img`, `a`), dimension body themes, rarity color tokens |
-| `layout.css` | App shell (`#app`), HUD (sticky top bar, stat cells, nickname, XP bar), main scrollable content area + custom scrollbar, panel show/hide + fade animation, tab bar (fixed bottom nav), iPhone safe area support |
-| `components.css` | Shared reusable pieces: `.card`, `.card-title`, `.progress-bar`, `.progress-fill`, `.btn-primary`, `.btn-ghost`, floating text animations, `.flash` and `.cash-flash` animations |
-| `panels.css` | Mine panel (ore bar, stats grid, sell button, upgrade buttons, dimension selector, booster badges), Pets panel (hunt/fish buttons, pet grid, rarity badges, upgrade & ability buttons), Crates panel (timed timers, inventory cards), Prestige panel (rebirth/prestige buttons, prestige shop) |
-| `modals.css` | Toast notifications, confirm modal overlay, floating leaderboard FAB with pulse animation, leaderboard bottom-sheet modal (tabs, header row, player rows, VIP nickname support) |
-| `settings.css` | Settings panel layout, auth forms (login, register modal), VIP badge variants (HUD, leaderboard, status card with animated glow ring), GM panel (stat overrides grid, VIP management buttons) |
+| `variables.css` | Design tokens, CSS reset, base elements, dimension themes |
+| `layout.css` | App shell, HUD, content area, tab bar, safe area |
+| `components.css` | Cards, progress bars, buttons, shared animations |
+| `panels.css` | Mine, Pets, Crates, Prestige panel styles |
+| `modals.css` | Toast, confirm modal, leaderboard modal, floating FAB |
+| `settings.css` | Auth forms, settings panel, GM panel, VIP system |
 
-### ✨ Improvement: Mobile touch feedback
-- Added `button:active { transform: scale(0.96) }` in `variables.css` — all buttons now give immediate tactile visual feedback on Android tap, making the game feel more responsive without any JS changes.
-
-### 🔗 index.html update required
-Replace the single stylesheet link with the new imports in this order:
-
-```html
-<link rel="stylesheet" href="css/variables.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/panels.css">
-<link rel="stylesheet" href="css/modals.css">
-<link rel="stylesheet" href="css/settings.css">
-```
-
-Then delete `style.css`.
-
-### Files changed
-`css/variables.css` *(new)* · `css/layout.css` *(new)* · `css/components.css` *(new)* · `css/panels.css` *(new)* · `css/modals.css` *(new)* · `css/settings.css` *(new)* · `index.html` · ~~`style.css`~~ *(deleted)*
+**Files changed:** `css/` *(6 new files)* · `index.html` · ~~`style.css`~~ *(deleted)*
 
 </details>
 
@@ -357,114 +377,44 @@ Then delete `style.css`.
 <summary><strong>v1.3.0 — UI Refactor: Modular Architecture</strong></summary>
 
 ### 🏗️ Refactor: ui.js split into dedicated modules
-- The monolithic `ui.js` (35,000 bytes, 950+ lines) has been replaced with seven focused modules housed in a new `js/ui/` directory.
-- Each module owns a single panel or responsibility, making future changes easier to locate, test, and review in isolation.
 
-**New file structure under `js/ui/`:**
+The monolithic `ui.js` replaced with seven focused modules under `js/ui/`.
 
 | File | Responsibility |
 |---|---|
-| `ui-core.js` | Shared DOM helpers, tab navigation, toast queue, modal, offline progress popup |
-| `ui-hud.js` | Top HUD bar (nickname, VIP badge, cash, shards, level, XP bar, dimension label) |
-| `ui-mine.js` | Mine panel, ore bar, dimension selector, booster badges, upgrade buttons, tick & sell animations |
-| `ui-pets.js` | Pets panel, hunt/fish cooldown buttons, pet grid with upgrade rows and legendary ability buttons |
-| `ui-crates.js` | Crates panel, timed crate countdowns, crate open animation |
-| `ui-prestige.js` | Prestige panel, rebirth progress section, prestige progress section, prestige shop cards |
-| `ui-settings.js` | Settings panel, register modal, GM panel, leaderboard modal with category tabs |
+| `ui-core.js` | Shared DOM helpers, tab navigation, toast, modal |
+| `ui-hud.js` | Top HUD bar |
+| `ui-mine.js` | Mine panel + animations |
+| `ui-pets.js` | Pets panel |
+| `ui-crates.js` | Crates panel |
+| `ui-prestige.js` | Prestige panel + shop |
+| `ui-settings.js` | Settings, register modal, GM panel, leaderboard |
 
-### 🔄 Cross-module dependency notes
-- `ui-core.js` exports all shared helpers (`setText`, `setStyle`, `toggleClass`, `escapeHTML`, `formatCooldown`, etc.) — all other UI modules import from here rather than duplicating definitions.
-- `switchTab()` in `ui-core.js` uses dynamic imports (`await import(...)`) to load each panel renderer on demand, avoiding circular dependency issues at the module level.
-- `ui-crates.js` imports `renderBoosterBadges` from `ui-mine.js` to refresh the booster badge display on the Mine panel after a crate is opened — the only intentional cross-panel dependency.
-
-### 📝 main.js import block updated
-The single `import ... from "./ui.js"` line has been replaced with seven targeted imports, one per new module.
-
-### Files changed
-`js/ui/ui-core.js` *(new)* · `js/ui/ui-hud.js` *(new)* · `js/ui/ui-mine.js` *(new)* · `js/ui/ui-pets.js` *(new)* · `js/ui/ui-crates.js` *(new)* · `js/ui/ui-prestige.js` *(new)* · `js/ui/ui-settings.js` *(new)* · `js/main.js` · ~~`js/ui.js`~~ *(deleted)*
+**Files changed:** `js/ui/` *(7 new files)* · `js/main.js` · ~~`js/ui.js`~~ *(deleted)*
 
 </details>
 
 <details>
 <summary><strong>v1.2.0 — Security Fixes & Visual Identity</strong></summary>
 
-### 🔒 Bug Fix: Logout data persistence (critical)
-- **Problem:** Logging out did not wipe localStorage. The previous account's full game state (cash, pets, rebirths, ore) remained on the device as guest data, allowing players to duplicate progress between accounts.
-- **Fix:** `logoutUser()` in `auth.js` now explicitly calls `localStorage.removeItem(SAVE_KEY)` and resets the in-memory state to `DEFAULT_STATE` before creating a fresh guest session. The cloud copy is always the source of truth.
-- **Fix:** `loadCloudSave()` now also wipes state before applying cloud data, preventing any leftover guest progress from bleeding into a newly logged-in account.
+- 🔒 **Fix:** Logout now wipes localStorage — previous account data no longer bleeds into guest sessions
+- 🔒 **Fix:** GM leaderboard hide now enforced server-side via Supabase RLS (`hidden = false` policy)
+- 👑 **Feature:** VIP badge in HUD with shimmer animation
+- 🎨 **Feature:** Dimension-colored nicknames in HUD and leaderboard
+- 👑 **Feature:** VIP badge in leaderboard rows
 
-### 🔒 Bug Fix: GM leaderboard hide was clientside only (critical)
-- **Problem:** The "hide from leaderboard" toggle in the GM panel only filtered rows clientside for the GM themselves. When any other player (including guests) loaded the leaderboard, the GM row appeared normally.
-- **Fix:** Leaderboard table now has a `hidden` boolean column in Supabase. Supabase RLS policy updated to `USING (hidden = false)` on the public SELECT policy — hidden rows are filtered server-side and never returned to any client, regardless of who is asking.
-- **Fix:** `toggleLeaderboardVisibility()` in `leaderboard.js` writes the `hidden` flag directly to Supabase. `gm.js` delegates to this function instead of mutating local state.
-
-### 👑 Feature: VIP badge in HUD
-- VIP players now see a pulsing gold **👑 VIP** badge directly next to their nickname in the top HUD bar.
-- Badge is injected dynamically by `renderHUD()` and removed automatically when VIP expires.
-- New CSS class `.vip-badge-hud` and shared `.vip-pulse` animation class added to `style.css`.
-
-### 🎨 Feature: Dimension-colored nicknames
-- Player nicknames in the HUD are now colored by their **current dimension's accent color** (e.g. green for Earth, red for Nether, purple for The End).
-- Color transitions smoothly when switching dimensions via CSS `transition: color 0.5s`.
-- Leaderboard rows now show each player's nickname in their **own dimension color**, fetched from the `dimension` column submitted with their leaderboard score.
-
-### 👑 Feature: VIP badge in leaderboard
-- VIP players now show a pulsing **👑 VIP** badge before their nickname in every leaderboard row.
-- `is_vip` and `dimension` columns added to the `leaderboard` table in Supabase.
-- `submitLeaderboardScore()` in `leaderboard.js` now submits `is_vip`, `dimension`, and preserves the existing `hidden` flag on every score update.
-
-### 🗄️ Database changes
-Run the following in Supabase SQL Editor before deploying this version:
-
-```sql
-ALTER TABLE leaderboard
-  ADD COLUMN IF NOT EXISTS is_vip     boolean DEFAULT false,
-  ADD COLUMN IF NOT EXISTS dimension  text    DEFAULT 'earth',
-  ADD COLUMN IF NOT EXISTS hidden     boolean DEFAULT false;
-
-ALTER TABLE player_saves
-  ADD COLUMN IF NOT EXISTS is_vip         boolean DEFAULT false,
-  ADD COLUMN IF NOT EXISTS vip_expires_at bigint  DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS player_id      text    DEFAULT '',
-  ADD COLUMN IF NOT EXISTS role           integer DEFAULT 0;
-
-CREATE INDEX IF NOT EXISTS idx_player_saves_player_id ON player_saves (player_id);
-CREATE INDEX IF NOT EXISTS idx_leaderboard_hidden ON leaderboard (hidden);
-
-DROP POLICY IF EXISTS "Users can manage own leaderboard entry" ON leaderboard;
-CREATE POLICY "Users can manage own leaderboard entry"
-  ON leaderboard FOR ALL USING (auth.uid() = id);
-
-DROP POLICY IF EXISTS "Anyone can read leaderboard" ON leaderboard;
-CREATE POLICY "Anyone can read leaderboard"
-  ON leaderboard FOR SELECT USING (hidden = false);
-```
-
-### Files changed
-`auth.js` · `leaderboard.js` · `gm.js` · `ui.js` · `style.css`
+**Files changed:** `auth.js` · `leaderboard.js` · `gm.js` · `ui.js` · `style.css`
 
 </details>
 
 <details>
 <summary><strong>v1.1.0 — Leaderboard & VIP Polish</strong></summary>
 
-### Leaderboard → Floating Button
-- Removed the Leaderboard tab from the bottom nav (now 5 tabs)
-- Added a floating **🏆 trophy button** fixed above the tab bar, right side
-- Leaderboard now opens as a **bottom-sheet modal** with blur backdrop and slide-up animation
-- Modal dismisses via close button or tapping the backdrop
+- Leaderboard moved from tab to floating trophy button + bottom-sheet modal
+- VIP card animated gold ring pulse in Settings
+- GM leaderboard hide toggle now persists in localStorage
 
-### VIP Badge & Pulse
-- Removed VIP badge from the HUD nickname — nickname is now plain text
-- VIP badge in **leaderboard rows** upgraded: now shows 👑 icon, pill shape, and pulsing gold glow (`vip-badge-lb`)
-- VIP card in Settings now has an **animated gold ring pulse** (`vip-card-pulse`) — breathing border glow behind the card content
-
-### GM Leaderboard Toggle Fix
-- Fixed: hide-from-leaderboard toggle was a session-only in-memory flag — it reset to visible on every page refresh
-- Fix: toggle now persists in `state` / localStorage via `gmHiddenFromLeaderboard` field added to `DEFAULT_STATE`
-
-### Files changed
-`gm.js` · `state.js` · `index.html` · `main.js` · `ui.js` · `style.css`
+**Files changed:** `gm.js` · `state.js` · `index.html` · `main.js` · `ui.js` · `style.css`
 
 </details>
 
