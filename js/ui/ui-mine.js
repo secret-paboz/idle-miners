@@ -2,10 +2,14 @@
 // UI-MINE.JS — Mine panel renderer + mining animations
 // Covers: ore bar, mine stats, dimension selector,
 //         booster badges, upgrade buttons, tick & sell animations
+//
+// CHANGED:
+// - renderMineStats() — removed computeOreValue import and
+//   the setText("stat-ore-value") line (stat removed from HTML)
 // ============================================================
 
 import { state } from "../state.js";
-import { formatNumber, computeMaxCapacity, computeMiningPower, computeOreValue } from "../economy.js";
+import { formatNumber, computeMaxCapacity, computeMiningPower } from "../economy.js";
 import { ORE_TYPES } from "../data/mines-data.js";
 import { getDimension, DIMENSIONS } from "../data/dimensions-data.js";
 import { getBoosterStatus } from "../crates.js";
@@ -51,15 +55,10 @@ function renderOreBar() {
 }
 
 function renderMineStats() {
-  const oreId     = state.currentOreId || "dirt";
-  const oreSample = ORE_TYPES[oreId] || {};
-
-  const power     = computeMiningPower();
-  const value     = computeOreValue(oreId);
   const dimension = getDimension(state.dimension);
+  const power     = computeMiningPower();
 
   setText("stat-mining-power",    formatNumber(power) + "/s");
-  setText("stat-ore-value",       "$" + formatNumber(value) + "/ore");
   setText("stat-dimension",       dimension?.name || "Earth");
   setText("stat-dimension-multi", dimension?.valueMulti + "x");
   setText("stat-pickaxe-level",   "Lv." + state.pickaxeLevel);
