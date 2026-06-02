@@ -196,7 +196,6 @@ export async function loginUser(email, password) {
     const loaded = await loadCloudSave(user.id);
     if (!loaded.success) console.warn("Cloud save not found, using local state.");
 
-    window.__gmVerified = await isGameMaster();
 
     return { success: true, message: `Welcome back, ${state.nickname}!`, user };
 
@@ -256,7 +255,6 @@ export async function restoreSession() {
     const user   = session.user;
     const loaded = await loadCloudSave(user.id);
 
-    window.__gmVerified = await isGameMaster();
 
     return { loggedIn: true, user, saveLoaded: loaded.success };
 
@@ -276,7 +274,7 @@ async function loadCloudSave(userId) {
   try {
     const { data, error } = await client
       .from("player_saves")
-      .select("nickname, game_data, is_vip, vip_expires_at")
+      .select("nickname, game_data, is_vip, vip_expires_at, role")
       .eq("id", userId)
       .single();
 
@@ -307,6 +305,7 @@ async function loadCloudSave(userId) {
     Object.assign(state, fresh);
 
     saveState();
+    window.__gmVerified = Number(data.role) === 99;
     return { success: true, nickname: data.nickname };
 
   } catch (err) {
