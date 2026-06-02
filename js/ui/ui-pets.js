@@ -33,7 +33,7 @@ export function renderPetsPanel() {
 // SECTION 2 — HUNT / FISH COOLDOWNS
 // ============================================================
 
-function renderPetCooldowns() {
+export function renderPetCooldowns() {
   const now = Date.now();
 
   const huntReady     = now - (state.lastHuntTime || 0) >= COOLDOWNS.hunt;
