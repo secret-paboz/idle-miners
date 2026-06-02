@@ -73,17 +73,21 @@ function renderDimensionSelector() {
   container.innerHTML = DIMENSIONS.map(dim => {
     const unlocked = state.dimensionUnlocked.includes(dim.id);
     const active   = state.dimension === dim.id;
+    const color    = dim.theme?.accentColor || "#f5a623";
     return `
       <button
-        class="dim-btn ${active ? "active" : ""} ${unlocked ? "" : "locked"}"
+        class="dim-card ${active ? "active" : ""} ${unlocked ? "" : "locked"}"
         data-dim="${dim.id}"
         ${unlocked ? "" : "disabled"}
+        style="--dim-color: ${color}"
         title="${unlocked ? dim.description : "Unlock at " + dim.unlockAt + " rebirths"}"
       >
-        <i class="${dim.icon}" style="font-size:13px;opacity:0.85;flex-shrink:0"></i>
-        <span class="dim-name">${dim.name}</span>
-        <span class="dim-multi">${dim.valueMulti}x</span>
-        ${unlocked ? "" : `<span class="dim-lock"><i class="fa-solid fa-lock"></i> ${dim.unlockAt}↺</span>`}
+        <div class="dim-card-icon"><i class="${dim.icon}"></i></div>
+        <div class="dim-card-name">${dim.name}</div>
+        ${unlocked
+          ? `<div class="dim-card-multi">${dim.valueMulti}x</div>`
+          : `<div class="dim-card-lock"><i class="fa-solid fa-lock"></i> ${dim.unlockAt}↺</div>`
+        }
       </button>
     `;
   }).join("");
