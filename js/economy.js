@@ -1,5 +1,13 @@
 // ============================================================
 // ECONOMY.JS — All game math, formulas, and loop logic
+//
+// CHANGED:
+// - computePetBonus() now handles "legendary" rarity using
+//   each pet's legendaryEffect field ("mining" or "sell")
+// - computeMiningPower() — removed rage buff block entirely
+// - computeOreValue()    — removed wings buff block entirely
+// - activateAbility()    — removed (legendaries are now passive)
+// - prestigeUpgradeCost() — flat 1 token always (was currentLevel+1)
 // ============================================================
 
 import { state, saveState, resetStateForRebirth, resetStateForPrestige } from "./state.js";
@@ -29,9 +37,9 @@ export function petUpgradeCost(petId, levels = 1) {
   return costPerLevel * levels;
 }
 
-// Prestige shop upgrade cost: 1 token per level
-export function prestigeUpgradeCost(currentLevel) {
-  return currentLevel + 1;
+// Prestige shop upgrade cost: flat 1 token per purchase (matches original)
+export function prestigeUpgradeCost(_currentLevel) {
+  return 1;
 }
 
 // ============================================================
@@ -41,33 +49,24 @@ export function prestigeUpgradeCost(currentLevel) {
 // Max backpack capacity
 // Base: 20 + (backpackLevel * 15)
 // Prestige bonus: +10 per storageLevel
-// Pet bonus: sum of all owned common pets' backpack modifiers
+// Pet bonus: common pets (backpack) + any legendary with legendaryEffect "backpack"
 export function computeMaxCapacity() {
-  const base = 20 + (state.backpackLevel * 15);
+  const base         = 20 + (state.backpackLevel * 15);
   const prestigeBonus = state.prestigeUpgrades.storageLevel * 10;
-  const petBonus = computePetBonus("backpack");
+  const petBonus     = computePetBonus("backpack");
   return Math.floor(base * (1 + petBonus) + prestigeBonus);
 }
 
 // Mining power per tick
-// Base: pickaxeLevel * 1
-// Rage buff: 2x if active
+// Base: pickaxeLevel + speedLevel prestige bonus
+// Pet bonus: uncommon pets (mining) + legendary Wither (mining)
 // Speed booster: multiplier from crate booster
-// Pet bonus: sum of all owned uncommon pets' speed modifiers
-// Prestige bonus: +1 per speedLevel
+// No more rage buff — Wither is now passive
 export function computeMiningPower() {
   const prestigeBonus = state.prestigeUpgrades.speedLevel;
-  const base = (state.pickaxeLevel * 1) + prestigeBonus;
-  const petBonus = computePetBonus("mining");
-  let power = base * (1 + petBonus);
-
-  // Rage buff (wither legendary ability)
-  if (state.buffs.rageActive && Date.now() < state.buffs.rageEndsAt) {
-    power *= 2;
-  } else if (state.buffs.rageActive) {
-    state.buffs.rageActive = false;
-    state.buffs.rageEndsAt = 0;
-  }
+  const base          = (state.pickaxeLevel * 1) + prestigeBonus;
+  const petBonus      = computePetBonus("mining");
+  let power           = base * (1 + petBonus);
 
   // Active speed booster from crates
   if (state.boosters.miningSpeed.endsAt > Date.now()) {
@@ -80,12 +79,12 @@ export function computeMiningPower() {
 // Ore sell value per block
 // Base: ore.baseValue * dimension.valueMulti
 // Rebirth bonus: +10% per rebirth
-// Wings buff: 2x if active
-// Sell booster: multiplier from crate booster
-// Pet bonus: sum of all owned rare pets' sell modifiers
+// Pet bonus: rare pets (sell) + legendary Ender Dragon (sell)
 // Prestige greed bonus: +2% per greedLevel
-// Prestige merchant bonus: +5% per merchantLevel (on sell action)
-// VIP bonus: 2x sell value (stacks on top of everything else)
+// Prestige merchant bonus: +5% per merchantLevel (on sell action only)
+// Sell booster: multiplier from crate booster
+// VIP bonus: 2x sell value
+// No more wings buff — Ender Dragon is now passive
 export function computeOreValue(oreId, isSellAction = false) {
   const ore = ORE_TYPES[oreId];
   if (!ore) return 0;
@@ -96,14 +95,6 @@ export function computeOreValue(oreId, isSellAction = false) {
   const petBonus   = computePetBonus("sell");
 
   let value = ore.baseValue * dimension.valueMulti * rebirthMod * greedMod * (1 + petBonus);
-
-  // Wings buff (enderdragon legendary ability)
-  if (state.buffs.wingsActive && Date.now() < state.buffs.wingsEndsAt) {
-    value *= 2;
-  } else if (state.buffs.wingsActive) {
-    state.buffs.wingsActive = false;
-    state.buffs.wingsEndsAt = 0;
-  }
 
   // Active sell booster from crates
   if (state.boosters.sellValue.endsAt > Date.now()) {
@@ -128,10 +119,14 @@ export function computeOreValue(oreId, isSellAction = false) {
 // SECTION 3 — PET BONUS CALCULATOR
 // ============================================================
 
-// Sums bonus from all owned pets of a given effect type
+// Sums bonus from all owned pets for a given effect type.
 // effectType: "backpack" | "mining" | "sell"
+//
+// For common/uncommon/rare: uses RARITY_CONFIG effectType to match.
+// For legendary: uses each pet's own legendaryEffect field to match.
 export function computePetBonus(effectType) {
   let totalBonus = 0;
+
   for (const petId in state.pets) {
     const petState = state.pets[petId];
     if (!petState.owned) continue;
@@ -139,11 +134,20 @@ export function computePetBonus(effectType) {
     const petData = PETS_DATA[petId];
     if (!petData) continue;
 
-    const rarityConf = RARITY_CONFIG[petData.rarity];
-    if (rarityConf.effectType !== effectType) continue;
-
-    totalBonus += petData.modifier * petState.level;
+    if (petData.rarity === "legendary") {
+      // Legendary pets use their own legendaryEffect field
+      if (petData.legendaryEffect === effectType) {
+        totalBonus += petData.modifier * petState.level;
+      }
+    } else {
+      // Common / uncommon / rare use RARITY_CONFIG effectType
+      const rarityConf = RARITY_CONFIG[petData.rarity];
+      if (rarityConf.effectType === effectType) {
+        totalBonus += petData.modifier * petState.level;
+      }
+    }
   }
+
   return totalBonus;
 }
 
@@ -152,8 +156,6 @@ export function computePetBonus(effectType) {
 // ============================================================
 
 // Called every 1000ms by main.js setInterval — NOT rate limited
-// (trusted game loop, not user input)
-// Returns: { oreMined, currentOre, maxCapacity, isFull }
 export function tickMining() {
   const maxCap = computeMaxCapacity();
   if (state.ore >= maxCap) {
@@ -188,7 +190,6 @@ export function tickMining() {
 }
 
 // Sell all ore in backpack
-// Returns: { cashEarned, oreType }
 export function sellOre() {
   if (state.ore <= 0) return { cashEarned: 0 };
 
@@ -210,11 +211,6 @@ export function sellOre() {
 // SECTION 4b — VIP AUTO-SELL
 // ============================================================
 
-// Called by main.js after every tickMining() when isFull === true.
-// Only triggers if player is an active VIP.
-// Intentionally bypasses rate limit — it's triggered by the
-// trusted game loop, not a user button press.
-// Returns: { triggered, cashEarned }
 export function tryAutoSell() {
   const now = Date.now();
 
@@ -223,9 +219,6 @@ export function tryAutoSell() {
 
   const maxCap = computeMaxCapacity();
   if (state.ore < maxCap) return { triggered: false };
-
-  // Bypass rate limit for auto-sell (game loop trigger, not user input)
-  if (state.ore <= 0) return { triggered: false };
 
   const oreId  = state.currentOreId || "dirt";
   const ore    = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
@@ -242,7 +235,6 @@ export function tryAutoSell() {
 }
 
 // Upgrade pickaxe
-// Returns: { success, newLevel, cost, message }
 export function upgradePickaxe() {
   const cost = pickaxeUpgradeCost(state.pickaxeLevel);
   if (state.cash < cost) {
@@ -260,7 +252,6 @@ export function upgradePickaxe() {
 }
 
 // Upgrade backpack
-// Returns: { success, newLevel, cost, message }
 export function upgradeBackpack() {
   const cost = backpackUpgradeCost(state.backpackLevel);
   if (state.cash < cost) {
@@ -278,7 +269,6 @@ export function upgradeBackpack() {
 }
 
 // Upgrade a pet (costs shards, flat rate)
-// Returns: { success, newLevel, cost, message }
 export function upgradePet(petId, levels = 1) {
   const petData  = PETS_DATA[petId];
   const petState = state.pets[petId];
@@ -296,8 +286,8 @@ export function upgradePet(petId, levels = 1) {
     return { success: false, message: `Need ${cost} shards.` };
   }
 
-  state.shards    -= cost;
-  petState.level  += actualLevels;
+  state.shards   -= cost;
+  petState.level += actualLevels;
   saveState();
 
   return {
@@ -305,37 +295,6 @@ export function upgradePet(petId, levels = 1) {
     newLevel: petState.level,
     cost,
     message:  `${petData.name} upgraded to level ${petState.level}!`,
-  };
-}
-
-// Activate legendary pet ability
-// Returns: { success, message, duration }
-export function activateAbility(petId) {
-  const petData  = PETS_DATA[petId];
-  const petState = state.pets[petId];
-
-  if (!petData?.ability || !petState?.owned) {
-    return { success: false, message: "Pet not owned or no ability." };
-  }
-
-  const ability  = petData.ability;
-  const now      = Date.now();
-  const lastUsed = state[ability.timeKey] || 0;
-
-  if (now - lastUsed < ability.cooldown) {
-    const remaining = Math.ceil((ability.cooldown - (now - lastUsed)) / 1000);
-    return { success: false, message: `Cooldown: ${remaining}s remaining.` };
-  }
-
-  state.buffs[ability.buffKey]   = true;
-  state.buffs[ability.endsAtKey] = now + ability.duration;
-  state[ability.timeKey]         = now;
-  saveState();
-
-  return {
-    success:  true,
-    message:  `${ability.name} activated! ${ability.effect} for 60 seconds.`,
-    duration: ability.duration,
   };
 }
 
@@ -354,12 +313,18 @@ export function switchDimension(dimensionId) {
 // ============================================================
 
 function checkLevelUp() {
-  const xpNeeded = xpRequiredForLevel(state.level + 1);
-  if (state.xp >= xpNeeded) {
-    state.level += 1;
-    return true;
+  let leveled = false;
+  // Loop handles multi-level jumps (e.g. from offline XP)
+  while (true) {
+    const xpNeeded = xpRequiredForLevel(state.level + 1);
+    if (state.xp >= xpNeeded) {
+      state.level += 1;
+      leveled = true;
+    } else {
+      break;
+    }
   }
-  return false;
+  return leveled;
 }
 
 // ============================================================
@@ -400,7 +365,7 @@ export function buyPrestigeUpgrade(upgradeKey) {
   const cost = prestigeUpgradeCost(currentLevel);
 
   if (state.prestigeTokens < cost) {
-    return { success: false, message: `Need ${cost} prestige tokens.` };
+    return { success: false, message: `Need ${cost} prestige token.` };
   }
 
   state.prestigeTokens -= cost;
@@ -418,20 +383,14 @@ export function buyPrestigeUpgrade(upgradeKey) {
 // SECTION 7 — OFFLINE PROGRESSION
 // ============================================================
 
-// Called on game load — calculates what was mined while offline.
-// Caps at 8 hours for non-VIP, 12 hours for VIP players.
-// If VIP: also auto-sells all ore earned offline.
-// Returns: { seconds, mined, hours, cashEarned (VIP only) }
 export function calculateOfflineProgress() {
   if (!state.lastOnlineTime) return null;
 
   const now     = Date.now();
   const elapsed = now - state.lastOnlineTime;
 
-  // Guard: reject negative, zero, or implausibly large elapsed times
   if (!isFinite(elapsed) || elapsed <= 0 || elapsed > 30 * 24 * 60 * 60 * 1000) return null;
 
-  // VIP gets 12h offline cap, regular players get 8h
   const isActiveVip = state.isVip && now < state.vipExpiresAt;
   const maxOffline  = isActiveVip
     ? 12 * 60 * 60 * 1000
@@ -452,7 +411,6 @@ export function calculateOfflineProgress() {
   state.ore         = Math.min(state.ore + mined, maxCap);
   state.blocksMined += mined;
 
-  // Award XP for offline blocks
   const mineTier = getMineTier(state.level);
   const ore      = rollOre(mineTier);
   let xpGained   = ore.xpPerBlock * mined;
@@ -462,7 +420,6 @@ export function calculateOfflineProgress() {
   state.xp += xpGained;
   checkLevelUp();
 
-  // VIP: auto-sell everything mined offline instantly (bypass rate limit)
   let cashEarned = 0;
   if (isActiveVip && state.ore > 0) {
     const oreId  = state.currentOreId || "dirt";
