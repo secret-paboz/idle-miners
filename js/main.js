@@ -18,7 +18,7 @@ import {
 import { doHunt, doFish } from "./pets.js";
 import { openCrate, openAllOfType, addCrate } from "./crates.js";
 import { triggerPrestige, purchasePrestigeUpgrade } from "./prestige.js";
-import { upgradePet, activateAbility } from "./economy.js";
+import { upgradePet } from "./economy.js";
 import { initTabs, switchTab, showToast, showModal, showOfflineProgress, loadAndRenderLeaderboard, showBootSpinner, hideBootSpinner } from "./ui/ui-core.js";
 import { renderHUD } from "./ui/ui-hud.js";
 import { renderMinePanel, animateMiningTick, animateSell } from "./ui/ui-mine.js";
@@ -616,14 +616,6 @@ async function handleDelegatedClick(e) {
     showToast(result.message, result.success ? "success" : "error", 2000);
     renderPetsPanel();
     renderHUD();
-    return;
-  }
-
-  const abilityBtn = e.target.closest("[data-pet-ability]");
-  if (abilityBtn) {
-    const result = activateAbility(abilityBtn.dataset.petAbility);
-    showToast(result.message, result.success ? "success" : "error", result.success ? 3000 : 2000);
-    renderPetsPanel();
     return;
   }
 
