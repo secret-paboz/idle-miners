@@ -22,8 +22,8 @@ import { upgradePet } from "./economy.js";
 import { initTabs, switchTab, showToast, showModal, showOfflineProgress, loadAndRenderLeaderboard, showBootSpinner, hideBootSpinner } from "./ui/ui-core.js";
 import { renderHUD } from "./ui/ui-hud.js";
 import { renderMinePanel, animateMiningTick, animateSell } from "./ui/ui-mine.js";
-import { renderPetsPanel } from "./ui/ui-pets.js";
-import { renderCratesPanel, animateCrateOpen } from "./ui/ui-crates.js";
+import { renderPetsPanel, renderPetCooldowns } from "./ui/ui-pets.js";
+import { renderCratesPanel, animateCrateOpen, renderCrateTimers } from "./ui/ui-crates.js";
 import { renderPrestigePanel } from "./ui/ui-prestige.js";
 import { renderSettingsPanel, renderGMPanel, showRegisterModal } from "./ui/ui-settings.js";
 import {
@@ -139,6 +139,8 @@ function startGameLoop() {
 
     if (tickCount % RENDER_HUD_EVERY  === 0) renderHUD();
     if (tickCount % RENDER_MINE_EVERY === 0) renderMinePanel();
+    if (tickCount % RENDER_HUD_EVERY  === 0) renderPetCooldowns();
+    if (tickCount % RENDER_HUD_EVERY  === 0) renderCrateTimers();
     if (tickCount % SAVE_LOCAL_EVERY  === 0) saveState();
 
     if (tickCount % SUBMIT_LB_EVERY === 0 && !state.isGuest) {
@@ -390,9 +392,27 @@ function handleResetSave() {
 // ── GM ────────────────────────────────────────────────────────
 
 function bindGMEvents() {
+  on("btn-gm-float", "click", handleToggleGMModal);
+  on("btn-gm-modal-close", "click", handleToggleGMModal);
+
+  const overlay = document.getElementById("gm-modal");
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) handleToggleGMModal();
+    });
+  }
+
   const settingsPanel = document.getElementById("panel-settings");
   if (!settingsPanel) return;
   settingsPanel.addEventListener("click", handleGMClick);
+}
+
+function handleToggleGMModal() {
+  const modal = document.getElementById("gm-modal");
+  if (!modal) return;
+  const isVisible = modal.style.display === "flex";
+  modal.style.display = isVisible ? "none" : "flex";
+  if (!isVisible) renderGMPanel();
 }
 
 async function handleGMClick(e) {
