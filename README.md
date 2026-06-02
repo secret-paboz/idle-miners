@@ -193,6 +193,7 @@ idle-miners/
 │   ├── panels.css          # Mine, Pets, Crates, Prestige panel styles
 │   ├── modals.css          # Toast, confirm modal, leaderboard modal, floating FAB
 │   └── settings.css        # Auth forms, settings panel, GM panel, VIP system
+├── sprites/                # Ore sprite PNGs (24×24px, one per ore type)
 └── js/
     ├── main.js             # Entry point, game loop, event binding
     ├── state.js            # Global game state + localStorage save/load
@@ -262,6 +263,55 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 ## 📋 Changelog
 
 <details>
+<summary><strong>v1.7.0 — Ore Sprites, Mine UI/UX Polish</strong></summary>
+
+### 🎨 Feature: Ore sprite floating text
+- Mining tick animation now shows `[sprite] +N OreName` instead of a plain `+N` number.
+- 13 ore sprites (dirt, stone, coal, copper, iron, gold, redstone, lapis, emerald, diamond, obsidian, netherite, ancientDebris) served from `/sprites/` as 24×24px optimized PNGs (down from 216×196px originals — 96% size reduction).
+- Floating text uses `display: flex` with `align-items: center` so the sprite and label sit inline.
+- `image-rendering: pixelated` keeps sprites crisp at small size.
+- Sell float animation unchanged — still shows `+$N` in green with no sprite.
+
+**Files changed:** `js/ui/ui-mine.js` · `css/components.css`
+**Assets added:** `sprites/` *(13 PNG files, 24×24px)*
+
+---
+
+### 🗑️ Removed: Ore Type stat cell
+- The "Ore Type" stat cell has been removed from the Stats grid in the Mine panel.
+- Ore type is now communicated through the floating text sprite on every mining tick — showing it twice was redundant.
+- Stats grid reflows cleanly from 8 to 7 cells in the existing 2-column layout.
+
+**Files changed:** `index.html` · `js/ui/ui-mine.js`
+
+---
+
+### ✨ Improvement: Ore bar glow states
+- `high` state (≥75% full) now emits a soft green glow (`box-shadow: 0 0 8px rgba(67,160,71,0.5)`).
+- `full` state (100%) now emits a red glow (`box-shadow: 0 0 12px rgba(229,57,53,0.6)`) in addition to the existing pulse animation.
+- Both transitions are smooth via `transition: box-shadow 0.3s ease`.
+
+**Files changed:** `css/panels.css`
+
+---
+
+### ✨ Improvement: Upgrade button affordability glow
+- `.upgrade-btn.can-afford` now includes a subtle gold `box-shadow` (`0 0 10px rgba(255,193,7,0.2)`) in addition to the existing border and background tint.
+- More readable on Android dark screens where border color alone is easy to miss.
+
+**Files changed:** `css/panels.css`
+
+---
+
+### ✨ Improvement: Sell button layout
+- Sell button now uses `flex-direction: column` so the ore count sits cleanly below the label.
+- Ore amount and estimated value use distinct opacity levels for better visual hierarchy.
+
+**Files changed:** `css/panels.css`
+
+</details>
+
+<details>
 <summary><strong>v1.6.0 — Server-side Save Validation & GM Role Enforcement</strong></summary>
 
 ### 🛡️ Feature: Server-side math validation on all cloud saves
@@ -276,9 +326,8 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 
 ### 🛡️ Feature: GM role verified server-side on every save
 - When a save request arrives at `api/save.js`, the server fetches the player's `role` from Supabase using the service role key.
-- If `role === 99` (Game Master) — math validation is skipped entirely, save is written as-is. GMs can set any values they need.
+- If `role === 99` (Game Master) — math validation is skipped entirely, save is written as-is.
 - If `role !== 99` — full math validation runs. A non-GM player cannot bypass this by editing localStorage or browser memory.
-- Previously, GM-set values (high cash, custom levels, etc.) could be falsely flagged by client-side guards. Now GMs are fully exempt server-side.
 
 **Files changed:** `api/save.js`
 
@@ -286,8 +335,8 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 
 ### 🗑️ Removed: HackShield token system
 - Removed `api/verify.js`, `js/hackshield.js`, and all token-based session validation.
-- The token system caused save rollbacks when tabs went idle, phones locked screens, or sessions exceeded 90 minutes — the token expired in memory and saves were silently skipped, causing the game to reload from an older cloud save on next boot.
-- Replaced entirely by the server-side math validation approach above, which requires only a valid Supabase JWT (auto-managed by the Supabase client) and no additional in-memory state.
+- The token system caused save rollbacks when tabs went idle, phones locked screens, or sessions exceeded 90 minutes.
+- Replaced entirely by the server-side math validation approach above.
 
 **Files deleted:** `api/verify.js` · `js/hackshield.js`
 **Files changed:** `js/main.js` · `js/economy.js` · `js/supabase.js`
@@ -295,8 +344,7 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 ---
 
 ### 🐛 Fix: Cloud saves failing silently (missing package.json)
-- `api/save.js` imports `@supabase/supabase-js` but no `package.json` existed in the repo root. Vercel had no instruction to install the dependency, causing the serverless function to crash on every invocation — making both manual saves and auto-saves fail silently for all logged-in players.
-- Fixed by adding `package.json` declaring `@supabase/supabase-js` as a dependency.
+- Added `package.json` declaring `@supabase/supabase-js` as a dependency so Vercel installs it for the serverless function.
 
 **Files added:** `package.json`
 
@@ -306,48 +354,44 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 <summary><strong>v1.5.0 — Bug Fixes, UX Polish & Stability</strong></summary>
 
 ### 🐛 Fix: Dimension icons not displaying
-- `renderDimensionSelector()` in `ui-mine.js` was only outputting the dimension name — the `icon` field in `dimensions-data.js` was defined but never rendered.
-- Fixed by adding `<i class="${dim.icon}">` to each dimension button in the selector.
-- Also fixed: `fa-earth-americas` (Font Awesome Pro) was used for the Earth dimension icon, causing it to silently fail in free tier projects. Replaced with `fa-globe` (Font Awesome 6 Free).
+- `renderDimensionSelector()` was only outputting the dimension name — the `icon` field was never rendered.
+- Also fixed: `fa-earth-americas` (Font Awesome Pro) replaced with `fa-globe` (Font Awesome 6 Free).
 
 **Files changed:** `js/data/dimensions-data.js` · `js/ui/ui-mine.js`
 
 ---
 
 ### ✨ Improvement: VIP badge shimmer animation
-- Replaced the pulsing gold glow (`vipPulse`) on all VIP badges with a diagonal shimmer sweep — a bright light streak that slides across the badge on a 2.8s loop.
-- Applies to: HUD badge, leaderboard badge, booster panel badge.
-- The VIP status card's existing `vipCardPulse` ring animation is intentionally untouched.
+- Replaced pulsing gold glow with a diagonal shimmer sweep on a 2.8s loop.
 
 **Files changed:** `css/settings.css`
 
 ---
 
 ### ✨ Improvement: Live ore bar updates
-- `renderMinePanel()` was previously only called on explicit user actions (sell, upgrade, tab switch). The ore bar, stats grid, and upgrade button affordability could appear stale between interactions.
-- Added `renderMinePanel()` to the game loop (`RENDER_MINE_EVERY = 2` ticks) so the panel refreshes every 2 seconds automatically.
+- Added `renderMinePanel()` to the game loop (`RENDER_MINE_EVERY = 2` ticks).
 
 **Files changed:** `js/main.js`
 
 ---
 
 ### 🐛 Fix: Ore type mismatch on sell toast
-- `sellOre()` was calling `rollOre()` to determine the ore type shown in the sell toast — a fresh random roll that had no relation to what was actually mined into the backpack.
-- Fixed by adding `currentOreId` to game state, updated by `tickMining()` on every tick.
+- `sellOre()` was calling `rollOre()` for the toast — a fresh random roll unrelated to what was mined.
+- Fixed by adding `currentOreId` to state, updated by `tickMining()` on every tick.
 
 **Files changed:** `js/state.js` · `js/economy.js` · `js/ui/ui-mine.js`
 
 ---
 
 ### 🛡️ Fix: Offline progress guard against corrupted timestamps
-- Added a validation guard that rejects elapsed times that are non-finite, zero or negative, or greater than 30 days.
+- Added validation rejecting elapsed times that are non-finite, zero/negative, or over 30 days.
 
 **Files changed:** `js/economy.js`
 
 ---
 
 ### ✨ Improvement: Boot loading spinner
-- Added a full-screen spinner overlay during `boot()` with `"Starting up..."` and `"Loading save..."` states.
+- Added full-screen spinner overlay during `boot()`.
 
 **Files changed:** `js/main.js` · `js/ui/ui-core.js` · `css/components.css`
 
@@ -357,8 +401,6 @@ For local Supabase credentials, paste them temporarily into `js/supabase.js` for
 <summary><strong>v1.4.0 — CSS Refactor: Modular Stylesheet Architecture</strong></summary>
 
 ### 🎨 Refactor: style.css split into 6 focused files under css/
-
-The monolithic `style.css` (1,892 lines) has been replaced with six dedicated stylesheets housed in a new `css/` directory.
 
 | File | Responsibility |
 |---|---|
@@ -378,8 +420,6 @@ The monolithic `style.css` (1,892 lines) has been replaced with six dedicated st
 
 ### 🏗️ Refactor: ui.js split into dedicated modules
 
-The monolithic `ui.js` replaced with seven focused modules under `js/ui/`.
-
 | File | Responsibility |
 |---|---|
 | `ui-core.js` | Shared DOM helpers, tab navigation, toast, modal |
@@ -397,8 +437,8 @@ The monolithic `ui.js` replaced with seven focused modules under `js/ui/`.
 <details>
 <summary><strong>v1.2.0 — Security Fixes & Visual Identity</strong></summary>
 
-- 🔒 **Fix:** Logout now wipes localStorage — previous account data no longer bleeds into guest sessions
-- 🔒 **Fix:** GM leaderboard hide now enforced server-side via Supabase RLS (`hidden = false` policy)
+- 🔒 **Fix:** Logout now wipes localStorage
+- 🔒 **Fix:** GM leaderboard hide enforced server-side via Supabase RLS
 - 👑 **Feature:** VIP badge in HUD with shimmer animation
 - 🎨 **Feature:** Dimension-colored nicknames in HUD and leaderboard
 - 👑 **Feature:** VIP badge in leaderboard rows
