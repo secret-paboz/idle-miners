@@ -26,8 +26,8 @@ function on(id, event, handler) {
 }
 
 export function bindGMEvents() {
-  on("btn-gm-float",       "click", handleToggleGMModal);
-  on("btn-gm-modal-close", "click", handleToggleGMModal);
+  on("tab-gm",             "click", handleToggleGMModal);
+  on("btn-gm-close",       "click", handleToggleGMModal);
 
   const overlay = document.getElementById("gm-modal");
   if (overlay) {
