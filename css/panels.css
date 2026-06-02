@@ -23,13 +23,18 @@
   height:        100%;
   background:    linear-gradient(90deg, #78909c, #90a4ae);
   border-radius: 99px;
-  transition:    width 0.5s ease;
+  transition:    width 0.5s ease, box-shadow 0.3s ease;
   position:      relative;
 }
 
-.ore-bar-fill.high { background: linear-gradient(90deg, #43a047, #66bb6a); }
+.ore-bar-fill.high {
+  background: linear-gradient(90deg, #43a047, #66bb6a);
+  box-shadow: 0 0 8px rgba(67,160,71,0.5);
+}
+
 .ore-bar-fill.full {
   background: linear-gradient(90deg, #e53935, #ff7043);
+  box-shadow: 0 0 12px rgba(229,57,53,0.6);
   animation:  pulseBar 1s ease-in-out infinite;
 }
 
@@ -94,6 +99,10 @@
   border-radius: var(--radius-md);
   text-align:    center;
   transition:    transform var(--transition), box-shadow var(--transition);
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  gap:           2px;
 }
 
 #btn-sell:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(67,160,71,0.4); }
@@ -101,6 +110,18 @@
 #btn-sell.pulse {
   animation: sellPulse 1.5s ease-in-out infinite;
   box-shadow: 0 0 18px rgba(67,160,71,0.5);
+}
+
+#btn-sell-amount {
+  font-size:   11px;
+  opacity:     0.8;
+  font-weight: 500;
+}
+
+#btn-sell-value {
+  font-size:   11px;
+  opacity:     0.65;
+  font-weight: 400;
 }
 
 @keyframes sellPulse {
@@ -117,12 +138,13 @@
   background:     var(--bg-card);
   border:         1px solid var(--border);
   border-radius:  var(--radius-md);
-  transition:     border-color var(--transition), background var(--transition);
+  transition:     border-color var(--transition), background var(--transition), box-shadow var(--transition);
 }
 
 .upgrade-btn.can-afford {
   border-color: var(--accent);
   background:   var(--accent-dim);
+  box-shadow:   0 0 10px rgba(255,193,7,0.2);
 }
 
 .upgrade-btn-label { font-size: 11px; color: var(--text-muted); }
