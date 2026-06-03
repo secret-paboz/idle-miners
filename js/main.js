@@ -10,7 +10,7 @@ import {
   formatNumber,
   tryAutoSell,
 } from "./economy.js";
-import { initTabs, switchTab, showToast, showOfflineProgress, showBootSpinner, hideBootSpinner } from "./ui/ui-core.js";
+import { initTabs, switchTab, showToast, showOfflineProgress, showBootSpinner, hideBootSpinner, updateFabGmVisibility } from "./ui/ui-core.js";
 import { renderHUD } from "./ui/ui-hud.js";
 import { renderMinePanel, animateMiningTick } from "./ui/ui-mine.js";
 import { renderPetCooldowns } from "./ui/ui-pets.js";
@@ -29,6 +29,13 @@ import { bindLeaderboardEvents } from "./handlers/leaderboard.js";
 import { bindSettingsEvents }    from "./handlers/settings.js";
 import { bindGMEvents }          from "./handlers/gm.js";
 import { bindDelegatedEvents, handleAuthChange } from "./handlers/auth.js";
+
+// ============================================================
+// GLOBALS — expose helpers needed by ui-core leaderboard renderer
+// ============================================================
+
+window.__formatNumber = formatNumber;
+window.__gameState    = { get state() { return state; } };
 
 // ============================================================
 // SECTION 1 — BOOT SEQUENCE
@@ -65,6 +72,7 @@ async function boot() {
   renderGMPanel();
   switchTab("mine");
   initTabs();
+  updateFabGmVisibility();
   startGameLoop();
   startAutoSave();
   bindEvents();
