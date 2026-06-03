@@ -2,6 +2,11 @@
 // UI-CRATES.JS — Crates panel renderer + crate open animation
 // Covers: crate inventory cards, timed crate countdown timers,
 //         and the animateCrateOpen feedback function
+//
+// CHANGED:
+// - animateCrateOpen() — added showCrateReward() which injects
+//   a reward card above the inventory with pop-in animation,
+//   showing exactly what was earned. Auto-dismisses after 5s.
 // ============================================================
 
 import { state } from "../state.js";
@@ -89,8 +94,53 @@ export function renderCrateTimers() {
 
 export function animateCrateOpen(result) {
   if (!result.success) { showToast(result.message, "error"); return; }
+
   const loot = result.result;
-  showToast(`${result.crateData.name}: ${loot.label}! ${loot.description}`, "success", 4000);
+
+  // Show reward reveal card above the inventory
+  showCrateReward(result.crateData, loot);
+
+  showToast(`🎁 ${loot.label}! ${loot.description}`, "success", 4000);
   renderCratesPanel();
   renderBoosterBadges();
+}
+
+function showCrateReward(crateData, loot) {
+  // Remove any existing reward card first
+  const existing = document.getElementById("crate-reward-card");
+  if (existing) existing.remove();
+
+  const container = document.getElementById("crate-inventory");
+  if (!container) return;
+
+  const card     = document.createElement("div");
+  card.id        = "crate-reward-card";
+  card.className = "crate-reward-card";
+  card.innerHTML = `
+    <div class="crate-reward-inner">
+      <span class="crate-reward-icon">🎁</span>
+      <div class="crate-reward-text">
+        <div class="crate-reward-title">${loot.label}!</div>
+        <div class="crate-reward-desc">${loot.description}</div>
+      </div>
+      <button class="crate-reward-close" id="btn-reward-close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+  `;
+
+  container.parentNode.insertBefore(card, container);
+
+  document.getElementById("btn-reward-close").onclick = () => {
+    card.classList.add("hiding");
+    setTimeout(() => card.remove(), 300);
+  };
+
+  // Auto-dismiss after 5 seconds
+  setTimeout(() => {
+    if (document.getElementById("crate-reward-card")) {
+      card.classList.add("hiding");
+      setTimeout(() => card.remove(), 300);
+    }
+  }, 5000);
 }
