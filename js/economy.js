@@ -168,7 +168,8 @@ export function tickMining() {
   const power    = computeMiningPower();
   const mineTier = getMineTier(state.level);
   const ore      = rollOre(mineTier);
-  const oreMined = Math.min(power, maxCap - state.ore);
+  const rolled   = Math.max(1, Math.floor(Math.random() * power) + 1);
+  const oreMined = Math.min(rolled, maxCap - state.ore);
 
   state.ore         += oreMined;
   state.blocksMined += oreMined;
