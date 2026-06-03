@@ -1,0 +1,18 @@
+{
+  "name": "Idle Miners",
+  "short_name": "Idle Miners",
+  "description": "Browser-based idle mining game. Mine ore, upgrade gear, collect pets, and prestige through 9 dimensions.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "sprites/coal.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
