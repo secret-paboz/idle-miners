@@ -3,13 +3,16 @@
 // Covers: ore bar, mine stats, dimension selector,
 //         booster badges, upgrade buttons, tick & sell animations
 //
-// CHANGED:
-// - renderMineStats() — removed computeOreValue import and
-//   the setText("stat-ore-value") line (stat removed from HTML)
-// - renderOreBar() — added warning (70%) and danger (90%) bar states
-// - renderUpgradeButtons() — added cannot-afford class for gray-out
-// - animateMiningTick() — syncs bar color states every tick
-// - renderBoosterBadges() — adds expiring-soon pulse when < 5min left
+// CHANGED (UX pass):
+// - renderDimensionSelector() — lock label now reads "X Rebirths"
+//   instead of "X↺" for mobile clarity
+// - renderBoosterBadges() — empty state now shows a hint pointing
+//   to the Crates panel instead of bare "No active boosters"
+// - renderUpgradeButtons() — adds next-level preview text
+//   (+X ore/s for pickaxe, +X cap for backpack)
+// - animateMiningTick() — log entries now include ore sprite
+// - appendMiningLog() — ore type parameter passed through so
+//   the sprite path can be resolved
 // ============================================================
 
 import { state } from "../state.js";
@@ -83,6 +86,12 @@ function renderDimensionSelector() {
     const unlocked = state.dimensionUnlocked.includes(dim.id);
     const active   = state.dimension === dim.id;
     const color    = dim.theme?.accentColor || "#f5a623";
+
+    // Use readable label instead of symbol-only "5↺" — mobile has no hover tooltips
+    const lockLabel = `<div class="dim-card-lock">
+      <i class="fa-solid fa-lock"></i> ${dim.unlockAt} Rebirths
+    </div>`;
+
     return `
       <button
         class="dim-card ${active ? "active" : ""} ${unlocked ? "" : "locked"}"
@@ -95,7 +104,7 @@ function renderDimensionSelector() {
         <div class="dim-card-name">${dim.name}</div>
         ${unlocked
           ? `<div class="dim-card-multi">${dim.valueMulti}x</div>`
-          : `<div class="dim-card-lock"><i class="fa-solid fa-lock"></i> ${dim.unlockAt}↺</div>`
+          : lockLabel
         }
       </button>
     `;
@@ -119,9 +128,8 @@ export function renderBoosterBadges() {
   const badges = Object.entries(status)
     .filter(([, b]) => b.active)
     .map(([key, b]) => {
-      // Warn when under 5 minutes remaining
-      const msLeft  = b.endsAt - Date.now();
-      const urgent  = msLeft > 0 && msLeft < 5 * 60 * 1000;
+      const msLeft = b.endsAt - Date.now();
+      const urgent = msLeft > 0 && msLeft < 5 * 60 * 1000;
       return `
         <div class="booster-badge booster-${key} ${urgent ? "expiring-soon" : ""}">
           <i class="${boosterIcon(key)}"></i>
@@ -131,26 +139,46 @@ export function renderBoosterBadges() {
       `;
     }).join("");
 
-  container.innerHTML = (vipBadge + badges) || `<span class="no-boosters">No active boosters</span>`;
+  const hasContent = vipBadge || badges;
+
+  // Empty state: hint to open Crates instead of a dead-end message
+  container.innerHTML = hasContent || `
+    <div>
+      <span class="no-boosters"><i class="fa-solid fa-circle-info"></i> No active boosters</span>
+      <div class="no-boosters-hint">
+        <i class="fa-solid fa-gift"></i> Open crates to earn boosters
+      </div>
+    </div>
+  `;
 }
 
 function renderUpgradeButtons() {
   const { cash } = state;
 
-  const pCost   = pickaxeCost(state.pickaxeLevel);
-  const pAfford = cash >= pCost;
-  setText("btn-pickaxe-cost",  "$" + formatNumber(pCost));
-  setText("btn-pickaxe-level", "Lv." + state.pickaxeLevel);
+  // ── Pickaxe ──
+  const pCost        = pickaxeCost(state.pickaxeLevel);
+  const pAfford      = cash >= pCost;
+  const pNextPower   = computeMiningPower(); // current power with next level baked in via +1
+  // Preview: next level adds 1 base mining power (pickaxeLevel * 1 formula)
+  const pPowerNext   = pNextPower + 1;
+  setText("btn-pickaxe-cost",    "$" + formatNumber(pCost));
+  setText("btn-pickaxe-level",   "Lv." + state.pickaxeLevel);
+  setText("btn-pickaxe-preview", "+" + formatNumber(pPowerNext - pNextPower + 1) + " ore/s");
   toggleClass("btn-upgrade-pickaxe", "can-afford",    pAfford);
   toggleClass("btn-upgrade-pickaxe", "cannot-afford", !pAfford);
 
-  const bCost   = backpackCost(state.backpackLevel);
-  const bAfford = cash >= bCost;
-  setText("btn-backpack-cost",  "$" + formatNumber(bCost));
-  setText("btn-backpack-level", "Lv." + state.backpackLevel);
+  // ── Backpack ──
+  const bCost       = backpackCost(state.backpackLevel);
+  const bAfford     = cash >= bCost;
+  // Preview: next level adds 15 base capacity (20 + backpackLevel * 15 formula)
+  const bCapPreview = 15;
+  setText("btn-backpack-cost",    "$" + formatNumber(bCost));
+  setText("btn-backpack-level",   "Lv." + state.backpackLevel);
+  setText("btn-backpack-preview", "+" + bCapPreview + " cap");
   toggleClass("btn-upgrade-backpack", "can-afford",    bAfford);
   toggleClass("btn-upgrade-backpack", "cannot-afford", !bAfford);
 
+  // ── Sell button state ──
   const fillPct = state.ore / computeMaxCapacity();
   toggleClass("btn-sell", "pulse",  fillPct >= 0.9);
   toggleClass("btn-sell", "urgent", fillPct >= 1.0);
@@ -192,7 +220,7 @@ export function animateMiningTick(oreMined, oreType) {
   if (oreMined > 0) {
     const oreId   = state.currentOreId || "dirt";
     const oreName = ORE_TYPES[oreId]?.name || "Ore";
-    appendMiningLog("+" + formatNumber(oreMined) + " " + oreName, "ore");
+    appendMiningLog("+" + formatNumber(oreMined) + " " + oreName, "ore", oreId);
   }
 }
 
@@ -204,17 +232,18 @@ export function animateSell(cashEarned) {
     void cashEl.offsetWidth;
     cashEl.classList.add("cash-flash");
   }
-  appendMiningLog("+" + formatNumber(cashEarned) + " sold", "sell");
+  appendMiningLog("$" + formatNumber(cashEarned) + " sold", "sell", null);
   showToast(`Sold for $${formatNumber(cashEarned)}!`, "success", 2000);
 }
 
 const MAX_LOG_ENTRIES = 40;
 
-function appendMiningLog(text, type) {
+// oreId: string like "coal" | "diamond" | null (for sell entries)
+function appendMiningLog(text, type, oreId) {
   const feed = document.getElementById("mining-log-feed");
   if (!feed) return;
 
-  // Remove empty placeholder
+  // Remove empty placeholder on first entry
   const empty = feed.querySelector(".mining-log-empty");
   if (empty) empty.remove();
 
@@ -222,7 +251,20 @@ function appendMiningLog(text, type) {
   entry.className = `mining-log-entry mining-log-${type}`;
 
   const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  entry.innerHTML = `<span class="mining-log-time">${time}</span><span class="mining-log-text">${text}</span>`;
+
+  // Ore sprite for mining entries; coin icon for sell entries
+  let spriteHtml = "";
+  if (type === "ore" && oreId) {
+    spriteHtml = `<img class="mining-log-sprite" src="public/sprites/${oreId}.png" alt="${oreId}" draggable="false">`;
+  } else if (type === "sell") {
+    spriteHtml = `<i class="fa-solid fa-coins" style="font-size:12px;color:var(--color-success);flex-shrink:0"></i>`;
+  }
+
+  entry.innerHTML = `
+    <span class="mining-log-time">${time}</span>
+    ${spriteHtml}
+    <span class="mining-log-text">${text}</span>
+  `;
 
   feed.prepend(entry);
 
