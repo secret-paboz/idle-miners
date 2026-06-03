@@ -38,38 +38,54 @@
 <div id="app">
 
   <!-- ============================================================
-       HUD — Always-visible top bar
+       HUD — Always-visible top bar (Option B: two rows)
        ============================================================ -->
   <header id="hud">
 
-    <div class="hud-stat">
-      <span class="hud-stat-value" id="hud-cash">$0</span>
-      <span class="hud-stat-label">Cash</span>
-      <span class="hud-stat-rate" id="hud-income-rate"></span>
+    <!-- ── Row 1: Cash · Nickname (center) · Level/Dimension ── -->
+    <div class="hud-row hud-row-1">
+
+      <div class="hud-stat">
+        <span class="hud-stat-value" id="hud-cash">$0</span>
+        <span class="hud-stat-rate"  id="hud-income-rate"></span>
+      </div>
+
+      <div class="hud-identity">
+        <button id="hud-nickname" class="hud-nickname-btn">Guest <i class="fa-solid fa-chart-simple hud-nickname-icon"></i></button>
+        <span id="hud-guest-badge" style="display:none">GUEST</span>
+        <!-- VIP badge injected here by ui-hud.js -->
+      </div>
+
+      <div class="hud-stat hud-stat-right">
+        <span class="hud-stat-value" id="hud-level">Lv.1</span>
+        <span class="hud-stat-label" id="hud-dimension">Earth</span>
+      </div>
+
     </div>
 
-    <div class="hud-stat">
-      <span class="hud-stat-value" id="hud-shards">0 ✦</span>
-      <span class="hud-stat-label">Shards</span>
-    </div>
+    <!-- ── Row 2: Shards · XP inline · Rebirths ── -->
+    <div class="hud-row hud-row-2">
 
-    <button id="hud-nickname" class="hud-nickname-btn">Guest <i class="fa-solid fa-chart-simple hud-nickname-icon"></i></button>
-    <span id="hud-guest-badge" style="display:none">GUEST</span>
+      <div class="hud-stat">
+        <span class="hud-stat-value hud-stat-value--sm" id="hud-shards">0 ✦</span>
+        <span class="hud-stat-label">Shards</span>
+      </div>
 
-    <div class="hud-stat" style="margin-left:auto">
-      <span class="hud-stat-value" id="hud-level">Lv.1</span>
-      <span class="hud-stat-label" id="hud-dimension">Earth</span>
-    </div>
+      <!-- Inline XP progress -->
+      <div class="hud-xp-inline">
+        <span class="hud-xp-lvl" id="hud-xp-from">Lv.1</span>
+        <div class="hud-xp-track">
+          <div class="hud-xp-fill" id="hud-xp-fill" style="width:0%"></div>
+        </div>
+        <span class="hud-xp-pct" id="hud-xp-label">0%</span>
+        <span class="hud-xp-lvl" id="hud-xp-to">Lv.2</span>
+      </div>
 
-    <div class="hud-stat">
-      <span class="hud-stat-value" id="hud-rebirths">0 ↺</span>
-      <span class="hud-stat-label">Rebirths</span>
-    </div>
+      <div class="hud-stat hud-stat-right">
+        <span class="hud-stat-value hud-stat-value--sm" id="hud-rebirths">0 ↺</span>
+        <span class="hud-stat-label">Rebirths</span>
+      </div>
 
-    <!-- XP bar stretches across bottom of HUD -->
-    <div id="hud-xp-bar">
-      <div id="hud-xp-fill" style="width:0%"></div>
-      <span id="hud-xp-label"></span>
     </div>
 
   </header>
