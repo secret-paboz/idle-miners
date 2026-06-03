@@ -52,7 +52,7 @@
       <span class="hud-stat-label">Shards</span>
     </div>
 
-    <span id="hud-nickname">Guest</span>
+    <button id="hud-nickname" class="hud-nickname-btn">Guest</button>
     <span id="hud-guest-badge" style="display:none">GUEST</span>
 
     <div class="hud-stat" style="margin-left:auto">
@@ -93,42 +93,6 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Stats</div>
-        <div class="stats-grid">
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Mining Power</div>
-            <div class="stat-cell-value" id="stat-mining-power">0/s</div>
-          </div>
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Dimension</div>
-            <div class="stat-cell-value" id="stat-dimension">Earth</div>
-          </div>
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Dim Bonus</div>
-            <div class="stat-cell-value" id="stat-dimension-multi">1x</div>
-          </div>
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Blocks Mined</div>
-            <div class="stat-cell-value" id="stat-blocks-mined">0</div>
-          </div>
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Pickaxe</div>
-            <div class="stat-cell-value" id="stat-pickaxe-level">Lv.1</div>
-          </div>
-
-          <div class="stat-cell">
-            <div class="stat-cell-label">Backpack</div>
-            <div class="stat-cell-value" id="stat-backpack-level">Lv.1</div>
-          </div>
-
-        </div>
-      </div>
 
       <div class="card">
         <div class="card-title">Actions</div>
@@ -449,6 +413,52 @@
      ENTRY POINT — ES Module
      ============================================================ -->
 <script type="module" src="js/main.js"></script>
+
+<!-- Player Stats Modal -->
+<div id="stats-modal-overlay" class="stats-modal-overlay" style="display:none">
+  <div class="stats-modal">
+    <div class="stats-modal-header">
+      <div class="stats-modal-title"><i class="fa-solid fa-chart-simple"></i> Player Stats</div>
+      <button class="stats-modal-close" id="btn-stats-modal-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="stats-modal-body">
+      <div class="stats-modal-grid">
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Mining Power</div>
+          <div class="stats-modal-value" id="stat-mining-power">0/s</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Dimension</div>
+          <div class="stats-modal-value" id="stat-dimension">Earth</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Dim Bonus</div>
+          <div class="stats-modal-value" id="stat-dimension-multi">1x</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Blocks Mined</div>
+          <div class="stats-modal-value" id="stat-blocks-mined">0</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Pickaxe</div>
+          <div class="stats-modal-value" id="stat-pickaxe-level">Lv.1</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Backpack</div>
+          <div class="stats-modal-value" id="stat-backpack-level">Lv.1</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Cash Earned</div>
+          <div class="stats-modal-value" id="stat-cash-earned">$0</div>
+        </div>
+        <div class="stats-modal-cell">
+          <div class="stats-modal-label">Rebirths</div>
+          <div class="stats-modal-value" id="stat-rebirths">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
