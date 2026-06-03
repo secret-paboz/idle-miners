@@ -26,7 +26,7 @@ A browser-based idle mining game inspired by the Discord Idle Miner bot. Mine or
 - 13 mine tiers unlock as you level up (Surface Mine → Ancient Ruins)
 - Pickaxe and Backpack upgrades scale with a 1.15× cost curve
 - XP and levelling system — higher level = better ore tiers
-- Offline progress calculated on return (capped at 8h for regular players, 12h for VIP)
+- Offline progress calculated on return (capped at 8h for regular, 12h for VIP). VIP players cycle through full mine→sell loops for the entire offline duration — regular players fill once.
 
 </details>
 
@@ -108,7 +108,7 @@ Active boosters appear as badges in the Mine panel with a live countdown timer.
 VIP is granted by a Game Master and lasts for a set number of days. VIP players receive:
 
 - **2× Sell Value** on all ore
-- **Auto-Sell** when backpack hits 100% capacity
+- **Auto-Sell** when backpack hits 100% capacity — cycles mine→sell repeatedly during offline progress too
 - **12h offline mining** (vs 8h for regular players)
 - A pulsating gold **👑 VIP** badge next to their nickname in the HUD
 - A pulsating gold **👑 VIP** badge next to their nickname in the leaderboard
@@ -197,7 +197,7 @@ idle-miners/
 └── js/
     ├── main.js             # Entry point, game loop, event binding
     ├── state.js            # Global game state + localStorage save/load
-    ├── economy.js          # All game math (mining, selling, upgrades)
+    ├── economy.js          # All game math (mining, selling, upgrades). VIP offline loop fix.
     ├── auth.js             # Login, register, logout, guest mode
     ├── supabase.js         # Cloud save gateway — POSTs to api/save.js
     ├── gm.js               # Game Master role check + GM actions
@@ -206,11 +206,11 @@ idle-miners/
     ├── prestige.js         # Rebirth/prestige gates + shop
     ├── leaderboard.js      # Fetch + submit leaderboard scores
     ├── ui/
-    │   ├── ui-core.js      # Shared helpers, tab navigation, toast, modal
+    │   ├── ui-core.js      # Shared helpers, tab navigation, toast, modal, offline progress modal, cloud banner
     │   ├── ui-hud.js       # Top HUD bar renderer
-    │   ├── ui-mine.js      # Mine panel + mining animations
+    │   ├── ui-mine.js      # Mine panel + mining animations, bar danger states, affordability
     │   ├── ui-pets.js      # Pets panel renderer
-    │   ├── ui-crates.js    # Crates panel + crate open animation
+    │   ├── ui-crates.js    # Crates panel + crate reward card animation
     │   ├── ui-prestige.js  # Prestige panel renderer
     │   └── ui-settings.js  # Settings, leaderboard, register modal, GM panel
     └── data/
