@@ -5,7 +5,7 @@
 // ============================================================
 
 import { state } from "../state.js";
-import { formatNumber } from "../economy.js";
+import { formatNumber, computeMiningPower } from "../economy.js";
 import { getDimension } from "../data/dimensions-data.js";
 import { setText, setStyle, xpForLevel } from "./ui-core.js";
 import { isGameMasterSync } from "../gm.js";
