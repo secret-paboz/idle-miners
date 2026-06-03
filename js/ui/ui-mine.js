@@ -67,9 +67,9 @@ function renderOreBar() {
     else if (percent >= 70)  fill.classList.add("warning");
   }
 
-  // Pulse sell button when backpack is nearly full
-  toggleClass("btn-sell", "pulse",  percent >= 90);
-  toggleClass("btn-sell", "urgent", percent >= 100);
+  // Pulse sell button based on fill level
+  toggleClass("btn-sell", "sell-warning", percent >= 80 && percent < 100);
+  toggleClass("btn-sell", "urgent",       percent >= 100);
 }
 
 function renderMineStats() {
@@ -181,8 +181,8 @@ function renderUpgradeButtons() {
 
   // ── Sell button state ──
   const fillPct = state.ore / computeMaxCapacity();
-  toggleClass("btn-sell", "pulse",  fillPct >= 0.9);
-  toggleClass("btn-sell", "urgent", fillPct >= 1.0);
+  toggleClass("btn-sell", "sell-warning", fillPct >= 0.8 && fillPct < 1.0);
+  toggleClass("btn-sell", "urgent",       fillPct >= 1.0);
   setText("btn-sell-amount", formatNumber(state.ore) + " ore");
 }
 
@@ -209,8 +209,8 @@ export function animateMiningTick(oreMined, oreType) {
   }
 
   const fillPct = current / max;
-  toggleClass("btn-sell", "pulse",  fillPct >= 0.9);
-  toggleClass("btn-sell", "urgent", fillPct >= 1.0);
+  toggleClass("btn-sell", "sell-warning", fillPct >= 0.8 && fillPct < 1.0);
+  toggleClass("btn-sell", "urgent",       fillPct >= 1.0);
 
   const { cash } = state;
   toggleClass("btn-upgrade-pickaxe",  "can-afford",    cash >= pickaxeCost(state.pickaxeLevel));
@@ -239,6 +239,15 @@ export function animateSell(cashEarned) {
 
 const MAX_LOG_ENTRIES = 40;
 
+// Returns a human-readable relative time string for the mining log
+// e.g. "just now", "5s ago", "2m ago"
+function _relativeTime(ts) {
+  const diffSec = Math.floor((Date.now() - ts) / 1000);
+  if (diffSec < 5)  return "just now";
+  if (diffSec < 60) return diffSec + "s ago";
+  return Math.floor(diffSec / 60) + "m ago";
+}
+
 // oreId: string like "coal" | "diamond" | null (for sell entries)
 function appendMiningLog(text, type, oreId) {
   const feed = document.getElementById("mining-log-feed");
@@ -251,7 +260,9 @@ function appendMiningLog(text, type, oreId) {
   const entry = document.createElement("div");
   entry.className = `mining-log-entry mining-log-${type}`;
 
-  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const now  = Date.now();
+  const time = _relativeTime(now);
+  // Store timestamp on entry for live updates (future use)
 
   // Ore sprite for mining entries; coin icon for sell entries
   let spriteHtml = "";
