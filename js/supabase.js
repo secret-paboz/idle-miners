@@ -10,6 +10,11 @@ import { state, saveState } from "./state.js";
 // SECTION 1 — SUPABASE INITIALIZATION
 // ============================================================
 
+// SECURITY NOTE: The anon key is intentionally exposed to the client.
+// It is a public key — access is governed entirely by Supabase Row Level
+// Security (RLS) policies. The service role key (which bypasses RLS) is NEVER
+// sent to the client; it lives only in Vercel env vars and is used exclusively
+// by the serverless api/save.js validator.
 const SUPABASE_URL      = window.__ENV__?.SUPABASE_URL      || "";
 const SUPABASE_ANON_KEY = window.__ENV__?.SUPABASE_ANON_KEY || "";
 
@@ -112,6 +117,9 @@ export async function cloudSave() {
 // ============================================================
 // SECTION 3 — CLOUD LOAD
 // Reads directly via anon client — reads are safe.
+// VIP status (is_vip, vip_expires_at) is always pulled fresh from Supabase
+// here and overrides whatever is in localStorage, preventing client-side
+// tampering with VIP expiry.
 // ============================================================
 
 export async function cloudLoad() {
