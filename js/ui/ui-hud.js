@@ -5,8 +5,9 @@
 // ============================================================
 
 import { state } from "../state.js";
-import { formatNumber, computeMiningPower } from "../economy.js";
+import { formatNumber, computeMiningPower, computeOreValue } from "../economy.js";
 import { getDimension } from "../data/dimensions-data.js";
+import { getMineTier, rollOre } from "../data/mines-data.js";
 import { setText, setStyle, xpForLevel } from "./ui-core.js";
 import { isGameMasterSync } from "../gm.js";
 
@@ -15,9 +16,16 @@ export function renderHUD() {
   const dimension   = getDimension(state.dimension);
   const dimColor    = dimension?.theme?.accentColor || "#ffffff";
 
+  // ── Nickname button — preserve the stats icon, only update text node ──
   const nicknameEl = document.getElementById("hud-nickname");
   if (nicknameEl) {
-    nicknameEl.textContent = state.nickname;
+    // Update only the first text node so the icon stays intact
+    const textNode = [...nicknameEl.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+    if (textNode) {
+      textNode.textContent = state.nickname + " ";
+    } else {
+      nicknameEl.textContent = state.nickname + " ";
+    }
     nicknameEl.style.color = dimColor;
 
     // Wire click once
@@ -45,13 +53,31 @@ export function renderHUD() {
   setText("hud-rebirths",  state.rebirths + " ↺");
   setText("hud-dimension", dimension?.name || "Earth");
 
-  // XP bar
+  // ── Passive income rate — "+$X/s" shown under Cash ──
+  const rateEl = document.getElementById("hud-income-rate");
+  if (rateEl) {
+    const power    = computeMiningPower();
+    const mineTier = getMineTier(state.level);
+    const ore      = rollOre(mineTier);
+    const oreValue = computeOreValue(ore.id);
+    // Average ore per second * value per block = cash/sec estimate
+    const cashPerSec = Math.floor((power / 2) * oreValue);
+    rateEl.textContent = cashPerSec > 0 ? "+$" + formatNumber(cashPerSec) + "/s" : "";
+  }
+
+  // ── XP bar + label ──
   const xpFloor   = xpForLevel(state.level);
   const xpCeil    = xpForLevel(state.level + 1);
   const xpInLevel = state.xp - xpFloor;
   const xpNeeded  = xpCeil - xpFloor;
   const xpPercent = Math.min((xpInLevel / xpNeeded) * 100, 100);
   setStyle("hud-xp-fill", "width", xpPercent + "%");
+
+  // XP label: "Lv.4 → Lv.5 · 72%"
+  const xpLabel = document.getElementById("hud-xp-label");
+  if (xpLabel) {
+    xpLabel.textContent = `Lv.${state.level} → Lv.${state.level + 1} · ${Math.floor(xpPercent)}%`;
+  }
 
   // Tint XP bar with dimension accent colour
   const xpFill = document.getElementById("hud-xp-fill");
