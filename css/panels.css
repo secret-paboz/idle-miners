@@ -658,3 +658,55 @@
 
 .btn-buy-prestige.disabled { opacity: 0.35; cursor: not-allowed; }
 .btn-buy-prestige.maxed    { background: var(--bg-secondary); color: var(--text-muted); cursor: default; }
+
+/* ============================================================
+   MINING LOG FEED
+   ============================================================ */
+
+.mining-log-feed {
+  max-height:   180px;
+  overflow-y:   auto;
+  display:      flex;
+  flex-direction: column;
+  gap:          4px;
+  font-size:    12px;
+  padding:      2px 0;
+}
+
+.mining-log-feed::-webkit-scrollbar       { width: 4px; }
+.mining-log-feed::-webkit-scrollbar-track { background: transparent; }
+.mining-log-feed::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+
+.mining-log-empty {
+  color:      var(--text-muted);
+  font-size:  12px;
+  text-align: center;
+  padding:    12px 0;
+}
+
+.mining-log-entry {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       4px 8px;
+  border-radius: var(--radius-sm);
+  background:    var(--bg-secondary);
+  animation:     logFadeIn 0.2s ease;
+}
+
+@keyframes logFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mining-log-time {
+  color:       var(--text-muted);
+  font-size:   10px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.mining-log-text  { font-weight: 600; }
+
+.mining-log-ore   .mining-log-text { color: var(--text-primary); }
+.mining-log-sell  .mining-log-text { color: var(--color-success); }
