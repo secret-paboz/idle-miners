@@ -24,12 +24,6 @@ export function renderSettingsPanel() {
   const authSection = document.getElementById("settings-auth");
   if (!authSection) return;
 
-  const now          = Date.now();
-  const isActiveVip  = auth.isVip && state.vipExpiresAt > now;
-  const vipExpiryStr = isActiveVip
-    ? new Date(state.vipExpiresAt).toLocaleDateString()
-    : null;
-
   if (auth.loggedIn) {
     authSection.innerHTML = `
       <div class="settings-logged-in-wrap">
@@ -42,22 +36,6 @@ export function renderSettingsPanel() {
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
           </button>
         </div>
-
-        ${isActiveVip ? `
-          <div class="vip-status-card active">
-            <div class="vip-card-pulse"></div>
-            <div class="vip-status-header">
-              <span class="vip-badge vip-pulse"><i class="fa-solid fa-crown"></i> VIP</span>
-              <span class="vip-status-title">Active</span>
-              <span class="vip-expiry">· Expires ${vipExpiryStr}</span>
-            </div>
-            <ul class="vip-perks-list">
-              <li><i class="fa-solid fa-check"></i> 2× Sell Value</li>
-              <li><i class="fa-solid fa-check"></i> Auto-Sell when full</li>
-              <li><i class="fa-solid fa-check"></i> 12h offline mining</li>
-            </ul>
-          </div>
-        ` : ``}
       </div>
     `;
   } else {
