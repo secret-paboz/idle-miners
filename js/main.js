@@ -81,11 +81,12 @@ async function boot() {
 
 let gameLoopInterval  = null;
 let tickCount         = 0;
-const TICK_MS          = 1000;
-const RENDER_HUD_EVERY  = 1;
-const RENDER_MINE_EVERY = 2;
-const SAVE_LOCAL_EVERY  = 30;
-const SUBMIT_LB_EVERY   = 300;
+const TICK_MS             = 1000;
+const RENDER_HUD_EVERY    = 1;   // every tick  — HUD, pet cooldowns, crate timers
+const RENDER_MINE_EVERY   = 2;   // every 2s    — mine panel (slightly heavier render)
+const SAVE_LOCAL_EVERY    = 30;  // every 30s   — localStorage save
+const SUBMIT_LB_EVERY     = 300; // every 5min  — leaderboard score submit
+const CRATE_CHECK_EVERY   = 30;  // every 30s   — timed crate award check (timestamps do the real gating)
 
 let lastAutoSellToast = 0;
 const AUTO_SELL_TOAST_COOLDOWN = 15 * 1000;
@@ -110,17 +111,24 @@ function startGameLoop() {
       }
     }
 
+    // Render — every 1s
     if (tickCount % RENDER_HUD_EVERY  === 0) renderHUD();
-    if (tickCount % RENDER_MINE_EVERY === 0) renderMinePanel();
     if (tickCount % RENDER_HUD_EVERY  === 0) renderPetCooldowns();
     if (tickCount % RENDER_HUD_EVERY  === 0) renderCrateTimers();
+
+    // Render — every 2s
+    if (tickCount % RENDER_MINE_EVERY === 0) renderMinePanel();
+
+    // Save locally — every 30s
     if (tickCount % SAVE_LOCAL_EVERY  === 0) saveState();
 
+    // Submit leaderboard — every 5min
     if (tickCount % SUBMIT_LB_EVERY === 0 && !state.isGuest) {
       submitLeaderboardScore().catch(() => {});
     }
 
-    checkAndAwardTimedCrates();
+    // Award timed crates — every 30s (timestamps do the real gating)
+    if (tickCount % CRATE_CHECK_EVERY === 0) checkAndAwardTimedCrates();
   }, TICK_MS);
 }
 
