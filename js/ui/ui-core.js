@@ -611,3 +611,55 @@ export function pickaxeCost(level) {
 export function backpackCost(level) {
   return Math.floor(25 * Math.pow(1.15, level - 1));
 }
+
+// ============================================================
+// VIP MODAL
+// ============================================================
+
+export function openVipModal() {
+  const overlay = document.getElementById("vip-modal");
+  if (!overlay) return;
+
+  const now         = Date.now();
+  const isActiveVip = state.isVip && state.vipExpiresAt > now;
+
+  const activeEl   = document.getElementById("vip-modal-active");
+  const inactiveEl = document.getElementById("vip-modal-inactive");
+
+  if (activeEl)   activeEl.style.display   = isActiveVip ? "block" : "none";
+  if (inactiveEl) inactiveEl.style.display = isActiveVip ? "none"  : "block";
+
+  // Populate expiry line for active VIP
+  if (isActiveVip) {
+    const expiryEl = document.getElementById("vip-modal-expiry");
+    if (expiryEl) {
+      const expiryDate = new Date(state.vipExpiresAt);
+      const dateStr    = expiryDate.toLocaleDateString(undefined, {
+        year: "numeric", month: "long", day: "numeric"
+      });
+      const timeStr = expiryDate.toLocaleTimeString(undefined, {
+        hour: "2-digit", minute: "2-digit"
+      });
+      expiryEl.textContent = `Expires on ${dateStr} at ${timeStr}`;
+    }
+  }
+
+  overlay.style.display = "flex";
+
+  // Wire close button once
+  const closeBtn = document.getElementById("btn-vip-modal-close");
+  if (closeBtn && !closeBtn._vipWired) {
+    closeBtn.addEventListener("click", closeVipModal);
+    closeBtn._vipWired = true;
+  }
+
+  // Close on backdrop click
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeVipModal();
+  }, { once: true });
+}
+
+export function closeVipModal() {
+  const overlay = document.getElementById("vip-modal");
+  if (overlay) overlay.style.display = "none";
+}
