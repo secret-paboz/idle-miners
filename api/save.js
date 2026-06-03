@@ -294,17 +294,38 @@ export default async function handler(req, res) {
     return res.status(403).json({ success: false, message: "User ID mismatch." });
   }
 
-  // ── Step 2: Fetch player role ────────────────────────
-  let playerRole = 0;
+  // ── Step 2: Fetch player role + authoritative VIP status ───
+  // VIP fields are NEVER trusted from the client. We always read
+  // is_vip and vip_expires_at from Supabase and write them back
+  // unchanged, preventing localStorage tampering with VIP expiry.
+  let playerRole    = 0;
+  let serverIsVip   = false;
+  let serverVipExp  = 0;
   try {
     const { data: roleData } = await admin
       .from("player_saves")
-      .select("role")
+      .select("role, is_vip, vip_expires_at")
       .eq("id", userId)
       .single();
-    playerRole = roleData?.role ?? 0;
+    playerRole   = roleData?.role           ?? 0;
+    serverIsVip  = roleData?.is_vip         ?? false;
+    serverVipExp = roleData?.vip_expires_at ?? 0;
+
+    // Auto-expire VIP server-side if the timestamp has passed
+    const now = Date.now();
+    if (serverIsVip && serverVipExp > 0 && serverVipExp < now) {
+      serverIsVip  = false;
+      serverVipExp = 0;
+      // Write the expiry immediately so it's consistent in DB
+      await admin
+        .from("player_saves")
+        .update({ is_vip: false, vip_expires_at: 0 })
+        .eq("id", userId);
+    }
   } catch {
-    playerRole = 0;
+    playerRole   = 0;
+    serverIsVip  = false;
+    serverVipExp = 0;
   }
 
   const isGM = playerRole === 99;
@@ -326,12 +347,16 @@ export default async function handler(req, res) {
 
   // ── Step 4: Write to Supabase ────────────────────────
   try {
+    // Strip client-supplied VIP fields from game_data and replace
+    // with the authoritative server values fetched in Step 2.
+    const sanitizedData = { ...gameData, isVip: serverIsVip, vipExpiresAt: serverVipExp };
+
     const row = {
       id:         userId,
       nickname:   typeof gameData.nickname === "string"
         ? gameData.nickname.slice(0, 32)
         : "Player",
-      game_data:  JSON.stringify(gameData),
+      game_data:  JSON.stringify(sanitizedData),
       updated_at: new Date().toISOString(),
     };
 
