@@ -318,8 +318,196 @@
 }
 
 /* ============================================================
-   GM MODAL
+   SECTION 2b — DANGER MODAL VARIANT
    ============================================================ */
+
+/* Warning icon above title */
+.modal-danger-icon {
+  width:           44px;
+  height:          44px;
+  background:      rgba(244,67,54,0.12);
+  border-radius:   50%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       20px;
+  color:           var(--color-error);
+  margin:          0 auto 14px;
+}
+
+/* Danger modal box — red border */
+.modal-box.modal-danger {
+  border-color: rgba(244,67,54,0.4);
+}
+
+/* Delete/confirm button — red */
+.btn-modal-danger {
+  background: var(--color-error);
+  color:      #fff;
+}
+
+.btn-modal-danger:hover { opacity: 0.88; }
+
+/* ============================================================
+   SECTION 5 — OFFLINE PROGRESS MODAL
+   ============================================================ */
+
+#offline-modal-overlay {
+  display:         none;
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  z-index:         600;
+  align-items:     center;
+  justify-content: center;
+  padding:         20px;
+}
+
+#offline-modal-overlay.visible {
+  display:   flex;
+  animation: fadeIn 0.25s ease;
+}
+
+.offline-modal {
+  background:    var(--bg-card);
+  border:        1px solid var(--border-bright);
+  border-radius: var(--radius-xl);
+  padding:       24px 20px;
+  width:         100%;
+  max-width:     340px;
+  text-align:    center;
+  animation:     slideUp 0.25s cubic-bezier(0.32,0.72,0,1);
+}
+
+.offline-modal-icon  { font-size: 36px; margin-bottom: 10px; }
+.offline-modal-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+
+.offline-modal-time {
+  font-size:     13px;
+  color:         var(--text-muted);
+  margin-bottom: 18px;
+  line-height:   1.5;
+}
+
+.offline-modal-time strong { color: var(--accent); }
+
+.offline-modal-stats {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   8px;
+  margin-bottom:         18px;
+}
+
+.offline-stat {
+  background:    var(--bg-secondary);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding:       10px 8px;
+}
+
+.offline-stat-value {
+  display:     block;
+  font-size:   17px;
+  font-weight: 700;
+  color:       var(--accent);
+}
+
+.offline-stat-label {
+  display:   block;
+  font-size: 11px;
+  color:     var(--text-muted);
+  margin-top: 2px;
+}
+
+.btn-offline-collect {
+  width:         100%;
+  padding:       12px;
+  background:    var(--accent);
+  color:         #000;
+  font-weight:   700;
+  font-size:     14px;
+  border-radius: var(--radius-md);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  gap:           8px;
+  transition:    opacity var(--transition), transform var(--transition);
+}
+
+.btn-offline-collect:hover  { opacity: 0.88; }
+.btn-offline-collect:active { transform: scale(0.97); }
+
+/* ============================================================
+   SECTION 6 — CRATE REWARD CARD
+   ============================================================ */
+
+.crate-reward-card {
+  background:    var(--bg-card);
+  border:        1px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  margin-bottom: 10px;
+  overflow:      hidden;
+  animation:     reward-pop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.crate-reward-card.hiding {
+  animation: reward-hide 0.3s ease forwards;
+}
+
+@keyframes reward-pop {
+  from { opacity: 0; transform: scale(0.85) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes reward-hide {
+  from { opacity: 1; transform: scale(1); max-height: 200px; }
+  to   { opacity: 0; transform: scale(0.9); max-height: 0; padding: 0; }
+}
+
+.crate-reward-inner {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  padding:     12px 14px;
+}
+
+.crate-reward-icon  { font-size: 26px; flex-shrink: 0; }
+
+.crate-reward-text  { flex: 1; }
+
+.crate-reward-title {
+  font-size:   13px;
+  font-weight: 700;
+  color:       var(--color-success);
+  margin-bottom: 2px;
+}
+
+.crate-reward-desc {
+  font-size: 12px;
+  color:     var(--text-muted);
+}
+
+.crate-reward-close {
+  width:           28px;
+  height:          28px;
+  border-radius:   50%;
+  background:      var(--bg-secondary);
+  border:          1px solid var(--border);
+  color:           var(--text-muted);
+  font-size:       12px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex-shrink:     0;
+  cursor:          pointer;
+  transition:      background var(--transition), color var(--transition);
+}
+
+.crate-reward-close:hover {
+  background: var(--border-bright);
+  color:      var(--text-primary);
+}
 
 .gm-modal-overlay {
   position:        fixed;
