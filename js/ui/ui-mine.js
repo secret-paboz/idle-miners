@@ -6,6 +6,10 @@
 // CHANGED:
 // - renderMineStats() — removed computeOreValue import and
 //   the setText("stat-ore-value") line (stat removed from HTML)
+// - renderOreBar() — added warning (70%) and danger (90%) bar states
+// - renderUpgradeButtons() — added cannot-afford class for gray-out
+// - animateMiningTick() — syncs bar color states every tick
+// - renderBoosterBadges() — adds expiring-soon pulse when < 5min left
 // ============================================================
 
 import { state } from "../state.js";
@@ -49,9 +53,14 @@ function renderOreBar() {
   const fill = document.getElementById("ore-bar-fill");
   if (fill) {
     fill.className = "ore-bar-fill";
-    if (percent >= 100)      fill.classList.add("full");
-    else if (percent >= 75)  fill.classList.add("high");
+    if      (percent >= 100) fill.classList.add("full");
+    else if (percent >= 90)  fill.classList.add("danger");
+    else if (percent >= 70)  fill.classList.add("warning");
   }
+
+  // Pulse sell button when backpack is nearly full
+  toggleClass("btn-sell", "pulse",  percent >= 90);
+  toggleClass("btn-sell", "urgent", percent >= 100);
 }
 
 function renderMineStats() {
@@ -109,13 +118,18 @@ export function renderBoosterBadges() {
 
   const badges = Object.entries(status)
     .filter(([, b]) => b.active)
-    .map(([key, b]) => `
-      <div class="booster-badge booster-${key}">
-        <i class="${boosterIcon(key)}"></i>
-        <span class="booster-text">${b.multiplier}x ${boosterLabel(key)}</span>
-        <span class="booster-timer">${b.formatted}</span>
-      </div>
-    `).join("");
+    .map(([key, b]) => {
+      // Warn when under 5 minutes remaining
+      const msLeft  = b.endsAt - Date.now();
+      const urgent  = msLeft > 0 && msLeft < 5 * 60 * 1000;
+      return `
+        <div class="booster-badge booster-${key} ${urgent ? "expiring-soon" : ""}">
+          <i class="${boosterIcon(key)}"></i>
+          <span class="booster-text">${b.multiplier}x ${boosterLabel(key)}</span>
+          <span class="booster-timer ${urgent ? "urgent" : ""}">${b.formatted}</span>
+        </div>
+      `;
+    }).join("");
 
   container.innerHTML = (vipBadge + badges) || `<span class="no-boosters">No active boosters</span>`;
 }
@@ -127,16 +141,19 @@ function renderUpgradeButtons() {
   const pAfford = cash >= pCost;
   setText("btn-pickaxe-cost",  "$" + formatNumber(pCost));
   setText("btn-pickaxe-level", "Lv." + state.pickaxeLevel);
-  toggleClass("btn-upgrade-pickaxe", "can-afford", pAfford);
+  toggleClass("btn-upgrade-pickaxe", "can-afford",    pAfford);
+  toggleClass("btn-upgrade-pickaxe", "cannot-afford", !pAfford);
 
   const bCost   = backpackCost(state.backpackLevel);
   const bAfford = cash >= bCost;
   setText("btn-backpack-cost",  "$" + formatNumber(bCost));
   setText("btn-backpack-level", "Lv." + state.backpackLevel);
-  toggleClass("btn-upgrade-backpack", "can-afford", bAfford);
+  toggleClass("btn-upgrade-backpack", "can-afford",    bAfford);
+  toggleClass("btn-upgrade-backpack", "cannot-afford", !bAfford);
 
   const fillPct = state.ore / computeMaxCapacity();
-  toggleClass("btn-sell", "pulse", fillPct >= 0.9);
+  toggleClass("btn-sell", "pulse",  fillPct >= 0.9);
+  toggleClass("btn-sell", "urgent", fillPct >= 1.0);
   setText("btn-sell-amount", formatNumber(state.ore) + " ore");
 }
 
@@ -153,12 +170,24 @@ export function animateMiningTick(oreMined, oreType) {
   setText("ore-current", formatNumber(current));
   setText("btn-sell-amount", formatNumber(current) + " ore");
 
+  // Sync bar color states every tick
+  const fill = document.getElementById("ore-bar-fill");
+  if (fill) {
+    fill.className = "ore-bar-fill";
+    if      (percent >= 100) fill.classList.add("full");
+    else if (percent >= 90)  fill.classList.add("danger");
+    else if (percent >= 70)  fill.classList.add("warning");
+  }
+
   const fillPct = current / max;
-  toggleClass("btn-sell", "pulse", fillPct >= 0.9);
+  toggleClass("btn-sell", "pulse",  fillPct >= 0.9);
+  toggleClass("btn-sell", "urgent", fillPct >= 1.0);
 
   const { cash } = state;
-  toggleClass("btn-upgrade-pickaxe",  "can-afford", cash >= pickaxeCost(state.pickaxeLevel));
-  toggleClass("btn-upgrade-backpack", "can-afford", cash >= backpackCost(state.backpackLevel));
+  toggleClass("btn-upgrade-pickaxe",  "can-afford",    cash >= pickaxeCost(state.pickaxeLevel));
+  toggleClass("btn-upgrade-pickaxe",  "cannot-afford", cash <  pickaxeCost(state.pickaxeLevel));
+  toggleClass("btn-upgrade-backpack", "can-afford",    cash >= backpackCost(state.backpackLevel));
+  toggleClass("btn-upgrade-backpack", "cannot-afford", cash <  backpackCost(state.backpackLevel));
 
   if (oreMined > 0) {
     const oreId   = state.currentOreId || "dirt";
