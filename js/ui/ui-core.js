@@ -252,7 +252,7 @@ function renderLbRows(rows, category) {
           ${crowns[i] ? `<div class="lb-podium-crown">${crowns[i]}</div>` : ""}
           <div class="lb-podium-rank">${rankNums[i]}</div>
           <div class="lb-podium-name">${escapeHTML(row.nickname || "—")}</div>
-          <div class="lb-podium-value">${escapeHTML(formatLbValue(row.value, category))}</div>
+          <div class="lb-podium-value">${escapeHTML(formatLbValue(getCategoryRowValue(row, category), category))}</div>
         </div>
       `).join("");
     }
@@ -280,7 +280,7 @@ function renderLbRows(rows, category) {
               ${escapeHTML(row.nickname || "—")}
               ${isMe ? `<span class="lb-you-tag">YOU</span>` : ""}
             </div>
-            <div class="lb-row-value">${escapeHTML(formatLbValue(row.value, category))}</div>
+            <div class="lb-row-value">${escapeHTML(formatLbValue(getCategoryRowValue(row, category), category))}</div>
           </div>
         `;
       }).join("");
@@ -298,6 +298,16 @@ function renderLbRows(rows, category) {
     } else {
       yourRankEl.style.display = "none";
     }
+  }
+}
+
+function getCategoryRowValue(row, category) {
+  switch (category) {
+    case "rebirths":     return row.rebirths    ?? 0;
+    case "blocks_mined": return row.blocksMined ?? 0;
+    case "cash_earned":  return row.cashEarned  ?? 0;
+    case "pets_owned":   return row.petsOwned   ?? 0;
+    default:             return 0;
   }
 }
 
