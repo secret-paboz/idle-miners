@@ -19,6 +19,12 @@ export function renderHUD() {
   if (nicknameEl) {
     nicknameEl.textContent = state.nickname;
     nicknameEl.style.color = dimColor;
+
+    // Wire click once
+    if (!nicknameEl._statsWired) {
+      nicknameEl.addEventListener("click", openStatsModal);
+      nicknameEl._statsWired = true;
+    }
   }
 
   // VIP badge next to nickname
@@ -57,4 +63,41 @@ export function renderHUD() {
   // Show GM tab button only for game masters
   const gmTab = document.getElementById("tab-gm");
   if (gmTab) gmTab.style.display = isGameMasterSync() ? "flex" : "none";
+}
+
+function openStatsModal() {
+  renderStatsModal();
+  const overlay = document.getElementById("stats-modal-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    // Wire close button once
+    const closeBtn = document.getElementById("btn-stats-modal-close");
+    if (closeBtn && !closeBtn._wired) {
+      closeBtn.addEventListener("click", closeStatsModal);
+      closeBtn._wired = true;
+    }
+    // Close on overlay backdrop click
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeStatsModal();
+    }, { once: true });
+  }
+}
+
+function closeStatsModal() {
+  const overlay = document.getElementById("stats-modal-overlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+function renderStatsModal() {
+  const power     = computeMiningPower();
+  const dimension = getDimension(state.dimension);
+
+  setText("stat-mining-power",    "1–" + formatNumber(power) + "/s");
+  setText("stat-dimension",       dimension?.name || "Earth");
+  setText("stat-dimension-multi", (dimension?.miningMultiplier ?? 1) + "x");
+  setText("stat-blocks-mined",    formatNumber(state.blocksMined ?? 0));
+  setText("stat-pickaxe-level",   "Lv." + (state.pickaxeLevel ?? 1));
+  setText("stat-backpack-level",  "Lv." + (state.backpackLevel ?? 1));
+  setText("stat-cash-earned",     "$" + formatNumber(state.cashEarned ?? 0));
+  setText("stat-rebirths",        state.rebirths ?? 0);
 }
