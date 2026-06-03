@@ -470,5 +470,63 @@
   </div>
 </div>
 
+<!-- ============================================================
+     VIP STATUS MODAL
+     ============================================================ -->
+<div id="vip-modal" class="vip-modal-overlay" style="display:none">
+  <div class="vip-modal">
+
+    <div class="vip-modal-header">
+      <span class="vip-modal-title"><i class="fa-solid fa-crown"></i> VIP Status</span>
+      <button class="vip-modal-close" id="btn-vip-modal-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Active VIP content (shown when player has VIP) -->
+    <div id="vip-modal-active" style="display:none">
+      <div class="vip-modal-badge-row">
+        <span class="vip-modal-crown-badge"><i class="fa-solid fa-crown"></i> VIP</span>
+        <span class="vip-modal-status-active">Active</span>
+      </div>
+      <div class="vip-modal-expiry" id="vip-modal-expiry"></div>
+
+      <div class="vip-modal-perks-title">Your VIP Perks</div>
+      <ul class="vip-modal-perks">
+        <li><i class="fa-solid fa-coins"></i> <strong>2× Sell Value</strong> on all ore</li>
+        <li><i class="fa-solid fa-bolt"></i> <strong>Auto-Sell</strong> when backpack hits 100%</li>
+        <li><i class="fa-solid fa-moon"></i> <strong>12h Offline Mining</strong> <span class="vip-perk-note">(vs 8h for regular)</span></li>
+        <li><i class="fa-solid fa-rotate"></i> <strong>Full Offline Cycles</strong> — VIP loops mine→sell the entire offline duration</li>
+        <li><i class="fa-solid fa-crown"></i> <strong>Gold VIP Badge</strong> in HUD &amp; Leaderboard</li>
+        <li><i class="fa-solid fa-palette"></i> <strong>Dimension-colored nickname</strong> in all views</li>
+      </ul>
+    </div>
+
+    <!-- No VIP content (shown when player does not have VIP) -->
+    <div id="vip-modal-inactive" style="display:none">
+      <div class="vip-modal-badge-row">
+        <span class="vip-modal-crown-badge vip-modal-crown-badge--gray"><i class="fa-solid fa-crown"></i> VIP</span>
+        <span class="vip-modal-status-inactive">Not Active</span>
+      </div>
+
+      <div class="vip-modal-perks-title">What VIP Includes</div>
+      <ul class="vip-modal-perks vip-modal-perks--locked">
+        <li><i class="fa-solid fa-coins"></i> <strong>2× Sell Value</strong> on all ore</li>
+        <li><i class="fa-solid fa-bolt"></i> <strong>Auto-Sell</strong> when backpack hits 100%</li>
+        <li><i class="fa-solid fa-moon"></i> <strong>12h Offline Mining</strong> <span class="vip-perk-note">(vs 8h for regular)</span></li>
+        <li><i class="fa-solid fa-rotate"></i> <strong>Full Offline Cycles</strong> — VIP loops mine→sell the entire offline duration</li>
+        <li><i class="fa-solid fa-crown"></i> <strong>Gold VIP Badge</strong> in HUD &amp; Leaderboard</li>
+        <li><i class="fa-solid fa-palette"></i> <strong>Dimension-colored nickname</strong> in all views</li>
+      </ul>
+
+      <div class="vip-modal-contact">
+        <div class="vip-modal-contact-label">Want VIP? Contact the developer:</div>
+        <a class="vip-modal-discord-btn" href="https://discord.com/users/1413503870373462070" target="_blank" rel="noopener noreferrer">
+          <i class="fa-brands fa-discord"></i> Message on Discord
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 </body>
 </html>
