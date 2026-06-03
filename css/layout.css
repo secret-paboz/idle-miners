@@ -17,59 +17,102 @@
 }
 
 /* ============================================================
-   SECTION 2 — HUD (top bar)
+   SECTION 2 — HUD (top bar) — Option B: two-row layout
    ============================================================ */
 
 #hud {
   position:      sticky;
   top:           0;
   z-index:       100;
-  height:        var(--hud-height);
   background:    var(--bg-secondary);
   border-bottom: 1px solid var(--border-bright);
   box-shadow:    0 4px 16px rgba(0,0,0,0.5);
   display:       flex;
-  align-items:   center;
-  padding:       0 12px;
-  gap:           10px;
+  flex-direction: column;
   flex-shrink:   0;
 }
 
+/* ── Row shared base ── */
+.hud-row {
+  display:     flex;
+  align-items: center;
+  padding:     0 12px;
+  width:       100%;
+}
+
+/* Row 1: Cash · Nickname · Level */
+.hud-row-1 {
+  padding-top:    9px;
+  padding-bottom: 5px;
+  border-bottom:  1px solid var(--border);
+  gap:            8px;
+}
+
+/* Row 2: Shards · XP inline · Rebirths */
+.hud-row-2 {
+  padding-top:    5px;
+  padding-bottom: 8px;
+  gap:            8px;
+}
+
+/* ── Stat block ── */
 .hud-stat {
   display:        flex;
   flex-direction: column;
-  align-items:    center;
-  min-width:      48px;
+  align-items:    flex-start;
+  flex-shrink:    0;
+}
+
+.hud-stat-right {
+  align-items: flex-end;
+  margin-left: auto;
 }
 
 .hud-stat-value {
-  font-size:   13px;
+  font-size:   14px;
   font-weight: 700;
   color:       var(--text-primary);
   white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Smaller value for row 2 stats */
+.hud-stat-value--sm {
+  font-size: 12px;
 }
 
 .hud-stat-label {
-  font-size:      10px;
+  font-size:      9px;
   color:          var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  line-height:    1.2;
 }
 
-/* Passive income rate — shown below the Cash label */
+/* Passive income rate — shown below Cash */
 .hud-stat-rate {
-  font-size:   9px;
+  font-size:   10px;
   font-weight: 600;
   color:       var(--color-success);
   white-space: nowrap;
-  min-height:  11px; /* reserve space even when empty */
-  opacity:     0.85;
+  min-height:  12px;
+  opacity:     0.9;
+  line-height: 1.2;
+}
+
+/* ── Identity block — centered in row 1 ── */
+.hud-identity {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             5px;
+  min-width:       0;
 }
 
 #hud-nickname {
-  flex:          1;
   font-size:     13px;
-  font-weight:   600;
+  font-weight:   700;
   color:         var(--accent);
   overflow:      hidden;
   text-overflow: ellipsis;
@@ -77,8 +120,8 @@
   transition:    color 0.5s ease, opacity 0.2s ease;
   display:       flex;
   align-items:   center;
-  gap:           5px;
-  padding:       3px 7px;
+  gap:           4px;
+  padding:       2px 6px;
   border-radius: var(--radius-sm);
   border:        1px solid transparent;
 }
@@ -89,51 +132,65 @@
 }
 
 .hud-nickname-icon {
-  font-size: 9px;
-  opacity:   0.55;
+  font-size:   9px;
+  opacity:     0.5;
   flex-shrink: 0;
 }
 
 #hud-guest-badge {
-  font-size:     10px;
+  font-size:     9px;
   background:    var(--bg-card);
   border:        1px solid var(--border-bright);
   border-radius: 20px;
-  padding:       2px 8px;
+  padding:       2px 7px;
   color:         var(--text-muted);
   white-space:   nowrap;
+  flex-shrink:   0;
 }
 
-/* XP bar — stretches across bottom of HUD */
-#hud-xp-bar {
-  position:   absolute;
-  bottom:     0;
-  left:       0;
-  right:      0;
-  height:     4px;
-  background: var(--border);
-  overflow:   visible; /* allow label to float above */
+/* ── Inline XP progress (row 2 center) ── */
+.hud-xp-inline {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             5px;
+  min-width:       0;
 }
 
-#hud-xp-fill {
-  height:        100%;
-  background:    linear-gradient(90deg, var(--accent), #ff6b35);
-  transition:    width 0.4s ease;
-  border-radius: 0 2px 2px 0;
-}
-
-/* XP label — floats above the bar, pinned to the right */
-#hud-xp-label {
-  position:    absolute;
-  bottom:      6px;
-  right:       12px;
-  font-size:   9px;
+.hud-xp-lvl {
+  font-size:   10px;
   font-weight: 600;
   color:       var(--text-muted);
   white-space: nowrap;
-  pointer-events: none;
-  letter-spacing: 0.03em;
-  opacity:     0.8;
+  flex-shrink: 0;
+}
+
+.hud-xp-track {
+  flex:          1;
+  max-width:     80px;
+  height:        4px;
+  background:    var(--border);
+  border-radius: 2px;
+  overflow:      hidden;
+  flex-shrink:   0;
+}
+
+.hud-xp-fill {
+  height:        100%;
+  background:    var(--accent);
+  transition:    width 0.4s ease;
+  border-radius: 2px;
+}
+
+.hud-xp-pct {
+  font-size:   10px;
+  font-weight: 700;
+  color:       var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width:   28px;
+  text-align:  center;
 }
 
 /* ============================================================
