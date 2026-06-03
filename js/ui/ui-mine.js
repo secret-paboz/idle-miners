@@ -67,7 +67,7 @@ function renderMineStats() {
   const dimension = getDimension(state.dimension);
   const power     = computeMiningPower();
 
-  setText("stat-mining-power",    formatNumber(power) + "/s");
+  setText("stat-mining-power",    "1–" + formatNumber(power) + "/s");
   setText("stat-dimension",       dimension?.name || "Earth");
   setText("stat-dimension-multi", dimension?.valueMulti + "x");
   setText("stat-pickaxe-level",   "Lv." + state.pickaxeLevel);
