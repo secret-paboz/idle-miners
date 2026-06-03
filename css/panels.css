@@ -154,9 +154,19 @@
   box-shadow:   0 0 10px rgba(255,193,7,0.2);
 }
 
-.upgrade-btn-label { font-size: 11px; color: var(--text-muted); }
-.upgrade-btn-level { font-size: 14px; font-weight: 700; }
-.upgrade-btn-cost  { font-size: 12px; color: var(--accent); margin-top: 2px; }
+.upgrade-btn-label   { font-size: 11px; color: var(--text-muted); }
+.upgrade-btn-level   { font-size: 14px; font-weight: 700; }
+.upgrade-btn-cost    { font-size: 12px; color: var(--accent); margin-top: 2px; }
+
+/* Next-level impact preview — e.g. "+12 ore/s" or "+500 cap" */
+.upgrade-btn-preview {
+  font-size:   10px;
+  font-weight: 600;
+  color:       var(--color-success);
+  margin-top:  2px;
+  min-height:  13px; /* reserve space so button height stays stable */
+  opacity:     0.85;
+}
 
 /* Dimension selector — Option B card grid */
 #dimension-selector {
@@ -257,6 +267,8 @@
   color:       var(--text-muted);
   position:    relative;
   z-index:     1;
+  text-align:  center;
+  line-height: 1.3;
 }
 
 /* Booster badges */
@@ -299,7 +311,25 @@
   padding-left:    6px;
 }
 
-.no-boosters   { font-size: 12px; color: var(--text-muted); }
+.no-boosters {
+  font-size:   12px;
+  color:       var(--text-muted);
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+}
+
+/* Hint link inside empty booster state */
+.no-boosters-hint {
+  font-size:   11px;
+  color:       var(--text-muted);
+  margin-top:  4px;
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+}
+
+.no-boosters-hint i { font-size: 10px; color: var(--accent); }
 
 /* ============================================================
    SECTION 2 — PETS PANEL
@@ -692,6 +722,16 @@
   border-radius: var(--radius-sm);
   background:    var(--bg-secondary);
   animation:     logFadeIn 0.2s ease;
+}
+
+/* Ore sprite inside log entries */
+.mining-log-sprite {
+  width:            16px;
+  height:           16px;
+  object-fit:       contain;
+  image-rendering:  pixelated;
+  flex-shrink:      0;
+  opacity:          0.9;
 }
 
 @keyframes logFadeIn {
