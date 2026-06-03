@@ -14,6 +14,10 @@
 //   showing time away, blocks mined, and cash earned (VIP).
 // - Added showCloudOfflineBanner() / hideCloudOfflineBanner()
 //   for persistent "playing offline" warning when Supabase fails.
+//
+// CHANGED (globals):
+// - Removed window.__gameState and window.__formatNumber reads.
+//   Now imports state and formatNumber directly via ES modules.
 // ============================================================
 
 import { state } from "../state.js";
@@ -232,8 +236,7 @@ function renderLbSkeleton() {
 }
 
 function renderLbRows(rows, category) {
-  const { state } = window.__gameState || {};
-  const myNick    = state?.nickname || "";
+  const myNick = state?.nickname || ""; // CHANGED: was window.__gameState
 
   // ── Podium (top 3) ──────────────────────────────────────
   const podium = document.getElementById("leaderboard-podium");
@@ -299,9 +302,7 @@ function renderLbRows(rows, category) {
 }
 
 function formatLbValue(value, category) {
-  const { formatNumber } = window.__formatNumber
-    ? { formatNumber: window.__formatNumber }
-    : { formatNumber: n => String(n) };
+  // CHANGED: removed window.__formatNumber fallback, formatNumber imported directly
   switch (category) {
     case "cash_earned":  return "$" + formatNumber(value);
     case "blocks_mined": return formatNumber(value);
