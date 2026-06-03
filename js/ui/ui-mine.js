@@ -16,7 +16,13 @@
 // ============================================================
 
 import { state } from "../state.js";
-import { formatNumber, computeMaxCapacity, computeMiningPower } from "../economy.js";
+import {
+  formatNumber,
+  computeMaxCapacity,
+  computeMiningPower,
+  pickaxeNextLevelGain,
+  backpackNextLevelGain,
+} from "../economy.js";
 import { ORE_TYPES } from "../data/mines-data.js";
 import { getDimension, DIMENSIONS } from "../data/dimensions-data.js";
 import { getBoosterStatus } from "../crates.js";
@@ -156,25 +162,20 @@ function renderUpgradeButtons() {
   const { cash } = state;
 
   // ── Pickaxe ──
-  const pCost        = pickaxeCost(state.pickaxeLevel);
-  const pAfford      = cash >= pCost;
-  const pNextPower   = computeMiningPower(); // current power with next level baked in via +1
-  // Preview: next level adds 1 base mining power (pickaxeLevel * 1 formula)
-  const pPowerNext   = pNextPower + 1;
+  const pCost   = pickaxeCost(state.pickaxeLevel);
+  const pAfford = cash >= pCost;
   setText("btn-pickaxe-cost",    "$" + formatNumber(pCost));
   setText("btn-pickaxe-level",   "Lv." + state.pickaxeLevel);
-  setText("btn-pickaxe-preview", "+" + formatNumber(pPowerNext - pNextPower + 1) + " ore/s");
+  setText("btn-pickaxe-preview", "+" + formatNumber(pickaxeNextLevelGain()) + " ore/s");
   toggleClass("btn-upgrade-pickaxe", "can-afford",    pAfford);
   toggleClass("btn-upgrade-pickaxe", "cannot-afford", !pAfford);
 
   // ── Backpack ──
-  const bCost       = backpackCost(state.backpackLevel);
-  const bAfford     = cash >= bCost;
-  // Preview: next level adds 15 base capacity (20 + backpackLevel * 15 formula)
-  const bCapPreview = 15;
+  const bCost   = backpackCost(state.backpackLevel);
+  const bAfford = cash >= bCost;
   setText("btn-backpack-cost",    "$" + formatNumber(bCost));
   setText("btn-backpack-level",   "Lv." + state.backpackLevel);
-  setText("btn-backpack-preview", "+" + bCapPreview + " cap");
+  setText("btn-backpack-preview", "+" + formatNumber(backpackNextLevelGain()) + " cap");
   toggleClass("btn-upgrade-backpack", "can-afford",    bAfford);
   toggleClass("btn-upgrade-backpack", "cannot-afford", !bAfford);
 
