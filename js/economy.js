@@ -8,6 +8,9 @@
 // - computeOreValue()    — removed wings buff block entirely
 // - activateAbility()    — removed (legendaries are now passive)
 // - prestigeUpgradeCost() — flat 1 token always (was currentLevel+1)
+// - calculateOfflineProgress() — VIP now loops mine→sell cycles for
+//   the full offline duration instead of one fill only. Fixes bug
+//   where a full backpack on close caused zero offline progress.
 // ============================================================
 
 import { state, saveState, resetStateForRebirth, resetStateForPrestige } from "./state.js";
@@ -396,48 +399,78 @@ export function calculateOfflineProgress() {
     ? 12 * 60 * 60 * 1000
     :  8 * 60 * 60 * 1000;
 
-  const effectiveMs = Math.min(elapsed, maxOffline);
-  const seconds     = Math.floor(effectiveMs / 1000);
+  const effectiveMs  = Math.min(elapsed, maxOffline);
+  let   secondsLeft  = Math.floor(effectiveMs / 1000);
 
-  if (seconds < 10) return null;
+  if (secondsLeft < 10) return null;
 
-  const power     = computeMiningPower();
-  const maxCap    = computeMaxCapacity();
-  const remaining = Math.max(0, maxCap - state.ore);
-  const mined     = Math.min(power * seconds, remaining);
-
-  if (mined <= 0) return null;
-
-  state.ore         = Math.min(state.ore + mined, maxCap);
-  state.blocksMined += mined;
-
+  const power    = computeMiningPower();
+  const maxCap   = computeMaxCapacity();
   const mineTier = getMineTier(state.level);
   const ore      = rollOre(mineTier);
-  let xpGained   = ore.xpPerBlock * mined;
-  if (state.boosters.xpGain.endsAt > now) {
-    xpGained = Math.floor(xpGained * state.boosters.xpGain.multiplier);
-  }
-  state.xp += xpGained;
-  checkLevelUp();
+  const oreId    = state.currentOreId || "dirt";
 
-  let cashEarned = 0;
-  if (isActiveVip && state.ore > 0) {
-    const oreId  = state.currentOreId || "dirt";
-    const oreObj = ORE_TYPES[oreId] || ORE_TYPES["dirt"];
-    const value  = computeOreValue(oreObj.id, true);
-    cashEarned   = Math.floor(state.ore * value);
-    state.cash       += cashEarned;
-    state.cashEarned += cashEarned;
-    state.ore         = 0;
-    saveState();
+  let totalMined = 0;
+  let totalCash  = 0;
+  let totalXp    = 0;
+
+  if (isActiveVip) {
+    // VIP: simulate full mine→sell cycles for the entire offline duration
+    while (secondsLeft > 0) {
+      const spaceLeft  = Math.max(0, maxCap - state.ore);
+      const secsToFill = spaceLeft > 0 ? Math.ceil(spaceLeft / power) : 0;
+
+      if (secsToFill === 0 || secsToFill > secondsLeft) {
+        // Last partial fill — not enough time to fill the backpack fully
+        const mined  = Math.min(power * secondsLeft, Math.max(0, maxCap - state.ore));
+        state.ore   += mined;
+        totalMined  += mined;
+        totalXp     += ore.xpPerBlock * mined;
+        secondsLeft  = 0;
+      } else {
+        // Full fill — mine until backpack is full, then auto-sell
+        state.ore   += spaceLeft;
+        totalMined  += spaceLeft;
+        totalXp     += ore.xpPerBlock * spaceLeft;
+        secondsLeft -= secsToFill;
+
+        // Auto-sell the full backpack
+        const value       = computeOreValue(oreId, true);
+        const cash        = Math.floor(state.ore * value);
+        totalCash        += cash;
+        state.cash       += cash;
+        state.cashEarned += cash;
+        state.ore         = 0;
+      }
+    }
+  } else {
+    // Non-VIP: one fill only, capped at remaining backpack space
+    const remaining = Math.max(0, maxCap - state.ore);
+    const mined     = Math.min(power * secondsLeft, remaining);
+    if (mined <= 0) return null;
+    state.ore  += mined;
+    totalMined += mined;
+    totalXp    += ore.xpPerBlock * mined;
   }
+
+  if (totalMined <= 0) return null;
+
+  state.blocksMined += totalMined;
+
+  // Apply XP booster if still active
+  if (state.boosters.xpGain.endsAt > now) {
+    totalXp = Math.floor(totalXp * state.boosters.xpGain.multiplier);
+  }
+  state.xp += totalXp;
+  checkLevelUp();
+  saveState();
 
   return {
-    seconds,
-    mined,
-    hours: (seconds / 3600).toFixed(1),
-    cashEarned,
-    isVip: isActiveVip,
+    seconds:    Math.floor(effectiveMs / 1000),
+    mined:      totalMined,
+    hours:      (effectiveMs / 3600000).toFixed(1),
+    cashEarned: totalCash,
+    isVip:      isActiveVip,
   };
 }
 
