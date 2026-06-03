@@ -124,7 +124,7 @@
   overflow-y:     auto;
   overflow-x:     hidden;
   scroll-behavior: smooth;
-  padding-bottom: calc(var(--tabbar-height) + 12px);
+  padding-bottom: 84px; /* space for FAB button */
 }
 
 #content::-webkit-scrollbar       { width: 3px; }
@@ -149,63 +149,494 @@
 }
 
 /* ============================================================
-   SECTION 5 — TAB BAR (bottom nav)
+   SECTION 5 — FAB MENU BUTTON (hamburger)
    ============================================================ */
 
-#tab-bar {
-  position:        fixed;
-  bottom:          0;
-  left:            50%;
-  transform:       translateX(-50%);
-  width:           100%;
-  max-width:       480px;
-  height:          var(--tabbar-height);
-  background:      var(--bg-secondary);
-  border-top:      1px solid var(--border);
-  display:         flex;
-  align-items:     center;
-  justify-content: space-around;
-  z-index:         100;
-  flex-shrink:     0;
-}
-
-.tab-btn {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
+#btn-fab-menu {
+  position:      fixed;
+  bottom:        20px;
+  right:         18px;
+  z-index:       200;
+  width:         50px;
+  height:        50px;
+  border-radius: 50%;
+  background:    var(--accent);
+  color:         #000;
+  border:        none;
+  cursor:        pointer;
+  display:       flex;
+  align-items:   center;
   justify-content: center;
-  gap:             3px;
-  padding:         6px 10px;
-  border-radius:   var(--radius-md);
-  color:           var(--text-muted);
-  font-size:       10px;
-  font-weight:     500;
-  transition:      color var(--transition), background var(--transition);
-  min-width:       52px;
+  box-shadow:    0 4px 20px var(--accent-glow);
+  transition:    transform 0.25s cubic-bezier(0.34,1.56,0.64,1),
+                 box-shadow 0.2s ease;
 }
 
-.tab-btn i { font-size: 20px; }
-
-.tab-btn.active {
-  color:      var(--accent);
-  background: var(--accent-dim);
+#btn-fab-menu:hover {
+  box-shadow: 0 6px 28px var(--accent-glow);
 }
 
-.tab-btn:hover:not(.active) {
-  color:      var(--text-secondary);
-  background: var(--bg-card);
+#btn-fab-menu.is-open {
+  transform: rotate(90deg) scale(1.05);
+}
+
+/* Icon swap */
+#fab-icon-open,
+#fab-icon-close {
+  position:   absolute;
+  font-size:  18px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+#fab-icon-close {
+  opacity:   0;
+  transform: scale(0.6);
+}
+
+#btn-fab-menu.is-open #fab-icon-open {
+  opacity:   0;
+  transform: scale(0.6);
+}
+
+#btn-fab-menu.is-open #fab-icon-close {
+  opacity:   1;
+  transform: scale(1);
 }
 
 /* ============================================================
-   SECTION 6 — SAFE AREA (iPhone notch support)
+   SECTION 6 — FAB POPUP MENU
+   ============================================================ */
+
+/* Backdrop — closes menu on outside tap */
+#fab-backdrop {
+  display:    none;
+  position:   fixed;
+  inset:      0;
+  z-index:    150;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+#fab-backdrop.is-open { display: block; }
+
+/* Popup panel */
+#fab-menu {
+  position:        fixed;
+  bottom:          80px;
+  right:           14px;
+  z-index:         190;
+  background:      var(--bg-card);
+  border:          1px solid var(--border-bright);
+  border-radius:   var(--radius-lg);
+  padding:         6px;
+  min-width:       190px;
+  box-shadow:      0 8px 32px rgba(0,0,0,0.7),
+                   0 0 0 1px rgba(255,255,255,0.04);
+  transform-origin: bottom right;
+  transform:        scale(0.85) translateY(10px);
+  opacity:          0;
+  pointer-events:   none;
+  transition:       transform 0.22s cubic-bezier(0.34,1.56,0.64,1),
+                    opacity 0.18s ease;
+}
+
+#fab-menu.is-open {
+  transform:      scale(1) translateY(0);
+  opacity:        1;
+  pointer-events: all;
+}
+
+.fab-menu-item {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       9px 12px;
+  border-radius: var(--radius-md);
+  cursor:        pointer;
+  font-size:     13px;
+  font-weight:   500;
+  color:         var(--text-primary);
+  transition:    background var(--transition);
+  position:      relative;
+  user-select:   none;
+}
+
+.fab-menu-item:hover  { background: var(--bg-card-hover); }
+
+.fab-menu-item i {
+  width:      18px;
+  text-align: center;
+  font-size:  14px;
+  color:      var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.fab-menu-item span:not(.fab-menu-badge) { flex: 1; }
+
+/* Active panel indicator */
+.fab-menu-item.is-active             { color: var(--accent); }
+.fab-menu-item.is-active i           { color: var(--accent); }
+.fab-menu-item.is-active::before {
+  content:       '';
+  position:      absolute;
+  left:          0;
+  top:           20%;
+  bottom:        20%;
+  width:         3px;
+  border-radius: 2px;
+  background:    var(--accent);
+}
+
+/* GM item */
+.fab-menu-item--gm             { color: var(--color-error); }
+.fab-menu-item--gm i           { color: var(--color-error); }
+.fab-menu-item--gm:hover       { background: rgba(244,67,54,0.08); }
+
+/* Badges (crate count, GM label) */
+.fab-menu-badge {
+  font-size:     9px;
+  font-weight:   700;
+  letter-spacing: 0.5px;
+  background:    var(--accent-dim);
+  color:         var(--accent);
+  padding:       2px 6px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.fab-menu-badge--gm {
+  background: rgba(244,67,54,0.15);
+  color:      var(--color-error);
+}
+
+/* Separator */
+.fab-menu-sep {
+  height:     1px;
+  background: var(--border);
+  margin:     4px 6px;
+}
+
+/* ============================================================
+   SECTION 7 — LEADERBOARD IMPROVEMENTS
+   ============================================================ */
+
+/* Modal shell */
+.lb-modal {
+  display:        flex;
+  flex-direction: column;
+  max-height:     88vh;
+}
+
+/* Category tabs */
+.lb-tabs {
+  display:    flex;
+  gap:        4px;
+  padding:    10px 12px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.lb-tabs::-webkit-scrollbar { display: none; }
+
+.lb-tab {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+  padding:     5px 11px;
+  border-radius: 20px;
+  font-size:   11px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor:      pointer;
+  color:       var(--text-secondary);
+  border:      1px solid transparent;
+  transition:  all var(--transition);
+  flex-shrink: 0;
+}
+
+.lb-tab i { font-size: 10px; }
+
+.lb-tab:hover {
+  color:      var(--text-primary);
+  background: var(--bg-card);
+}
+
+.lb-tab.active {
+  color:       var(--accent);
+  background:  var(--accent-dim);
+  border-color: rgba(245,166,35,0.3);
+}
+
+/* Podium — top 3 */
+.lb-podium {
+  display:         flex;
+  align-items:     flex-end;
+  justify-content: center;
+  gap:             6px;
+  padding:         14px 14px 8px;
+  background:      linear-gradient(180deg, rgba(245,166,35,0.05) 0%, transparent 100%);
+  flex-shrink:     0;
+}
+
+.lb-podium-card {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  border-radius:   var(--radius-lg);
+  padding:         10px 6px;
+  border:          1px solid var(--border);
+  background:      var(--bg-card);
+  position:        relative;
+  overflow:        hidden;
+  transition:      transform 0.2s ease;
+}
+
+.lb-podium-card:hover { transform: translateY(-2px); }
+
+/* Colored top strip per rank */
+.lb-podium-card::before {
+  content:  '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height:   2px;
+}
+
+.lb-podium-card.rank-1 { order: 2; padding-top: 16px; }
+.lb-podium-card.rank-2 { order: 1; }
+.lb-podium-card.rank-3 { order: 3; }
+
+.lb-podium-card.rank-1::before { background: #ffd700; }
+.lb-podium-card.rank-2::before { background: #c0c0c0; }
+.lb-podium-card.rank-3::before { background: #cd7f32; }
+
+.lb-podium-crown  { font-size: 16px; margin-bottom: 2px; }
+
+.lb-podium-rank {
+  font-size:   18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.lb-podium-card.rank-1 .lb-podium-rank { color: #ffd700; font-size: 22px; }
+.lb-podium-card.rank-2 .lb-podium-rank { color: #c0c0c0; }
+.lb-podium-card.rank-3 .lb-podium-rank { color: #cd7f32; }
+
+.lb-podium-name {
+  font-size:     11px;
+  font-weight:   600;
+  color:         var(--text-primary);
+  margin:        4px 0 2px;
+  text-align:    center;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  width:         100%;
+}
+
+.lb-podium-value {
+  font-size:   11px;
+  font-weight: 600;
+  color:       var(--accent);
+}
+
+/* Rows 4+ */
+#leaderboard-table {
+  flex:       1;
+  overflow-y: auto;
+  padding:    4px 10px 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.lb-row {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       8px 10px;
+  border-radius: var(--radius-md);
+  margin-bottom: 3px;
+  transition:    background var(--transition);
+  animation:     lbRowIn 0.3s ease both;
+}
+
+.lb-row:hover { background: var(--bg-card); }
+
+/* Highlight the current player's row */
+.lb-row.is-me {
+  background:  var(--accent-dim);
+  border:      1px solid rgba(245,166,35,0.25);
+  box-shadow:  0 0 12px rgba(245,166,35,0.07);
+}
+
+@keyframes lbRowIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+/* Staggered animation for first 8 rows */
+.lb-row:nth-child(1) { animation-delay: 0.04s; }
+.lb-row:nth-child(2) { animation-delay: 0.08s; }
+.lb-row:nth-child(3) { animation-delay: 0.12s; }
+.lb-row:nth-child(4) { animation-delay: 0.16s; }
+.lb-row:nth-child(5) { animation-delay: 0.20s; }
+.lb-row:nth-child(6) { animation-delay: 0.24s; }
+.lb-row:nth-child(7) { animation-delay: 0.28s; }
+.lb-row:nth-child(8) { animation-delay: 0.32s; }
+
+.lb-rank-badge {
+  width:         26px;
+  height:        26px;
+  border-radius: 6px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  font-size:     12px;
+  font-weight:   700;
+  background:    var(--bg-card);
+  color:         var(--text-muted);
+  flex-shrink:   0;
+}
+
+.lb-row.is-me .lb-rank-badge {
+  background: var(--accent-dim);
+  color:      var(--accent);
+}
+
+.lb-row-name {
+  flex:        1;
+  font-size:   12px;
+  font-weight: 500;
+}
+
+.lb-row.is-me .lb-row-name {
+  color:       var(--accent);
+  font-weight: 600;
+}
+
+.lb-you-tag {
+  font-size:     9px;
+  font-weight:   700;
+  letter-spacing: 0.5px;
+  background:    var(--accent-dim);
+  color:         var(--accent);
+  padding:       1px 5px;
+  border-radius: 10px;
+  margin-left:   4px;
+}
+
+.lb-row-value {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--text-secondary);
+}
+
+.lb-row.is-me .lb-row-value { color: var(--accent); }
+
+/* Skeleton loading rows */
+.lb-skeleton {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       8px 10px;
+  border-radius: var(--radius-md);
+  margin-bottom: 3px;
+}
+
+.lb-skel {
+  background:      linear-gradient(90deg,
+    var(--bg-card) 25%,
+    var(--bg-card-hover) 50%,
+    var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation:       lbShimmer 1.4s infinite;
+  border-radius:   4px;
+}
+
+@keyframes lbShimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Your rank — pinned footer */
+.lb-your-rank {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       8px 14px;
+  background:    var(--bg-secondary);
+  border-top:    1px solid var(--border);
+  flex-shrink:   0;
+}
+
+.lb-your-rank i { font-size: 12px; color: var(--accent); }
+
+.lb-your-rank-label {
+  flex:      1;
+  font-size: 11px;
+  color:     var(--text-muted);
+}
+
+.lb-your-rank-value {
+  font-size:   14px;
+  font-weight: 700;
+  color:       var(--accent);
+}
+
+/* Last updated timestamp */
+.lb-updated {
+  font-size:  9px;
+  color:      var(--text-muted);
+  text-align: right;
+  padding:    4px 14px 6px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Empty state */
+.lb-empty-state {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  padding:        32px 20px;
+  gap:            10px;
+}
+
+.lb-empty-state-icon {
+  font-size: 36px;
+  opacity:   0.25;
+}
+
+.lb-empty-state-title {
+  font-size:   15px;
+  font-weight: 600;
+  color:       var(--text-secondary);
+}
+
+.lb-empty-state-sub {
+  font-size:  12px;
+  color:      var(--text-muted);
+  text-align: center;
+  max-width:  200px;
+}
+
+/* ============================================================
+   SECTION 8 — SAFE AREA (iPhone notch support)
    ============================================================ */
 
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
-  #tab-bar {
-    padding-bottom: env(safe-area-inset-bottom);
-    height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  #btn-fab-menu {
+    bottom: calc(20px + env(safe-area-inset-bottom));
   }
-  .toast {
-    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 14px);
+  #fab-menu {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  #content {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
 }
