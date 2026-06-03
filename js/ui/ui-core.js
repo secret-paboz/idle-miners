@@ -8,6 +8,12 @@
 // - If the queue has 3+ items backed up, duration is cut to
 //   800ms so rapid upgrades don't create a 30-second backlog.
 // - processToastQueue() fade delay reduced from 400ms to 150ms.
+//
+// CHANGED (offline progress):
+// - showOfflineProgress() replaced toast with a proper modal
+//   showing time away, blocks mined, and cash earned (VIP).
+// - Added showCloudOfflineBanner() / hideCloudOfflineBanner()
+//   for persistent "playing offline" warning when Supabase fails.
 // ============================================================
 
 import { state } from "../state.js";
@@ -165,19 +171,80 @@ export function showModal({ title, message, confirmText = "Confirm", cancelText 
 export function showOfflineProgress(result) {
   if (!result) return;
 
-  if (result.isVip && result.cashEarned > 0) {
-    showToast(
-      `👑 Welcome back! Mined & sold ${formatNumber(result.mined)} ore in ${result.hours}h — earned $${formatNumber(result.cashEarned)}!`,
-      "success",
-      6000
-    );
-  } else {
-    showToast(
-      `Welcome back! Mined ${formatNumber(result.mined)} ore in ${result.hours}h offline.`,
-      "info",
-      5000
-    );
+  // Build human-readable time string
+  const totalSecs = result.seconds || 0;
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+
+  let overlay = document.getElementById("offline-modal-overlay");
+  if (!overlay) {
+    overlay    = document.createElement("div");
+    overlay.id = "offline-modal-overlay";
+    document.body.appendChild(overlay);
   }
+
+  const cashRow = result.isVip && result.cashEarned > 0 ? `
+    <div class="offline-stat">
+      <span class="offline-stat-value">$${formatNumber(result.cashEarned)}</span>
+      <span class="offline-stat-label">Cash earned</span>
+    </div>
+  ` : "";
+
+  overlay.innerHTML = `
+    <div class="offline-modal">
+      <div class="offline-modal-icon">${result.isVip ? "👑" : "⛏️"}</div>
+      <div class="offline-modal-title">Welcome back!</div>
+      <div class="offline-modal-time">
+        Your miner worked for <strong>${escapeHTML(timeStr)}</strong> while you were away
+      </div>
+      <div class="offline-modal-stats">
+        <div class="offline-stat">
+          <span class="offline-stat-value">${formatNumber(result.mined)}</span>
+          <span class="offline-stat-label">Blocks mined</span>
+        </div>
+        ${cashRow}
+      </div>
+      <button class="btn-offline-collect" id="btn-offline-collect">
+        <i class="fa-solid fa-hand-holding-dollar"></i> Collect
+      </button>
+    </div>
+  `;
+
+  overlay.classList.add("visible");
+
+  document.getElementById("btn-offline-collect").onclick = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 300);
+  };
+}
+
+// ============================================================
+// SECTION 4b — CLOUD OFFLINE BANNER
+// ============================================================
+
+export function showCloudOfflineBanner() {
+  if (document.getElementById("cloud-offline-banner")) return;
+
+  const banner     = document.createElement("div");
+  banner.id        = "cloud-offline-banner";
+  banner.innerHTML = `
+    <i class="fa-solid fa-cloud-slash"></i>
+    <span><strong>Playing offline</strong> — progress saves locally only. Check your connection.</span>
+  `;
+
+  // Insert after HUD
+  const hud = document.getElementById("hud");
+  if (hud && hud.parentNode) {
+    hud.parentNode.insertBefore(banner, hud.nextSibling);
+  } else {
+    document.body.prepend(banner);
+  }
+}
+
+export function hideCloudOfflineBanner() {
+  const banner = document.getElementById("cloud-offline-banner");
+  if (banner) banner.remove();
 }
 
 // ============================================================
