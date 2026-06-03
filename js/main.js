@@ -38,6 +38,10 @@ async function boot() {
   showBootSpinner("Starting up...");
 
   initSupabase();
+  if (!window.supabaseClient) {
+  const { showCloudOfflineBanner } = await import("./ui/ui-core.js");
+  showCloudOfflineBanner();
+}
   initState();
 
   const session = await restoreSession();
