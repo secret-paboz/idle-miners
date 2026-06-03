@@ -8,7 +8,7 @@ import { state } from "../state.js";
 import { formatNumber, computeMiningPower, computeOreValue } from "../economy.js";
 import { getDimension } from "../data/dimensions-data.js";
 import { getMineTier, rollOre } from "../data/mines-data.js";
-import { setText, setStyle, xpForLevel } from "./ui-core.js";
+import { setText, setStyle, xpForLevel, openVipModal } from "./ui-core.js";
 import { isGameMasterSync } from "../gm.js";
 
 export function renderHUD() {
@@ -35,15 +35,32 @@ export function renderHUD() {
     }
   }
 
-  // VIP badge next to nickname
+  // VIP badge next to nickname — always shown, clickable
   const existingBadge = document.getElementById("hud-vip-badge");
   if (existingBadge) existingBadge.remove();
 
-  if (isActiveVip && nicknameEl) {
+  if (nicknameEl) {
     const badge = document.createElement("span");
     badge.id        = "hud-vip-badge";
-    badge.className = "vip-badge vip-badge-hud vip-pulse";
-    badge.innerHTML = `<i class="fa-solid fa-crown"></i> VIP`;
+    badge.style.cursor = "pointer";
+
+    if (isActiveVip) {
+      badge.className = "vip-badge vip-badge-hud vip-pulse";
+      badge.innerHTML = `<i class="fa-solid fa-crown"></i> VIP`;
+    } else {
+      badge.className = "vip-badge vip-badge-hud vip-badge-hud--inactive";
+      badge.innerHTML = `<i class="fa-solid fa-crown"></i> VIP`;
+      badge.style.background  = "var(--bg-card)";
+      badge.style.color       = "var(--text-muted)";
+      badge.style.border      = "1px solid var(--border)";
+      badge.style.boxShadow   = "none";
+    }
+
+    if (!badge._vipWired) {
+      badge.addEventListener("click", openVipModal);
+      badge._vipWired = true;
+    }
+
     nicknameEl.insertAdjacentElement("afterend", badge);
   }
 
