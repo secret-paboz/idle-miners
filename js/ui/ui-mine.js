@@ -192,7 +192,7 @@ export function animateMiningTick(oreMined, oreType) {
   if (oreMined > 0) {
     const oreId   = state.currentOreId || "dirt";
     const oreName = ORE_TYPES[oreId]?.name || "Ore";
-    spawnFloatingText("+" + formatNumber(oreMined), oreName, oreId, "ore-float");
+    appendMiningLog("+" + formatNumber(oreMined) + " " + oreName, "ore");
   }
 }
 
@@ -204,26 +204,31 @@ export function animateSell(cashEarned) {
     void cashEl.offsetWidth;
     cashEl.classList.add("cash-flash");
   }
-  spawnFloatingText("+" + formatNumber(cashEarned), "", "", "sell-float");
+  appendMiningLog("+" + formatNumber(cashEarned) + " sold", "sell");
   showToast(`Sold for $${formatNumber(cashEarned)}!`, "success", 2000);
 }
 
-function spawnFloatingText(amount, oreName, oreId, className) {
-  const minePanel = document.getElementById("panel-mine");
-  if (!minePanel) return;
+const MAX_LOG_ENTRIES = 40;
 
-  const el = document.createElement("div");
-  el.className = `floating-text ${className}`;
+function appendMiningLog(text, type) {
+  const feed = document.getElementById("mining-log-feed");
+  if (!feed) return;
 
-  if (oreId) {
-    el.innerHTML = `
-      <img src="/sprites/${oreId}.png" class="float-sprite" alt="${oreName}">
-      <span>${amount} ${oreName}</span>
-    `;
-  } else {
-    el.textContent = amount;
+  // Remove empty placeholder
+  const empty = feed.querySelector(".mining-log-empty");
+  if (empty) empty.remove();
+
+  const entry = document.createElement("div");
+  entry.className = `mining-log-entry mining-log-${type}`;
+
+  const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  entry.innerHTML = `<span class="mining-log-time">${time}</span><span class="mining-log-text">${text}</span>`;
+
+  feed.prepend(entry);
+
+  // Cap entries
+  const entries = feed.querySelectorAll(".mining-log-entry");
+  if (entries.length > MAX_LOG_ENTRIES) {
+    entries[entries.length - 1].remove();
   }
-
-  minePanel.appendChild(el);
-  setTimeout(() => el.remove(), 1200);
 }
