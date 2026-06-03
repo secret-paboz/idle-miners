@@ -47,8 +47,9 @@
   --transition: 0.2s ease;
 
   /* Layout heights */
-  --hud-height:    60px;
-  --tabbar-height: 58px;
+  --hud-height:         68px;  /* increased from 60px to fit income rate line under Cash */
+  --tabbar-height:      58px;
+  --hud-xp-label-above: 6px;   /* gap between XP bar top and floating label */
 }
 
 /* ============================================================
@@ -107,14 +108,14 @@ a   { color: var(--accent); text-decoration: none; }
    ============================================================ */
 
 body.dim-earth   { --bg-primary: #0d0d0d; --bg-secondary: #141414; }
-body.dim-cave    { --bg-primary: #0a0a0f; --bg-secondary: #10101a; --accent: #9c27b0; }
-body.dim-snow    { --bg-primary: #0d1117; --bg-secondary: #131c27; --accent: #64b5f6; }
-body.dim-nether  { --bg-primary: #130800; --bg-secondary: #1f0e00; --accent: #ff5722; }
-body.dim-crimson { --bg-primary: #130008; --bg-secondary: #1f000f; --accent: #e91e63; }
-body.dim-warped  { --bg-primary: #001310; --bg-secondary: #001f1a; --accent: #00bcd4; }
-body.dim-end     { --bg-primary: #080d13; --bg-secondary: #0d1520; --accent: #7c4dff; }
-body.dim-void    { --bg-primary: #050508; --bg-secondary: #08080e; --accent: #b388ff; }
-body.dim-aether  { --bg-primary: #0a0d15; --bg-secondary: #10152a; --accent: #ffd54f; }
+body.dim-cave    { --bg-primary: #0a0a0f; --bg-secondary: #10101a; --accent: #9c27b0;  --accent-dim: rgba(156,39,176,0.15); --accent-glow: rgba(156,39,176,0.35); }
+body.dim-snow    { --bg-primary: #0d1117; --bg-secondary: #131c27; --accent: #64b5f6;  --accent-dim: rgba(100,181,246,0.15); --accent-glow: rgba(100,181,246,0.35); }
+body.dim-nether  { --bg-primary: #130800; --bg-secondary: #1f0e00; --accent: #ff5722;  --accent-dim: rgba(255,87,34,0.15);   --accent-glow: rgba(255,87,34,0.35); }
+body.dim-crimson { --bg-primary: #130008; --bg-secondary: #1f000f; --accent: #e91e63;  --accent-dim: rgba(233,30,99,0.15);   --accent-glow: rgba(233,30,99,0.35); }
+body.dim-warped  { --bg-primary: #001310; --bg-secondary: #001f1a; --accent: #00bcd4;  --accent-dim: rgba(0,188,212,0.15);   --accent-glow: rgba(0,188,212,0.35); }
+body.dim-end     { --bg-primary: #080d13; --bg-secondary: #0d1520; --accent: #7c4dff;  --accent-dim: rgba(124,77,255,0.15);  --accent-glow: rgba(124,77,255,0.35); }
+body.dim-void    { --bg-primary: #050508; --bg-secondary: #08080e; --accent: #b388ff;  --accent-dim: rgba(179,136,255,0.15); --accent-glow: rgba(179,136,255,0.35); }
+body.dim-aether  { --bg-primary: #0a0d15; --bg-secondary: #10152a; --accent: #ffd54f;  --accent-dim: rgba(255,213,79,0.15);  --accent-glow: rgba(255,213,79,0.35); }
 
 /* ============================================================
    SECTION 5 — RARITY COLOR TOKENS
