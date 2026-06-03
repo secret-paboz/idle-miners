@@ -31,13 +31,6 @@ import { bindGMEvents }          from "./handlers/gm.js";
 import { bindDelegatedEvents, handleAuthChange } from "./handlers/auth.js";
 
 // ============================================================
-// GLOBALS — expose helpers needed by ui-core leaderboard renderer
-// ============================================================
-
-window.__formatNumber = formatNumber;
-window.__gameState    = { get state() { return state; } };
-
-// ============================================================
 // SECTION 1 — BOOT SEQUENCE
 // ============================================================
 
@@ -46,9 +39,9 @@ async function boot() {
 
   initSupabase();
   if (!window.supabaseClient) {
-  const { showCloudOfflineBanner } = await import("./ui/ui-core.js");
-  showCloudOfflineBanner();
-}
+    const { showCloudOfflineBanner } = await import("./ui/ui-core.js");
+    showCloudOfflineBanner();
+  }
   initState();
 
   const session = await restoreSession();
