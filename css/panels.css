@@ -27,9 +27,14 @@
   position:      relative;
 }
 
-.ore-bar-fill.high {
-  background: linear-gradient(90deg, #43a047, #66bb6a);
-  box-shadow: 0 0 8px rgba(67,160,71,0.5);
+.ore-bar-fill.warning {
+  background: linear-gradient(90deg, #f9a825, #fbc02d);
+  box-shadow: 0 0 8px rgba(249,168,37,0.4);
+}
+
+.ore-bar-fill.danger {
+  background: linear-gradient(90deg, #e53935, #ff7043);
+  box-shadow: 0 0 10px rgba(229,57,53,0.5);
 }
 
 .ore-bar-fill.full {
@@ -186,8 +191,14 @@
   pointer-events: none;
 }
 
+.dim-card:not(.locked):hover {
+  border-color: var(--dim-color);
+  background:   color-mix(in srgb, var(--dim-color) 8%, var(--bg-card));
+}
+
 .dim-card.active {
   border-color: var(--dim-color);
+  background:   color-mix(in srgb, var(--dim-color) 10%, var(--bg-card));
   box-shadow:   0 0 14px color-mix(in srgb, var(--dim-color) 30%, transparent);
 }
 
@@ -280,7 +291,14 @@
 
 .booster-badge.booster-vip .booster-text { color: #ffc107; }
 
-.booster-timer { color: var(--text-muted); font-size: 11px; }
+.booster-timer {
+  color:           var(--text-muted);
+  font-size:       11px;
+  font-variant-numeric: tabular-nums;
+  margin-left:     auto;
+  padding-left:    6px;
+}
+
 .no-boosters   { font-size: 12px; color: var(--text-muted); }
 
 /* ============================================================
