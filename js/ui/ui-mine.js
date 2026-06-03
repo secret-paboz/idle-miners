@@ -256,7 +256,7 @@ function appendMiningLog(text, type, oreId) {
   // Ore sprite for mining entries; coin icon for sell entries
   let spriteHtml = "";
   if (type === "ore" && oreId) {
-    spriteHtml = `<img class="mining-log-sprite" src="public/sprites/${oreId}.png" alt="${oreId}" draggable="false">`;
+    spriteHtml = `<img class="mining-log-sprite" src="/sprites/${oreId}.png" alt="${oreId}" draggable="false">`;
   } else if (type === "sell") {
     spriteHtml = `<i class="fa-solid fa-coins" style="font-size:12px;color:var(--color-success);flex-shrink:0"></i>`;
   }
