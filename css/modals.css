@@ -688,3 +688,208 @@
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
+
+/* ============================================================
+   VIP STATUS MODAL
+   ============================================================ */
+
+.vip-modal-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.75);
+  z-index:         1100;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         20px;
+  backdrop-filter: blur(2px);
+}
+
+.vip-modal {
+  background:    var(--bg-secondary);
+  border:        1px solid #b8860b;
+  border-radius: var(--radius-lg);
+  width:         100%;
+  max-width:     380px;
+  max-height:    80vh;
+  overflow-y:    auto;
+  box-shadow:    0 0 32px rgba(255,193,7,0.15);
+}
+
+/* Header */
+.vip-modal-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         14px 16px 12px;
+  border-bottom:   1px solid var(--border);
+}
+
+.vip-modal-title {
+  font-size:   15px;
+  font-weight: 700;
+  color:       var(--text-primary);
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.vip-modal-title i { color: #ffc107; }
+
+.vip-modal-close {
+  width:           32px;
+  height:          32px;
+  border-radius:   50%;
+  background:      var(--bg-card);
+  border:          1px solid var(--border);
+  color:           var(--text-secondary);
+  font-size:       14px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  transition:      background var(--transition), color var(--transition);
+}
+
+.vip-modal-close:hover {
+  background: var(--border-bright);
+  color:      var(--text-primary);
+}
+
+/* Badge row */
+.vip-modal-badge-row {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  padding:     16px 16px 4px;
+}
+
+.vip-modal-crown-badge {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       5px 14px;
+  border-radius: 999px;
+  font-size:     13px;
+  font-weight:   700;
+  background:    linear-gradient(135deg, #b8860b, #ffd700, #b8860b);
+  color:         #1a1000;
+  animation:     vip-badge-pulse 2.4s ease-in-out infinite;
+}
+
+.vip-modal-crown-badge--gray {
+  background: var(--bg-card);
+  color:      var(--text-muted);
+  border:     1px solid var(--border);
+  animation:  none;
+}
+
+@keyframes vip-badge-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255,193,7,0.4); }
+  50%       { box-shadow: 0 0 16px rgba(255,193,7,0.75); }
+}
+
+.vip-modal-status-active {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--color-success);
+}
+
+.vip-modal-status-inactive {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--text-muted);
+}
+
+/* Expiry */
+.vip-modal-expiry {
+  font-size:   12px;
+  color:       var(--text-secondary);
+  padding:     4px 16px 12px;
+}
+
+/* Perks */
+.vip-modal-perks-title {
+  font-size:      11px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color:          var(--text-muted);
+  padding:        12px 16px 8px;
+  border-top:     1px solid var(--border);
+}
+
+.vip-modal-perks {
+  list-style: none;
+  padding:    0 16px 16px;
+  display:    flex;
+  flex-direction: column;
+  gap:        10px;
+}
+
+.vip-modal-perks li {
+  display:     flex;
+  align-items: flex-start;
+  gap:         10px;
+  font-size:   13px;
+  color:       var(--text-primary);
+  line-height: 1.4;
+}
+
+.vip-modal-perks li i {
+  color:      #ffc107;
+  font-size:  14px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.vip-modal-perks--locked li {
+  color: var(--text-muted);
+}
+
+.vip-modal-perks--locked li i {
+  color: var(--text-muted);
+}
+
+.vip-perk-note {
+  color:     var(--text-muted);
+  font-size: 11px;
+}
+
+/* Contact / Discord button */
+.vip-modal-contact {
+  padding:    0 16px 20px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.vip-modal-contact-label {
+  font-size:    12px;
+  color:        var(--text-muted);
+  margin-bottom: 10px;
+  padding-top:  14px;
+}
+
+.vip-modal-discord-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  width:           100%;
+  padding:         11px 0;
+  border-radius:   var(--radius-md);
+  background:      #5865f2;
+  color:           #ffffff;
+  font-size:       14px;
+  font-weight:     600;
+  text-decoration: none;
+  transition:      background var(--transition), transform var(--transition);
+}
+
+.vip-modal-discord-btn:hover {
+  background: #4752c4;
+  color:      #ffffff;
+}
+
+.vip-modal-discord-btn:active {
+  transform: scale(0.97);
+}
