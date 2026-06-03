@@ -45,6 +45,7 @@
     <div class="hud-stat">
       <span class="hud-stat-value" id="hud-cash">$0</span>
       <span class="hud-stat-label">Cash</span>
+      <span class="hud-stat-rate" id="hud-income-rate"></span>
     </div>
 
     <div class="hud-stat">
@@ -52,7 +53,7 @@
       <span class="hud-stat-label">Shards</span>
     </div>
 
-    <button id="hud-nickname" class="hud-nickname-btn">Guest</button>
+    <button id="hud-nickname" class="hud-nickname-btn">Guest <i class="fa-solid fa-chart-simple hud-nickname-icon"></i></button>
     <span id="hud-guest-badge" style="display:none">GUEST</span>
 
     <div class="hud-stat" style="margin-left:auto">
@@ -68,6 +69,7 @@
     <!-- XP bar stretches across bottom of HUD -->
     <div id="hud-xp-bar">
       <div id="hud-xp-fill" style="width:0%"></div>
+      <span id="hud-xp-label"></span>
     </div>
 
   </header>
@@ -93,14 +95,6 @@
         </div>
       </div>
 
-
-      <div class="card">
-        <div class="card-title">Mining Log</div>
-        <div id="mining-log-feed" class="mining-log-feed">
-          <div class="mining-log-empty">Start mining to see activity…</div>
-        </div>
-      </div>
-
       <div class="card">
         <div class="card-title">Actions</div>
         <div class="mine-actions">
@@ -115,14 +109,23 @@
             <span class="upgrade-btn-label">Pickaxe</span>
             <span class="upgrade-btn-level" id="btn-pickaxe-level">Lv.1</span>
             <span class="upgrade-btn-cost"  id="btn-pickaxe-cost">$15</span>
+            <span class="upgrade-btn-preview" id="btn-pickaxe-preview"></span>
           </button>
 
           <button id="btn-upgrade-backpack" class="upgrade-btn">
             <span class="upgrade-btn-label">Backpack</span>
             <span class="upgrade-btn-level" id="btn-backpack-level">Lv.1</span>
             <span class="upgrade-btn-cost"  id="btn-backpack-cost">$25</span>
+            <span class="upgrade-btn-preview" id="btn-backpack-preview"></span>
           </button>
 
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mining Log</div>
+        <div id="mining-log-feed" class="mining-log-feed">
+          <div class="mining-log-empty">Start mining to see activity…</div>
         </div>
       </div>
 
