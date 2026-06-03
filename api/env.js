@@ -6,7 +6,12 @@
 //
 // ⚠️ SECURITY RULES:
 //   - SUPABASE_URL and SUPABASE_ANON_KEY are safe to expose (client needs them)
-//   - SUPABASE_SERVICE_ROLE_KEY must NEVER be injected here (server-side only)
+//     The anon key is a PUBLIC key — it only grants access that is explicitly
+//     permitted by Supabase Row Level Security (RLS) policies. It cannot bypass
+//     RLS or access other users' data. Exposing it to the browser is the
+//     intended and documented Supabase pattern.
+//   - SUPABASE_SERVICE_ROLE_KEY bypasses RLS entirely and must NEVER be
+//     injected here. It lives exclusively in api/save.js (server-side only).
 // ============================================================
 
 export default function handler(req, res) {
