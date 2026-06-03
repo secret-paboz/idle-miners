@@ -1,5 +1,9 @@
 // ============================================================
 // HANDLERS/SETTINGS.JS — Settings panel event handlers
+//
+// CHANGED:
+// - handleResetSave() — passes danger:true and icon to showModal()
+//   so the confirm dialog renders with a warning icon and red styling.
 // ============================================================
 
 import { state } from "../state.js";
@@ -28,9 +32,10 @@ async function handleForceSave() {
 function handleResetSave() {
   showModal({
     title:       "Delete Save Data?",
-    message:     "This permanently wipes ALL your progress — cash, gear, pets, everything. This cannot be undone.",
+    message:     "This permanently wipes ALL your progress — cash, gear, pets, rebirths, everything. This cannot be undone.",
     confirmText: "Delete Everything",
     cancelText:  "Cancel",
+    danger:      true,
     onConfirm:   () => {
       localStorage.clear();
       showToast("Save data deleted. Reloading...", "info", 2000);
