@@ -127,9 +127,72 @@ function initState() {
   return state;
 }
 
+// ============================================================
+// CLAMP STATE — Sanitize invalid/corrupted values before saving
+// Guards against NaN, Infinity, negatives, and type mismatches
+// ============================================================
+
+function clampState() {
+  const nn = (v, fallback = 0) => (typeof v === "number" && isFinite(v) ? v : fallback);
+  const pos = (v, fallback = 0) => Math.max(0, nn(v, fallback));
+
+  // Currencies
+  state.cash        = pos(state.cash);
+  state.cashEarned  = pos(state.cashEarned);
+  state.shards      = pos(state.shards);
+
+  // Mining resources
+  state.ore         = pos(state.ore);
+
+  // Player progression
+  state.level       = Math.max(1, Math.floor(pos(state.level, 1)));
+  state.xp          = pos(state.xp);
+  state.blocksMined = pos(state.blocksMined);
+
+  // Equipment
+  state.pickaxeLevel  = Math.max(1, Math.floor(pos(state.pickaxeLevel, 1)));
+  state.backpackLevel = Math.max(1, Math.floor(pos(state.backpackLevel, 1)));
+
+  // Prestige progression
+  state.rebirths       = pos(Math.floor(state.rebirths));
+  state.prestiges      = pos(Math.floor(state.prestiges));
+  state.prestigeTokens = pos(Math.floor(state.prestigeTokens));
+
+  // Prestige shop upgrades
+  if (state.prestigeUpgrades && typeof state.prestigeUpgrades === "object") {
+    for (const key of ["merchantLevel", "greedLevel", "speedLevel", "storageLevel"]) {
+      state.prestigeUpgrades[key] = pos(Math.floor(state.prestigeUpgrades[key]));
+    }
+  }
+
+  // VIP
+  state.vipExpiresAt = pos(state.vipExpiresAt);
+  if (typeof state.isVip !== "boolean") state.isVip = false;
+
+  // Booleans
+  if (typeof state.isGuest !== "boolean") state.isGuest = true;
+  if (typeof state.gmHiddenFromLeaderboard !== "boolean") state.gmHiddenFromLeaderboard = false;
+
+  // Strings
+  if (typeof state.nickname !== "string")    state.nickname    = "";
+  if (typeof state.currentOreId !== "string") state.currentOreId = "dirt";
+  if (typeof state.dimension !== "string")   state.dimension   = "earth";
+
+  // Boosters — clamp multipliers to sane range [1, 100]
+  if (state.boosters && typeof state.boosters === "object") {
+    for (const key of ["miningSpeed", "sellValue", "xpGain"]) {
+      if (state.boosters[key]) {
+        state.boosters[key].multiplier = Math.min(100, Math.max(1, nn(state.boosters[key].multiplier, 1)));
+        state.boosters[key].endsAt     = pos(state.boosters[key].endsAt);
+      }
+    }
+  }
+}
+
 function saveState() {
-  state.lastSaveTime  = Date.now();
+  state.lastSaveTime   = Date.now();
   state.lastOnlineTime = Date.now();
+  clampState();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -241,6 +304,7 @@ export {
   GUEST_KEY,
   initState,
   saveState,
+  clampState,
   resetStateForRebirth,
   resetStateForPrestige,
   updateDimensionUnlocks,
