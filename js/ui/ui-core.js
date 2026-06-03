@@ -133,7 +133,7 @@ function processToastQueue() {
 // SECTION 3 — MODAL
 // ============================================================
 
-export function showModal({ title, message, confirmText = "Confirm", cancelText = "Cancel", onConfirm, onCancel }) {
+export function showModal({ title, message, confirmText = "Confirm", cancelText = "Cancel", danger = false, onConfirm, onCancel }) {
   let modal = document.getElementById("modal-overlay");
   if (!modal) {
     modal    = document.createElement("div");
@@ -141,13 +141,20 @@ export function showModal({ title, message, confirmText = "Confirm", cancelText 
     document.body.appendChild(modal);
   }
 
+  const iconHtml = danger ? `
+    <div class="modal-danger-icon">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+  ` : "";
+
   modal.innerHTML = `
-    <div class="modal-box">
+    <div class="modal-box ${danger ? "modal-danger" : ""}">
+      ${iconHtml}
       <h2 class="modal-title">${escapeHTML(title)}</h2>
       <p class="modal-message">${escapeHTML(message)}</p>
       <div class="modal-actions">
         <button class="btn-modal-cancel"  id="modal-cancel">${escapeHTML(cancelText)}</button>
-        <button class="btn-modal-confirm" id="modal-confirm">${escapeHTML(confirmText)}</button>
+        <button class="btn-modal-confirm ${danger ? "btn-modal-danger" : ""}" id="modal-confirm">${escapeHTML(confirmText)}</button>
       </div>
     </div>
   `;
