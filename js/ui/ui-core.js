@@ -21,31 +21,104 @@ import { formatNumber, computeMaxCapacity } from "../economy.js";
 import { RARITY_CONFIG } from "../data/pets-data.js";
 
 // ============================================================
-// SECTION 1 — TAB NAVIGATION
+// SECTION 1 — FAB MENU + PANEL NAVIGATION
 // ============================================================
 
-const TABS = ["mine", "pets", "crates", "prestige", "settings"];
+const PANELS = ["mine", "pets", "crates", "prestige", "settings"];
 
+let _fabOpen = false;
+
+// Wire up the FAB hamburger button and all menu items
 export function initTabs() {
-  TABS.forEach(tab => {
-    const btn = document.getElementById(`tab-${tab}`);
-    if (btn) btn.addEventListener("click", () => switchTab(tab));
-  });
+  const fabBtn   = document.getElementById("btn-fab-menu");
+  const fabMenu  = document.getElementById("fab-menu");
+  const backdrop = document.getElementById("fab-backdrop");
+
+  if (fabBtn)   fabBtn.addEventListener("click", toggleFabMenu);
+  if (backdrop) backdrop.addEventListener("click", closeFabMenu);
+
+  // Wire each menu item by its data-panel attribute
+  if (fabMenu) {
+    fabMenu.querySelectorAll(".fab-menu-item[data-panel]").forEach(item => {
+      item.addEventListener("click", () => {
+        const panel = item.dataset.panel;
+        if (panel === "leaderboard") {
+          closeFabMenu();
+          openLeaderboardModal();
+        } else if (panel === "gm") {
+          closeFabMenu();
+          document.getElementById("gm-modal").style.display = "flex";
+        } else {
+          switchTab(panel);
+          closeFabMenu();
+        }
+      });
+    });
+  }
+}
+
+export function openFabMenu() {
+  _fabOpen = true;
+  const fabBtn   = document.getElementById("btn-fab-menu");
+  const fabMenu  = document.getElementById("fab-menu");
+  const backdrop = document.getElementById("fab-backdrop");
+  if (fabBtn)   { fabBtn.classList.add("is-open"); fabBtn.setAttribute("aria-expanded", "true"); }
+  if (fabMenu)  fabMenu.classList.add("is-open");
+  if (backdrop) backdrop.classList.add("is-open");
+}
+
+export function closeFabMenu() {
+  _fabOpen = false;
+  const fabBtn   = document.getElementById("btn-fab-menu");
+  const fabMenu  = document.getElementById("fab-menu");
+  const backdrop = document.getElementById("fab-backdrop");
+  if (fabBtn)   { fabBtn.classList.remove("is-open"); fabBtn.setAttribute("aria-expanded", "false"); }
+  if (fabMenu)  fabMenu.classList.remove("is-open");
+  if (backdrop) backdrop.classList.remove("is-open");
+}
+
+export function toggleFabMenu() {
+  _fabOpen ? closeFabMenu() : openFabMenu();
+}
+
+// Show/hide the GM menu item based on GM status
+export function updateFabGmVisibility() {
+  const item = document.getElementById("fab-item-gm");
+  const sep  = document.getElementById("fab-sep-gm");
+  const show = !!window.__gmVerified;
+  if (item) item.style.display = show ? "flex" : "none";
+  if (sep)  sep.style.display  = show ? "block" : "none";
+}
+
+// Update crate badge count in the menu
+export function updateFabCrateBadge(count) {
+  const badge = document.getElementById("fab-crate-badge");
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent   = count;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
 }
 
 export async function switchTab(tabId) {
-  TABS.forEach(tab => {
+  // Deactivate all panels
+  PANELS.forEach(tab => {
     const panel = document.getElementById(`panel-${tab}`);
-    const btn   = document.getElementById(`tab-${tab}`);
     if (panel) panel.classList.remove("active");
-    if (btn)   btn.classList.remove("active");
   });
 
+  // Activate the requested panel
   const activePanel = document.getElementById(`panel-${tabId}`);
-  const activeBtn   = document.getElementById(`tab-${tabId}`);
   if (activePanel) activePanel.classList.add("active");
-  if (activeBtn)   activeBtn.classList.add("active");
 
+  // Update active state on menu items
+  document.querySelectorAll(".fab-menu-item[data-panel]").forEach(item => {
+    item.classList.toggle("is-active", item.dataset.panel === tabId);
+  });
+
+  // Render panel content
   switch (tabId) {
     case "mine": {
       const { renderMinePanel } = await import("./ui-mine.js");
@@ -75,12 +148,179 @@ export async function switchTab(tabId) {
   }
 }
 
-export async function loadAndRenderLeaderboard(category = "rebirths") {
-  const { renderLeaderboardPanel } = await import("./ui-settings.js");
-  const { fetchLeaderboard }       = await import("../leaderboard.js");
-  renderLeaderboardPanel([], category, true);
+// Open leaderboard modal (called from FAB menu + leaderboard handler)
+export function openLeaderboardModal() {
+  const modal = document.getElementById("leaderboard-modal");
+  if (modal) modal.style.display = "flex";
+  loadAndRenderLeaderboard("cash_earned");
+}
+
+// Category config for tabs
+const LB_CATEGORIES = [
+  { id: "cash_earned",  label: "Cash",     icon: "fa-solid fa-coins" },
+  { id: "blocks_mined", label: "Blocks",   icon: "fa-solid fa-cubes" },
+  { id: "rebirths",     label: "Rebirths", icon: "fa-solid fa-rotate" },
+  { id: "pets_owned",   label: "Pets",     icon: "fa-solid fa-paw" },
+];
+
+let _lbCategory    = "cash_earned";
+let _lbFetchedAt   = 0;
+let _lbTimerHandle = null;
+
+export async function loadAndRenderLeaderboard(category = "cash_earned") {
+  _lbCategory = category;
+
+  // Render tabs
+  renderLbTabs(category);
+
+  // Show skeleton while loading
+  renderLbSkeleton();
+
+  const { fetchLeaderboard } = await import("../leaderboard.js");
   const result = await fetchLeaderboard(category, 25);
-  renderLeaderboardPanel(result.rows || [], category, false);
+
+  _lbFetchedAt = Date.now();
+  startLbTimestamp();
+
+  renderLbRows(result.rows || [], category);
+}
+
+function renderLbTabs(activeCategory) {
+  const container = document.getElementById("leaderboard-tabs");
+  if (!container) return;
+  container.innerHTML = LB_CATEGORIES.map(cat => `
+    <div class="lb-tab ${cat.id === activeCategory ? "active" : ""}" data-cat="${cat.id}">
+      <i class="${cat.icon}"></i> ${cat.label}
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".lb-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      if (tab.dataset.cat !== _lbCategory) {
+        loadAndRenderLeaderboard(tab.dataset.cat);
+      }
+    });
+  });
+}
+
+function renderLbSkeleton() {
+  // Podium skeleton
+  const podium = document.getElementById("leaderboard-podium");
+  if (podium) {
+    podium.innerHTML = [1,2,3].map(() => `
+      <div class="lb-podium-card" style="flex:1;gap:6px">
+        <div class="lb-skel" style="width:30px;height:22px;border-radius:4px"></div>
+        <div class="lb-skel" style="width:54px;height:10px;border-radius:4px;margin-top:4px"></div>
+        <div class="lb-skel" style="width:38px;height:10px;border-radius:4px"></div>
+      </div>
+    `).join("");
+  }
+  // Row skeletons
+  const table = document.getElementById("leaderboard-table");
+  if (table) {
+    table.innerHTML = [1,2,3,4,5].map(() => `
+      <div class="lb-skeleton">
+        <div class="lb-skel" style="width:26px;height:26px;border-radius:6px;flex-shrink:0"></div>
+        <div class="lb-skel" style="flex:1;height:11px;border-radius:4px"></div>
+        <div class="lb-skel" style="width:52px;height:11px;border-radius:4px"></div>
+      </div>
+    `).join("");
+  }
+  // Hide your-rank while loading
+  const yourRank = document.getElementById("lb-your-rank");
+  if (yourRank) yourRank.style.display = "none";
+}
+
+function renderLbRows(rows, category) {
+  const { state } = window.__gameState || {};
+  const myNick    = state?.nickname || "";
+
+  // ── Podium (top 3) ──────────────────────────────────────
+  const podium = document.getElementById("leaderboard-podium");
+  if (podium) {
+    if (rows.length === 0) {
+      podium.innerHTML = "";
+    } else {
+      const top3     = rows.slice(0, 3);
+      const crowns   = ["👑", "", ""];
+      const rankNums = ["#1", "#2", "#3"];
+      podium.innerHTML = top3.map((row, i) => `
+        <div class="lb-podium-card rank-${i+1}">
+          ${crowns[i] ? `<div class="lb-podium-crown">${crowns[i]}</div>` : ""}
+          <div class="lb-podium-rank">${rankNums[i]}</div>
+          <div class="lb-podium-name">${escapeHTML(row.nickname || "—")}</div>
+          <div class="lb-podium-value">${escapeHTML(formatLbValue(row.value, category))}</div>
+        </div>
+      `).join("");
+    }
+  }
+
+  // ── Rows 4+ ─────────────────────────────────────────────
+  const table = document.getElementById("leaderboard-table");
+  if (table) {
+    if (rows.length === 0) {
+      table.innerHTML = `
+        <div class="lb-empty-state">
+          <div class="lb-empty-state-icon">🏆</div>
+          <div class="lb-empty-state-title">No scores yet</div>
+          <div class="lb-empty-state-sub">Be the first to make it onto the leaderboard!</div>
+        </div>
+      `;
+    } else {
+      table.innerHTML = rows.slice(3).map((row, i) => {
+        const rank  = i + 4;
+        const isMe  = myNick && row.nickname === myNick;
+        return `
+          <div class="lb-row ${isMe ? "is-me" : ""}">
+            <div class="lb-rank-badge">${rank}</div>
+            <div class="lb-row-name">
+              ${escapeHTML(row.nickname || "—")}
+              ${isMe ? `<span class="lb-you-tag">YOU</span>` : ""}
+            </div>
+            <div class="lb-row-value">${escapeHTML(formatLbValue(row.value, category))}</div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  // ── Your rank footer ────────────────────────────────────
+  const yourRankEl  = document.getElementById("lb-your-rank");
+  const yourRankVal = document.getElementById("lb-your-rank-value");
+  if (yourRankEl && yourRankVal) {
+    const myIdx = myNick ? rows.findIndex(r => r.nickname === myNick) : -1;
+    if (myIdx !== -1) {
+      yourRankVal.textContent  = `#${myIdx + 1}`;
+      yourRankEl.style.display = "flex";
+    } else {
+      yourRankEl.style.display = "none";
+    }
+  }
+}
+
+function formatLbValue(value, category) {
+  const { formatNumber } = window.__formatNumber
+    ? { formatNumber: window.__formatNumber }
+    : { formatNumber: n => String(n) };
+  switch (category) {
+    case "cash_earned":  return "$" + formatNumber(value);
+    case "blocks_mined": return formatNumber(value);
+    case "rebirths":     return value + " ↺";
+    case "pets_owned":   return value + " 🐾";
+    default:             return String(value);
+  }
+}
+
+function startLbTimestamp() {
+  if (_lbTimerHandle) clearInterval(_lbTimerHandle);
+  const el = document.getElementById("lb-updated-at");
+  if (!el) return;
+  el.textContent = "Updated just now";
+  _lbTimerHandle = setInterval(() => {
+    const secs = Math.floor((Date.now() - _lbFetchedAt) / 1000);
+    if (secs < 60)  el.textContent = `Updated ${secs}s ago`;
+    else            el.textContent = `Updated ${Math.floor(secs/60)}m ago`;
+  }, 5000);
 }
 
 // ============================================================
