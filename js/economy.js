@@ -488,3 +488,41 @@ export function formatNumber(n) {
   if (n >= 1e3)  return (n / 1e3).toFixed(1)  + "K";
   return Math.floor(n).toLocaleString();
 }
+
+// ============================================================
+// SECTION 9 — UPGRADE PREVIEW HELPERS
+// Returns the gain the player will see after the NEXT upgrade.
+// These mirror the formulas in computeMiningPower /
+// computeMaxCapacity but simulate level + 1 without mutating state.
+// ============================================================
+
+// Returns "+X ore/s" delta for the next pickaxe level, accounting
+// for pet bonuses and any active speed booster.
+export function pickaxeNextLevelGain() {
+  const petBonus      = computePetBonus("mining");
+  const prestigeBonus = state.prestigeUpgrades.speedLevel;
+
+  // Current power base vs next-level base (no booster — shows base gain)
+  const currentBase = (state.pickaxeLevel       * 1) + prestigeBonus;
+  const nextBase    = ((state.pickaxeLevel + 1) * 1) + prestigeBonus;
+
+  const currentPower = Math.max(1, Math.floor(currentBase * (1 + petBonus)));
+  const nextPower    = Math.max(1, Math.floor(nextBase    * (1 + petBonus)));
+
+  return nextPower - currentPower;
+}
+
+// Returns "+X cap" delta for the next backpack level, accounting
+// for pet bonuses and prestige storage upgrades.
+export function backpackNextLevelGain() {
+  const petBonus      = computePetBonus("backpack");
+  const prestigeBonus = state.prestigeUpgrades.storageLevel * 10;
+
+  const currentBase = 20 + (state.backpackLevel       * 15);
+  const nextBase    = 20 + ((state.backpackLevel + 1) * 15);
+
+  const currentCap = Math.floor(currentBase * (1 + petBonus) + prestigeBonus);
+  const nextCap    = Math.floor(nextBase    * (1 + petBonus) + prestigeBonus);
+
+  return nextCap - currentCap;
+}
