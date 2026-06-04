@@ -1,7 +1,6 @@
 // ============================================================
 // UI-PRESTIGE.JS — Prestige panel renderer
-// Covers: rebirth progress section, prestige progress section,
-//         and the prestige shop upgrade cards
+// Covers: rebirth progress, prestige progress, prestige shop
 // ============================================================
 
 import { state } from "../state.js";
@@ -25,17 +24,21 @@ export function renderPrestigePanel() {
 function renderRebirthSection() {
   const progress = getRebirthProgress();
 
-  setText("rebirth-pickaxe-progress", `Pickaxe: ${progress.pickaxe.current} / 200`);
+  // Count + bonus (just numbers — labels are in HTML)
+  setText("rebirth-count", state.rebirths);
+  setText("rebirth-bonus", "+" + (state.rebirths * 10) + "% sell");
+
+  // Pickaxe bar
+  setText("rebirth-pickaxe-progress", progress.pickaxe.current + " / 200");
   setStyle("rebirth-pickaxe-bar", "width", progress.pickaxe.percent + "%");
   toggleClass("rebirth-pickaxe-bar", "done", progress.pickaxe.done);
 
-  setText("rebirth-backpack-progress", `Backpack: ${progress.backpack.current} / 200`);
+  // Backpack bar
+  setText("rebirth-backpack-progress", progress.backpack.current + " / 200");
   setStyle("rebirth-backpack-bar", "width", progress.backpack.percent + "%");
   toggleClass("rebirth-backpack-bar", "done", progress.backpack.done);
 
-  setText("rebirth-count", "Rebirths: " + state.rebirths);
-  setText("rebirth-bonus", "+" + (state.rebirths * 10) + "% sell value");
-
+  // Button
   const btn = document.getElementById("btn-rebirth");
   if (btn) {
     btn.disabled = !progress.canRebirth;
@@ -51,18 +54,33 @@ function renderPrestigeSection() {
   const progress = getPrestigeProgress();
   const status   = getPrestigeStatus();
 
-  setText("prestige-rebirths-progress", `Rebirths: ${progress.rebirths.current} / 25`);
+  // Count + tokens (just numbers — labels are in HTML)
+  setText("prestige-count",  state.prestiges);
+  setText("prestige-tokens", state.prestigeTokens);
+
+  // Token hint in shop title
+  setText("prestige-shop-tokens",
+    state.prestigeTokens > 0
+      ? "✦ " + state.prestigeTokens + " token" + (state.prestigeTokens !== 1 ? "s" : "")
+      : ""
+  );
+
+  // Rebirths bar
+  setText("prestige-rebirths-progress", progress.rebirths.current + " / 25");
   setStyle("prestige-rebirths-bar", "width", progress.rebirths.percent + "%");
+  toggleClass("prestige-rebirths-bar", "done", progress.rebirths.done);
 
-  setText("prestige-pickaxe-progress", `Pickaxe: ${progress.pickaxe.current} / 200`);
+  // Pickaxe bar
+  setText("prestige-pickaxe-progress", progress.pickaxe.current + " / 200");
   setStyle("prestige-pickaxe-bar", "width", progress.pickaxe.percent + "%");
+  toggleClass("prestige-pickaxe-bar", "done", progress.pickaxe.done);
 
-  setText("prestige-backpack-progress", `Backpack: ${progress.backpack.current} / 200`);
+  // Backpack bar
+  setText("prestige-backpack-progress", progress.backpack.current + " / 200");
   setStyle("prestige-backpack-bar", "width", progress.backpack.percent + "%");
+  toggleClass("prestige-backpack-bar", "done", progress.backpack.done);
 
-  setText("prestige-tokens", state.prestigeTokens + " tokens");
-  setText("prestige-count",  "Prestiges: " + state.prestiges);
-
+  // Button
   const btn = document.getElementById("btn-prestige");
   if (btn) {
     btn.disabled = !status.eligible;
@@ -79,24 +97,48 @@ function renderPrestigeShop() {
   if (!container) return;
 
   const status = getPrestigeStatus();
-  container.innerHTML = status.upgrades.map(upgrade => `
-    <div class="prestige-card ${upgrade.maxed ? "maxed" : ""} ${upgrade.canAfford ? "can-afford" : ""}"
-         style="--prestige-color: ${upgrade.color}; --prestige-glow: ${upgrade.glowColor}">
-      <div class="prestige-card-header">
-        <i class="${upgrade.icon}" style="color:${upgrade.color}"></i>
-        <span class="prestige-name">${upgrade.name}</span>
-        <span class="prestige-level">Lv.${upgrade.currentLevel} / ${upgrade.maxLevel}</span>
+
+  container.innerHTML = status.upgrades.map(upgrade => {
+    const levelPct = Math.round((upgrade.currentLevel / upgrade.maxLevel) * 100);
+
+    return `
+      <div class="prestige-card
+                  ${upgrade.maxed    ? "maxed"     : ""}
+                  ${upgrade.canAfford ? "can-afford" : ""}"
+           style="--prestige-color:${upgrade.color};--prestige-glow:${upgrade.glowColor}">
+
+        <div class="prestige-card-header">
+          <i class="${upgrade.icon}" style="color:${upgrade.color}"></i>
+          <span class="prestige-name">${upgrade.name}</span>
+          <span class="prestige-level">Lv.${upgrade.currentLevel} / ${upgrade.maxLevel}</span>
+        </div>
+
+        <!-- Level progress bar -->
+        <div class="prestige-level-bar">
+          <div class="prestige-level-fill" style="width:${levelPct}%"></div>
+        </div>
+
+        <div class="prestige-desc">${upgrade.description}</div>
+
+        <div class="prestige-effect">
+          <span class="effect-current">${upgrade.currentEffect}</span>
+          ${upgrade.nextEffect
+            ? `<span class="effect-arrow">→</span>
+               <span class="effect-next">${upgrade.nextEffect}</span>`
+            : ""}
+        </div>
+
+        <button class="btn-buy-prestige
+                        ${upgrade.maxed     ? "maxed"    : ""}
+                        ${upgrade.canAfford ? ""         : "disabled"}"
+                data-prestige-upgrade="${upgrade.key}"
+                ${upgrade.maxed || !upgrade.canAfford ? "disabled" : ""}>
+          ${upgrade.maxed
+            ? `<i class="fa-solid fa-check"></i> Maxed`
+            : `<i class="fa-solid fa-medal"></i> ${upgrade.cost} token${upgrade.cost !== 1 ? "s" : ""}`}
+        </button>
+
       </div>
-      <div class="prestige-desc">${upgrade.description}</div>
-      <div class="prestige-effect">
-        <span class="effect-current">${upgrade.currentEffect}</span>
-        ${upgrade.nextEffect ? `<span class="effect-next">→ ${upgrade.nextEffect}</span>` : ""}
-      </div>
-      <button class="btn-buy-prestige ${upgrade.maxed ? "maxed" : ""} ${upgrade.canAfford ? "" : "disabled"}"
-              data-prestige-upgrade="${upgrade.key}"
-              ${upgrade.maxed || !upgrade.canAfford ? "disabled" : ""}>
-        ${upgrade.maxed ? "MAXED" : `Buy (${upgrade.cost} token${upgrade.cost !== 1 ? "s" : ""})`}
-      </button>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
