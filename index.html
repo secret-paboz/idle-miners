@@ -226,57 +226,116 @@
 
       <!-- Rebirth -->
       <div class="card rebirth-section">
-        <div class="card-title">Rebirth</div>
 
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
-          Resets cash, ore, level &amp; gear. Keeps pets, shards &amp; crates.
-          Earns +10% permanent sell value.
+        <div class="prestige-card-top">
+          <div class="prestige-card-top-left">
+            <div class="card-title">Rebirth</div>
+            <div class="prestige-stat-row">
+              <span class="prestige-stat-val" id="rebirth-count">0</span>
+              <span class="prestige-stat-lbl">rebirths</span>
+              <span class="prestige-stat-bonus" id="rebirth-bonus">+0% sell</span>
+            </div>
+          </div>
+          <div class="prestige-card-top-right">
+            <div class="prestige-keep-reset">
+              <div class="prestige-keeps">
+                <span class="prestige-pill keep"><i class="fa-solid fa-paw"></i> Pets</span>
+                <span class="prestige-pill keep"><i class="fa-solid fa-gem"></i> Shards</span>
+                <span class="prestige-pill keep"><i class="fa-solid fa-box"></i> Crates</span>
+              </div>
+              <div class="prestige-resets">
+                <span class="prestige-pill reset"><i class="fa-solid fa-coins"></i> Cash</span>
+                <span class="prestige-pill reset"><i class="fa-solid fa-pickaxe"></i> Gear</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div style="font-size:13px;margin-bottom:4px" id="rebirth-count">Rebirths: 0</div>
-        <div style="font-size:12px;color:var(--accent);margin-bottom:12px" id="rebirth-bonus">+0% sell value</div>
+        <!-- Pickaxe progress -->
+        <div class="prestige-progress-row">
+          <span class="prestige-progress-label">Pickaxe</span>
+          <span class="prestige-progress-val" id="rebirth-pickaxe-progress">1 / 200</span>
+        </div>
+        <div class="progress-bar progress-bar--rebirth">
+          <div class="progress-fill progress-fill--rebirth" id="rebirth-pickaxe-bar" style="width:0%"></div>
+        </div>
 
-        <div style="font-size:12px;color:var(--text-muted)" id="rebirth-pickaxe-progress">Pickaxe: 1 / 200</div>
-        <div class="progress-bar"><div class="progress-fill" id="rebirth-pickaxe-bar" style="width:0%"></div></div>
+        <!-- Backpack progress -->
+        <div class="prestige-progress-row">
+          <span class="prestige-progress-label">Backpack</span>
+          <span class="prestige-progress-val" id="rebirth-backpack-progress">1 / 200</span>
+        </div>
+        <div class="progress-bar progress-bar--rebirth">
+          <div class="progress-fill progress-fill--rebirth" id="rebirth-backpack-bar" style="width:0%"></div>
+        </div>
 
-        <div style="font-size:12px;color:var(--text-muted)" id="rebirth-backpack-progress">Backpack: 1 / 200</div>
-        <div class="progress-bar"><div class="progress-fill" id="rebirth-backpack-bar" style="width:0%"></div></div>
+        <button id="btn-rebirth" class="btn-rebirth" disabled>
+          <i class="fa-solid fa-rotate"></i> Rebirth
+        </button>
 
-        <button id="btn-rebirth" class="btn-rebirth" disabled>Rebirth</button>
       </div>
 
       <!-- Prestige -->
       <div class="card prestige-section">
-        <div class="card-title">Prestige</div>
 
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
-          Resets everything including rebirths. Awards 1 Prestige Token
-          for the shop below.
+        <div class="prestige-card-top">
+          <div class="prestige-card-top-left">
+            <div class="card-title">Prestige</div>
+            <div class="prestige-stat-row">
+              <span class="prestige-stat-val" id="prestige-count">0</span>
+              <span class="prestige-stat-lbl">prestiges</span>
+            </div>
+          </div>
+          <div class="prestige-card-top-right">
+            <span class="prestige-token-badge">
+              <i class="fa-solid fa-medal"></i>
+              <span id="prestige-tokens">0</span>
+              <span class="prestige-token-lbl">tokens</span>
+            </span>
+            <div class="prestige-reset-warn">
+              <i class="fa-solid fa-triangle-exclamation"></i> Resets everything
+            </div>
+          </div>
         </div>
 
-        <div class="prestige-status-row">
-          <span style="font-size:13px" id="prestige-count">Prestiges: 0</span>
-          <span class="prestige-token-badge">
-            <i class="fa-solid fa-medal"></i>
-            <span id="prestige-tokens">0 tokens</span>
-          </span>
+        <!-- Rebirths progress -->
+        <div class="prestige-progress-row">
+          <span class="prestige-progress-label">Rebirths</span>
+          <span class="prestige-progress-val" id="prestige-rebirths-progress">0 / 25</span>
+        </div>
+        <div class="progress-bar progress-bar--prestige">
+          <div class="progress-fill progress-fill--prestige" id="prestige-rebirths-bar" style="width:0%"></div>
         </div>
 
-        <div style="font-size:12px;color:var(--text-muted)" id="prestige-rebirths-progress">Rebirths: 0 / 25</div>
-        <div class="progress-bar"><div class="progress-fill" id="prestige-rebirths-bar" style="width:0%"></div></div>
+        <!-- Pickaxe progress -->
+        <div class="prestige-progress-row">
+          <span class="prestige-progress-label">Pickaxe</span>
+          <span class="prestige-progress-val" id="prestige-pickaxe-progress">1 / 200</span>
+        </div>
+        <div class="progress-bar progress-bar--prestige">
+          <div class="progress-fill progress-fill--prestige" id="prestige-pickaxe-bar" style="width:0%"></div>
+        </div>
 
-        <div style="font-size:12px;color:var(--text-muted)" id="prestige-pickaxe-progress">Pickaxe: 1 / 200</div>
-        <div class="progress-bar"><div class="progress-fill" id="prestige-pickaxe-bar" style="width:0%"></div></div>
+        <!-- Backpack progress -->
+        <div class="prestige-progress-row">
+          <span class="prestige-progress-label">Backpack</span>
+          <span class="prestige-progress-val" id="prestige-backpack-progress">1 / 200</span>
+        </div>
+        <div class="progress-bar progress-bar--prestige">
+          <div class="progress-fill progress-fill--prestige" id="prestige-backpack-bar" style="width:0%"></div>
+        </div>
 
-        <div style="font-size:12px;color:var(--text-muted)" id="prestige-backpack-progress">Backpack: 1 / 200</div>
-        <div class="progress-bar"><div class="progress-fill" id="prestige-backpack-bar" style="width:0%"></div></div>
+        <button id="btn-prestige" class="btn-prestige" disabled>
+          <i class="fa-solid fa-star"></i> Prestige
+        </button>
 
-        <button id="btn-prestige" class="btn-prestige" disabled>Prestige</button>
       </div>
 
       <!-- Prestige Shop -->
       <div class="card">
-        <div class="card-title">Prestige Shop</div>
+        <div class="card-title">Prestige Shop
+          <span class="prestige-shop-token-hint" id="prestige-shop-tokens"></span>
+        </div>
         <div id="prestige-shop"></div>
       </div>
 
