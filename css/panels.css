@@ -336,34 +336,104 @@
    ============================================================ */
 
 .pets-actions {
-  display:       flex;
-  gap:           10px;
-  margin-bottom: 16px;
+  display: flex;
+  gap:     12px;
 }
 
+/* ── Hunt / Fish buttons with SVG ring ── */
 .hunt-fish-btn {
-  flex:           1;
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  padding:        12px;
-  background:     var(--bg-card);
-  border:         1px solid var(--border);
-  border-radius:  var(--radius-lg);
-  transition:     border-color var(--transition), background var(--transition);
+  flex:            1;
+  position:        relative;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         14px 10px;
+  background:      var(--bg-card);
+  border:          1px solid var(--border);
+  border-radius:   var(--radius-lg);
+  overflow:        hidden;
+  transition:      border-color var(--transition), background var(--transition),
+                   box-shadow var(--transition);
 }
 
 .hunt-fish-btn.ready {
   border-color: var(--color-success);
-  background:   rgba(76,175,80,0.1);
+  background:   rgba(76,175,80,0.08);
+  box-shadow:   0 0 14px rgba(76,175,80,0.18);
 }
 
-.hunt-fish-btn.on-cooldown { opacity: 0.65; }
+.hunt-fish-btn.on-cooldown {
+  border-color: var(--border);
+  background:   var(--bg-card);
+}
 
-.hunt-fish-label { font-size: 13px; font-weight: 600; }
-.hunt-fish-timer { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+/* SVG ring — absolutely positioned behind inner content */
+.hunt-fish-ring {
+  position: absolute;
+  top:      50%;
+  left:     50%;
+  transform: translate(-50%, -50%);
+  width:    72px;
+  height:   72px;
+  opacity:  0.18;
+}
 
-/* Pet grid */
+.hunt-fish-btn.ready .hunt-fish-ring { opacity: 0; }
+
+.ring-track {
+  fill:         none;
+  stroke:       var(--border-bright);
+  stroke-width: 3;
+}
+
+.ring-fill {
+  fill:             none;
+  stroke:           var(--accent);
+  stroke-width:     3;
+  stroke-linecap:   round;
+  /* circumference of r=18 circle ≈ 113.1 */
+  stroke-dasharray: 113.1;
+  stroke-dashoffset: 113.1; /* JS sets this dynamically */
+  transform:        rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition:       stroke-dashoffset 0.9s linear;
+}
+
+/* Inner content stacked vertically */
+.hunt-fish-inner {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            3px;
+  position:       relative;
+  z-index:        1;
+}
+
+.hunt-fish-icon {
+  font-size:  20px;
+  transition: color var(--transition);
+}
+
+.hunt-fish-btn.ready .hunt-fish-icon { color: var(--color-success); }
+
+.hunt-fish-label {
+  font-size:   13px;
+  font-weight: 700;
+}
+
+.hunt-fish-timer {
+  font-size:  10px;
+  color:      var(--text-muted);
+  min-height: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hunt-fish-btn.ready .hunt-fish-timer {
+  color:       var(--color-success);
+  font-weight: 600;
+}
+
+/* ── Pet grid ── */
 #pet-grid {
   display:               grid;
   grid-template-columns: 1fr 1fr;
@@ -371,104 +441,152 @@
 }
 
 .pet-card {
-  background:      var(--bg-card);
-  border:          1px solid var(--border);
-  border-radius:   var(--radius-lg);
-  padding:         12px 10px;
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  gap:             6px;
-  position:        relative;
-  transition:      border-color var(--transition);
+  background:     var(--bg-card);
+  border:         1px solid var(--border);
+  border-radius:  var(--radius-lg);
+  padding:        0 0 12px;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            5px;
+  position:       relative;
+  overflow:       hidden;
+  transition:     border-color var(--transition), box-shadow var(--transition);
+}
+
+/* Rarity color bar across the top of each card */
+.pet-card::before {
+  content:    "";
+  display:    block;
+  width:      100%;
+  height:     3px;
+  background: var(--rarity-color, var(--border));
+  flex-shrink: 0;
 }
 
 .pet-card.owned {
-  border-color: var(--rarity-color, var(--border));
-  box-shadow:   0 0 12px color-mix(in srgb, var(--rarity-color, transparent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--rarity-color, var(--border)) 60%, transparent);
+  box-shadow:   0 0 16px color-mix(in srgb, var(--rarity-color, transparent) 15%, transparent);
 }
 
-.pet-card.unowned { opacity: 0.45; }
+/* Unowned — dimmed but readable, not invisible */
+.pet-card.unowned {
+  opacity: 0.5;
+  filter:  saturate(0.4);
+}
 
 .pet-header {
   width:           100%;
   display:         flex;
   justify-content: space-between;
   align-items:     center;
+  padding:         8px 10px 0;
 }
 
 .pet-rarity-badge {
-  font-size:      9px;
-  font-weight:    700;
+  font-size:      8px;
+  font-weight:    800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color:          #000;
   padding:        2px 6px;
   border-radius:  99px;
 }
 
 .pet-level {
-  font-size:   11px;
-  font-weight: 600;
+  font-size:   10px;
+  font-weight: 700;
   color:       var(--text-muted);
+  background:  var(--bg-secondary);
+  padding:     1px 6px;
+  border-radius: 99px;
+  border:      1px solid var(--border);
 }
 
+/* Icon container — larger, with subtle rarity glow on owned */
 .pet-icon {
-  width:           52px;
-  height:          52px;
+  width:           56px;
+  height:          56px;
   display:         flex;
   align-items:     center;
   justify-content: center;
+  border-radius:   50%;
+  background:      color-mix(in srgb, var(--rarity-color, transparent) 10%, transparent);
+  margin:          2px 0;
 }
 
+.pet-icon i { font-size: 26px; }
 .pet-icon img { width: 100%; height: 100%; object-fit: contain; }
 
-.pet-name   { font-size: 13px; font-weight: 700; text-align: center; }
-.pet-effect { font-size: 10px; color: var(--text-muted); text-align: center; }
+.pet-name {
+  font-size:   12px;
+  font-weight: 700;
+  text-align:  center;
+  padding:     0 8px;
+  line-height: 1.2;
+}
 
+.pet-effect {
+  font-size:   10px;
+  color:       var(--text-muted);
+  text-align:  center;
+  padding:     0 8px;
+  line-height: 1.4;
+  min-height:  28px;
+}
+
+/* Upgrade row — full width, bordered top */
 .pet-upgrade-row {
   width:           100%;
   display:         flex;
   justify-content: space-between;
   align-items:     center;
-  margin-top:      4px;
+  padding:         8px 10px 0;
+  margin-top:      2px;
+  border-top:      1px solid var(--border);
 }
 
-.pet-shard-cost { font-size: 10px; color: var(--text-muted); }
+.pet-shard-cost {
+  font-size:   10px;
+  color:       var(--text-muted);
+  display:     flex;
+  align-items: center;
+  gap:         3px;
+}
 
 .pet-upgrade-btn {
   font-size:     11px;
-  font-weight:   600;
-  padding:       4px 10px;
-  background:    var(--accent-dim);
-  color:         var(--accent);
-  border:        1px solid var(--accent);
+  font-weight:   700;
+  padding:       4px 11px;
+  background:    color-mix(in srgb, var(--rarity-color, var(--accent)) 15%, transparent);
+  color:         var(--rarity-color, var(--accent));
+  border:        1px solid color-mix(in srgb, var(--rarity-color, var(--accent)) 60%, transparent);
   border-radius: var(--radius-sm);
-  transition:    background var(--transition);
+  transition:    background var(--transition), transform var(--transition);
 }
 
-.pet-upgrade-btn:hover { background: var(--accent); color: #000; }
-
-.pet-ability-btn {
-  width:         100%;
-  font-size:     11px;
-  font-weight:   600;
-  padding:       6px;
-  border-radius: var(--radius-sm);
-  background:    rgba(255,193,7,0.12);
-  border:        1px solid #ffc107;
-  color:         #ffc107;
-  text-align:    center;
-  transition:    background var(--transition);
+.pet-upgrade-btn:hover {
+  background: color-mix(in srgb, var(--rarity-color, var(--accent)) 30%, transparent);
+  transform:  scale(1.04);
 }
 
-.pet-ability-btn.active      { background: rgba(255,193,7,0.3); }
-.pet-ability-btn.on-cooldown { opacity: 0.5; cursor: not-allowed; }
+.pet-upgrade-btn:active { transform: scale(0.97); }
 
+/* Unowned "how to get" hint */
 .pet-unowned-label {
-  font-size:  10px;
-  color:      var(--text-muted);
-  font-style: italic;
+  font-size:   10px;
+  color:       var(--text-muted);
+  font-style:  italic;
+  text-align:  center;
+  padding:     6px 10px 0;
+  display:     flex;
+  align-items: center;
+  gap:         4px;
+}
+
+.pet-unowned-label i {
+  font-size:  9px;
+  flex-shrink: 0;
 }
 
 /* ============================================================
