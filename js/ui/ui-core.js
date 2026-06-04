@@ -125,8 +125,9 @@ export async function switchTab(tabId) {
   // Render panel content
   switch (tabId) {
     case "mine": {
-      const { renderMinePanel } = await import("./ui-mine.js");
+      const { renderMinePanel, renderBoosterBadges } = await import("./ui-mine.js");
       renderMinePanel();
+      renderBoosterBadges();
       break;
     }
     case "pets": {
@@ -429,11 +430,16 @@ export function showModal({ title, message, confirmText = "Confirm", cancelText 
 export function showOfflineProgress(result) {
   if (!result) return;
 
-  // Build human-readable time string
+  // Build human-readable time string (supports days for long absences)
   const totalSecs = result.seconds || 0;
-  const h = Math.floor(totalSecs / 3600);
+  const d = Math.floor(totalSecs / 86400);
+  const h = Math.floor((totalSecs % 86400) / 3600);
   const m = Math.floor((totalSecs % 3600) / 60);
-  const timeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const timeStr = d > 0
+    ? `${d}d ${h}h ${m}m`
+    : h > 0
+      ? `${h}h ${m}m`
+      : `${m}m`;
 
   let overlay = document.getElementById("offline-modal-overlay");
   if (!overlay) {
