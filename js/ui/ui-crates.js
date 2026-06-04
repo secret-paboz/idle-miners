@@ -1,91 +1,147 @@
 // ============================================================
 // UI-CRATES.JS — Crates panel renderer + crate open animation
-// Covers: crate inventory cards, timed crate countdown timers,
-//         and the animateCrateOpen feedback function
-//
-// CHANGED:
-// - animateCrateOpen() — added showCrateReward() which injects
-//   a reward card above the inventory with pop-in animation,
-//   showing exactly what was earned. Auto-dismisses after 5s.
+// Covers: timed crate SVG ring countdowns, crate inventory
+//         with loot preview pills, and reward reveal card
 // ============================================================
 
 import { state } from "../state.js";
-import { getCrateInventory } from "../crates.js";
+import { getCrateInventory, CRATE_TYPES } from "../crates.js";
+import { COOLDOWNS } from "../data/pets-data.js";
 import { renderBoosterBadges } from "./ui-mine.js";
 import { setText, toggleClass, showToast, formatCooldown } from "./ui-core.js";
 
+// SVG ring circumference for r=18 circle
+const RING_CIRC = 2 * Math.PI * 18; // ≈ 113.1
+
+// Loot type → icon + label
+const LOOT_ICONS = {
+  miningSpeed: { icon: "fa-solid fa-bolt",        label: "Speed"  },
+  sellValue:   { icon: "fa-solid fa-coins",        label: "Sell"   },
+  xpGain:      { icon: "fa-solid fa-star",         label: "XP"     },
+};
+
 // ============================================================
-// SECTION 1 — CRATES PANEL
+// SECTION 1 — RENDER PANEL
 // ============================================================
 
 export function renderCratesPanel() {
-  renderCrateInventory();
   renderCrateTimers();
+  renderCrateInventory();
 }
 
 // ============================================================
-// SECTION 2 — CRATE INVENTORY
+// SECTION 2 — TIMED CRATE COUNTDOWN RINGS
 // ============================================================
+
+const TIMER_CONFIG = [
+  { stateKey: "lastHourlyTime", ringId: "ring-hourly", valId: "val-timer-hourly", btnId: "btn-claim-hourly", slotId: "timer-hourly", cooldown: COOLDOWNS.hourly },
+  { stateKey: "lastDailyTime",  ringId: "ring-daily",  valId: "val-timer-daily",  btnId: "btn-claim-daily",  slotId: "timer-daily",  cooldown: COOLDOWNS.daily  },
+  { stateKey: "lastWeeklyTime", ringId: "ring-weekly", valId: "val-timer-weekly", btnId: "btn-claim-weekly", slotId: "timer-weekly", cooldown: COOLDOWNS.weekly },
+];
+
+export function renderCrateTimers() {
+  const now = Date.now();
+
+  TIMER_CONFIG.forEach(({ stateKey, ringId, valId, btnId, slotId, cooldown }) => {
+    const last      = state[stateKey] || 0;
+    const elapsed   = now - last;
+    const ready     = elapsed >= cooldown;
+    const remaining = ready ? 0 : Math.ceil((cooldown - elapsed) / 1000);
+    const progress  = ready ? 1 : elapsed / cooldown;
+
+    // Slot class
+    const slot = document.getElementById(slotId);
+    if (slot) {
+      slot.classList.toggle("ready",   ready);
+      slot.classList.toggle("waiting", !ready);
+    }
+
+    // Ring fill
+    const ring = document.getElementById(ringId);
+    if (ring) {
+      ring.style.strokeDashoffset = RING_CIRC * (1 - Math.min(progress, 1));
+    }
+
+    // Timer value text
+    const valEl = document.getElementById(valId);
+    if (valEl) valEl.textContent = ready ? "Ready!" : formatCooldown(remaining);
+
+    // Claim button
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.disabled = !ready;
+      btn.classList.toggle("disabled", !ready);
+      btn.textContent = ready ? "Claim" : "Waiting";
+    }
+  });
+}
+
+// ============================================================
+// SECTION 3 — CRATE INVENTORY WITH LOOT PREVIEW
+// ============================================================
+
+function buildLootPreview(crateData) {
+  // Deduplicate booster keys from loot table
+  const seen = new Set();
+  return crateData.lootTable
+    .filter(entry => {
+      if (seen.has(entry.boosterKey)) return false;
+      seen.add(entry.boosterKey);
+      return true;
+    })
+    .map(entry => {
+      const info = LOOT_ICONS[entry.boosterKey] || { icon: "fa-solid fa-box", label: entry.boosterKey };
+      return `<span class="crate-loot-pill"><i class="${info.icon}"></i> ${info.label}</span>`;
+    })
+    .join("");
+}
 
 function renderCrateInventory() {
   const container = document.getElementById("crate-inventory");
   if (!container) return;
 
   const inventory = getCrateInventory();
-  container.innerHTML = inventory.map(crate => `
-    <div class="crate-card" style="--crate-color: ${crate.color}; --crate-glow: ${crate.glowColor}">
-      <div class="crate-icon"><i class="${crate.icon}"></i></div>
-      <div class="crate-info">
-        <div class="crate-name">${crate.name}</div>
-        <div class="crate-desc">${crate.description}</div>
-      </div>
-      <div class="crate-count">${crate.count}</div>
-      <div class="crate-actions">
-        <button class="btn-open-crate ${crate.count < 1 ? "disabled" : ""}"
-                data-crate="${crate.id}" ${crate.count < 1 ? "disabled" : ""}>
-          Open
-        </button>
-        <button class="btn-open-all-crate ${crate.count < 2 ? "disabled" : ""}"
-                data-crate-all="${crate.id}" ${crate.count < 2 ? "disabled" : ""}>
-          Open All (${crate.count})
-        </button>
-      </div>
-    </div>
-  `).join("");
-}
+  const hasAny    = inventory.some(c => c.count > 0);
 
-// ============================================================
-// SECTION 3 — TIMED CRATE COUNTDOWNS
-// ============================================================
+  if (!hasAny) {
+    container.innerHTML = `<div class="crate-inventory-empty"><i class="fa-solid fa-box-open"></i> No crates in inventory</div>`;
+    return;
+  }
 
-export function renderCrateTimers() {
-  const now    = Date.now();
-  const timers = [
-    { key: "lastHourlyTime", id: "timer-hourly", label: "Hourly Crate", interval: 60 * 60 * 1000          },
-    { key: "lastDailyTime",  id: "timer-daily",  label: "Daily Crate",  interval: 24 * 60 * 60 * 1000     },
-    { key: "lastWeeklyTime", id: "timer-weekly", label: "Weekly Crate", interval: 7 * 24 * 60 * 60 * 1000 },
-  ];
+  container.innerHTML = inventory.map(crate => {
+    const hasCrates   = crate.count > 0;
+    const lootPreview = buildLootPreview(crate);
 
-  timers.forEach(({ key, id, label, interval, crateId }) => {
-    const last      = state[key] || 0;
-    const elapsed   = now - last;
-    const ready     = elapsed >= interval;
-    const remaining = ready ? 0 : Math.ceil((interval - elapsed) / 1000);
+    return `
+      <div class="crate-card ${hasCrates ? "has-crates" : "no-crates"}"
+           style="--crate-color:${crate.color};--crate-glow:${crate.glowColor}">
 
-    const el = document.getElementById(id);
-    if (!el) return;
+        <div class="crate-icon"><i class="${crate.icon}"></i></div>
 
-    el.innerHTML = `
-      <div class="crate-timer ${ready ? "ready" : "waiting"}">
-        <span class="timer-label">${label}</span>
-        <span class="timer-value">${ready ? "Ready!" : formatCooldown(remaining)}</span>
-        <button class="btn-claim-crate ${ready ? "" : "disabled"}"
-                data-claim="${crateId}" ${ready ? "" : "disabled"}>
-          ${ready ? "Claim" : "Waiting"}
-        </button>
+        <div class="crate-info">
+          <div class="crate-name">${crate.name}</div>
+          <div class="crate-loot-preview">${lootPreview}</div>
+        </div>
+
+        <div class="crate-count-wrap">
+          <div class="crate-count">${crate.count}</div>
+          <div class="crate-count-label">owned</div>
+        </div>
+
+        <div class="crate-actions">
+          <button class="btn-open-crate ${!hasCrates ? "disabled" : ""}"
+                  data-crate="${crate.id}" ${!hasCrates ? "disabled" : ""}>
+            Open
+          </button>
+          <button class="btn-open-all-crate ${crate.count < 2 ? "disabled" : ""}"
+                  data-crate-all="${crate.id}" ${crate.count < 2 ? "disabled" : ""}>
+            All (${crate.count})
+          </button>
+        </div>
+
       </div>
     `;
-  });
+  }).join("");
 }
 
 // ============================================================
@@ -96,29 +152,30 @@ export function animateCrateOpen(result) {
   if (!result.success) { showToast(result.message, "error"); return; }
 
   const loot = result.result;
-
-  // Show reward reveal card above the inventory
   showCrateReward(result.crateData, loot);
-
   showToast(`🎁 ${loot.label}! ${loot.description}`, "success", 4000);
   renderCratesPanel();
   renderBoosterBadges();
 }
 
 function showCrateReward(crateData, loot) {
-  // Remove any existing reward card first
   const existing = document.getElementById("crate-reward-card");
   if (existing) existing.remove();
 
   const container = document.getElementById("crate-inventory");
   if (!container) return;
 
+  const info = LOOT_ICONS[loot.boosterKey] || { icon: "fa-solid fa-box" };
+
   const card     = document.createElement("div");
   card.id        = "crate-reward-card";
   card.className = "crate-reward-card";
+  card.style.setProperty("--reward-color", crateData?.color || "#ffc107");
   card.innerHTML = `
     <div class="crate-reward-inner">
-      <span class="crate-reward-icon">🎁</span>
+      <div class="crate-reward-icon-wrap">
+        <i class="${info.icon}"></i>
+      </div>
       <div class="crate-reward-text">
         <div class="crate-reward-title">${loot.label}!</div>
         <div class="crate-reward-desc">${loot.description}</div>
@@ -136,7 +193,6 @@ function showCrateReward(crateData, loot) {
     setTimeout(() => card.remove(), 300);
   };
 
-  // Auto-dismiss after 5 seconds
   setTimeout(() => {
     if (document.getElementById("crate-reward-card")) {
       card.classList.add("hiding");
