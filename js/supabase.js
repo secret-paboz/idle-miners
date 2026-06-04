@@ -183,17 +183,24 @@ export async function deleteCloudSave() {
   try {
     const { data: sessionData } = await client.auth.getSession();
     const userId = sessionData?.session?.user?.id;
+    const jwt    = sessionData?.session?.access_token;
 
-    if (!userId) return { success: false, message: "Not logged in." };
+    if (!userId || !jwt) return { success: false, message: "Not logged in." };
 
-    const { error } = await client
-      .from("player_saves")
-      .update({ game_data: null })
-      .eq("id", userId);
+    const res = await fetch("/api/delete", {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${jwt}`,
+      },
+      body: JSON.stringify({ userId }),
+    });
 
-    if (error) {
-      console.warn("[deleteCloudSave] Supabase error:", error.message);
-      return { success: false, message: "Failed to delete cloud save." };
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      console.warn("[deleteCloudSave] Server error:", result.message);
+      return { success: false, message: result.message || "Failed to delete cloud save." };
     }
 
     return { success: true, message: "Cloud save deleted." };
