@@ -444,11 +444,12 @@
 
 .crate-reward-card {
   background:    var(--bg-card);
-  border:        1px solid var(--color-success);
+  border:        1px solid color-mix(in srgb, var(--reward-color, var(--color-success)) 60%, transparent);
   border-radius: var(--radius-lg);
   margin-bottom: 10px;
   overflow:      hidden;
   animation:     reward-pop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:    0 0 16px color-mix(in srgb, var(--reward-color, var(--color-success)) 20%, transparent);
 }
 
 .crate-reward-card.hiding {
@@ -472,14 +473,25 @@
   padding:     12px 14px;
 }
 
-.crate-reward-icon  { font-size: 26px; flex-shrink: 0; }
+.crate-reward-icon-wrap {
+  width:           40px;
+  height:          40px;
+  border-radius:   50%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      color-mix(in srgb, var(--reward-color, var(--color-success)) 15%, transparent);
+  flex-shrink:     0;
+  font-size:       18px;
+  color:           var(--reward-color, var(--color-success));
+}
 
 .crate-reward-text  { flex: 1; }
 
 .crate-reward-title {
-  font-size:   13px;
-  font-weight: 700;
-  color:       var(--color-success);
+  font-size:     13px;
+  font-weight:   700;
+  color:         var(--reward-color, var(--color-success));
   margin-bottom: 2px;
 }
 
