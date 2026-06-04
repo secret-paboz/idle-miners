@@ -2,8 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/env",  "destination": "/api/env.js"  },
-    { "source": "/api/save", "destination": "/api/save.js" },
+    { "source": "/api/env",    "destination": "/api/env.js"    },
+    { "source": "/api/save",   "destination": "/api/save.js"   },
+    { "source": "/api/delete", "destination": "/api/delete.js" },
     { "source": "/(.*)",     "destination": "/index.html"  }
   ]
 }
