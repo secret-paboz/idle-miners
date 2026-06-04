@@ -1,13 +1,7 @@
 // ============================================================
 // UI-PETS.JS — Pets panel renderer
-// Covers: hunt/fish cooldown buttons, pet grid with
-//         owned/unowned states, upgrade rows
-//
-// CHANGED:
-// - Removed all legendary ability button rendering (abilityHTML)
-// - Removed canActivate / pet.ability checks
-// - Legendary pets now show their passive effect label instead
-// - Removed getActiveAbilities import (function deleted in pets.js)
+// Covers: hunt/fish cooldown buttons with SVG ring timers,
+//         pet grid with owned/unowned states, upgrade rows
 // ============================================================
 
 import { state } from "../state.js";
@@ -19,6 +13,9 @@ import {
   formatCooldown,
   shardCost,
 } from "./ui-core.js";
+
+// SVG ring circumference for r=18 circle
+const RING_CIRC = 2 * Math.PI * 18; // ≈ 113.1
 
 // ============================================================
 // SECTION 1 — PETS PANEL
@@ -36,41 +33,80 @@ export function renderPetsPanel() {
 export function renderPetCooldowns() {
   const now = Date.now();
 
-  const huntReady     = now - (state.lastHuntTime || 0) >= COOLDOWNS.hunt;
-  const fishReady     = now - (state.lastFishTime || 0) >= COOLDOWNS.fish;
-  const huntRemaining = huntReady ? 0 : Math.ceil((COOLDOWNS.hunt - (now - state.lastHuntTime)) / 1000);
-  const fishRemaining = fishReady ? 0 : Math.ceil((COOLDOWNS.fish - (now - state.lastFishTime)) / 1000);
+  const huntElapsed   = now - (state.lastHuntTime || 0);
+  const fishElapsed   = now - (state.lastFishTime || 0);
+  const huntReady     = huntElapsed >= COOLDOWNS.hunt;
+  const fishReady     = fishElapsed >= COOLDOWNS.fish;
+  const huntRemaining = huntReady ? 0 : Math.ceil((COOLDOWNS.hunt - huntElapsed) / 1000);
+  const fishRemaining = fishReady ? 0 : Math.ceil((COOLDOWNS.fish - fishElapsed) / 1000);
 
+  // Timer text
   setText("btn-hunt-timer", huntReady ? "Ready!" : formatCooldown(huntRemaining));
+  setText("btn-fish-timer", fishReady ? "Ready!" : formatCooldown(fishRemaining));
+
+  // Button state classes
   toggleClass("btn-hunt", "ready",       huntReady);
   toggleClass("btn-hunt", "on-cooldown", !huntReady);
-
-  setText("btn-fish-timer", fishReady ? "Ready!" : formatCooldown(fishRemaining));
   toggleClass("btn-fish", "ready",       fishReady);
   toggleClass("btn-fish", "on-cooldown", !fishReady);
+
+  // SVG ring — stroke-dashoffset represents progress remaining
+  // offset = CIRC means empty (full cooldown), 0 means full (ready)
+  _updateRing("hunt-ring-fill", huntReady ? 1 : huntElapsed / COOLDOWNS.hunt);
+  _updateRing("fish-ring-fill", fishReady ? 1 : fishElapsed / COOLDOWNS.fish);
+}
+
+function _updateRing(id, progress) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  // progress 0→1: 0 = just started (full ring shown), 1 = done (ring hidden by CSS)
+  const offset = RING_CIRC * (1 - Math.min(progress, 1));
+  el.style.strokeDashoffset = offset;
 }
 
 // ============================================================
 // SECTION 3 — PET GRID
 // ============================================================
 
-// Returns a human-readable passive effect label for each pet.
-function getPetEffectLabel(pet) {
-  const level = state.pets[pet.id]?.level || 1;
-
+// Returns current effect label for owned pets
+function getPetEffectLabel(pet, level) {
+  const pct = (pet.modifier * level * 100).toFixed(0);
   switch (pet.rarity) {
-    case "common":
-      return `+${(pet.modifier * level * 100).toFixed(0)}% backpack capacity`;
-    case "uncommon":
-      return `+${(pet.modifier * level * 100).toFixed(0)}% mining speed`;
-    case "rare":
-      return `+${(pet.modifier * level * 100).toFixed(0)}% sell value`;
-    case "legendary":
-      // Legendary shows which passive pool it feeds and current bonus
+    case "common":    return `+${pct}% backpack capacity`;
+    case "uncommon":  return `+${pct}% mining speed`;
+    case "rare":      return `+${pct}% sell value`;
+    case "legendary": {
       const effectName = pet.legendaryEffect === "mining" ? "mining speed" : "sell value";
-      return `+${(pet.modifier * level * 100).toFixed(0)}% ${effectName} (passive)`;
-    default:
-      return pet.description;
+      return `+${pct}% ${effectName}`;
+    }
+    default: return pet.description;
+  }
+}
+
+// Returns next-level effect label for upgrade preview
+function getNextEffectLabel(pet, level) {
+  const nextLevel = level + 1;
+  const pct       = (pet.modifier * nextLevel * 100).toFixed(0);
+  switch (pet.rarity) {
+    case "common":    return `→ +${pct}% backpack`;
+    case "uncommon":  return `→ +${pct}% speed`;
+    case "rare":      return `→ +${pct}% sell`;
+    case "legendary": {
+      const effectName = pet.legendaryEffect === "mining" ? "speed" : "sell";
+      return `→ +${pct}% ${effectName}`;
+    }
+    default: return "";
+  }
+}
+
+// How to obtain hint based on rarity
+function getObtainHint(rarity) {
+  switch (rarity) {
+    case "common":
+    case "uncommon":  return `<i class="fa-solid fa-khanda"></i> Hunt`;
+    case "rare":      return `<i class="fa-solid fa-fish"></i> Fish`;
+    case "legendary": return `<i class="fa-solid fa-fish"></i> Fish (rare)`;
+    default:          return "Unknown";
   }
 }
 
@@ -87,35 +123,48 @@ function renderPetGrid() {
     else unowned.push({ petId, pet, petState: petState || { owned: false, level: 0 } });
   });
 
-  const allPets = [...owned, ...unowned];
+  container.innerHTML = [...owned, ...unowned].map(({ petId, pet, petState }) => {
+    const rarity    = RARITY_CONFIG[pet.rarity];
+    const isOwned   = petState?.owned;
+    const level     = petState?.level || 0;
+    const canUpgrade = isOwned && (state.shards >= rarity.shardCost);
 
-  container.innerHTML = allPets.map(({ petId, pet, petState }) => {
-    const rarity  = RARITY_CONFIG[pet.rarity];
-    const isOwned = petState?.owned;
-    const level   = petState?.level || 0;
-
-    const effectLabel = isOwned ? getPetEffectLabel(pet) : pet.description;
+    const effectLabel   = isOwned ? getPetEffectLabel(pet, level) : pet.description;
+    const nextLabel     = isOwned ? getNextEffectLabel(pet, level) : "";
+    const obtainHint    = getObtainHint(pet.rarity);
 
     return `
       <div class="pet-card ${isOwned ? "owned" : "unowned"} rarity-${pet.rarity}"
            style="--rarity-color: ${rarity.color}">
+
         <div class="pet-header">
-          <span class="pet-rarity-badge" style="background:${rarity.color}">${pet.rarity}</span>
+          <span class="pet-rarity-badge" style="background:${rarity.color}20;color:${rarity.color};border:1px solid ${rarity.color}40">${rarity.label}</span>
           ${isOwned ? `<span class="pet-level">Lv.${level}</span>` : ""}
         </div>
+
         <div class="pet-icon">
           <i class="${pet.icon}" style="color:${rarity.color}"></i>
         </div>
+
         <div class="pet-name">${pet.name}</div>
         <div class="pet-effect">${effectLabel}</div>
+
         ${isOwned ? `
           <div class="pet-upgrade-row">
-            <span class="pet-shard-cost">✦ ${shardCost(pet.rarity)}/lv</span>
-            <button class="pet-upgrade-btn" data-pet-upgrade="${petId}">Upgrade</button>
+            <div class="pet-shard-cost">
+              <span style="color:${rarity.color}">✦</span> ${shardCost(pet.rarity)}
+              <span class="pet-next-effect">${nextLabel}</span>
+            </div>
+            <button class="pet-upgrade-btn ${canUpgrade ? "" : "disabled"}"
+                    data-pet-upgrade="${petId}"
+                    ${canUpgrade ? "" : "disabled"}>
+              Upgrade
+            </button>
           </div>
         ` : `
-          <div class="pet-unowned-label">Not yet obtained</div>
+          <div class="pet-unowned-label">${obtainHint}</div>
         `}
+
       </div>
     `;
   }).join("");
