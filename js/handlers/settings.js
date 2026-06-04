@@ -6,8 +6,8 @@
 //   so the confirm dialog renders with a warning icon and red styling.
 // ============================================================
 
-import { state } from "../state.js";
-import { cloudSave } from "../supabase.js";
+import { state, saveState } from "../state.js";
+import { cloudSave, deleteCloudSave } from "../supabase.js";
 import { showToast, showModal } from "../ui/ui-core.js";
 
 function on(id, event, handler) {
@@ -36,7 +36,15 @@ function handleResetSave() {
     confirmText: "Delete Everything",
     cancelText:  "Cancel",
     danger:      true,
-    onConfirm:   () => {
+    onConfirm:   async () => {
+      if (!state.isGuest) {
+        showToast("Deleting cloud save...", "info", 2000);
+        const result = await deleteCloudSave();
+        if (!result.success) {
+          showToast("⚠️ Could not delete cloud save. Try again.", "error", 3000);
+          return;
+        }
+      }
       localStorage.clear();
       showToast("Save data deleted. Reloading...", "info", 2000);
       setTimeout(() => location.reload(), 2000);
