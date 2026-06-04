@@ -166,15 +166,28 @@
         <div class="pets-actions">
 
           <button id="btn-hunt" class="hunt-fish-btn">
-            <i class="fa-solid fa-khanda" style="font-size:22px"></i>
-            <span class="hunt-fish-label">Hunt</span>
-            <span class="hunt-fish-timer" id="btn-hunt-timer">Ready!</span>
+            <!-- Circular cooldown ring -->
+            <svg class="hunt-fish-ring" viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="18"/>
+              <circle class="ring-fill" id="hunt-ring-fill" cx="22" cy="22" r="18"/>
+            </svg>
+            <div class="hunt-fish-inner">
+              <i class="fa-solid fa-khanda hunt-fish-icon"></i>
+              <span class="hunt-fish-label">Hunt</span>
+              <span class="hunt-fish-timer" id="btn-hunt-timer">Ready!</span>
+            </div>
           </button>
 
           <button id="btn-fish" class="hunt-fish-btn">
-            <i class="fa-solid fa-fish" style="font-size:22px"></i>
-            <span class="hunt-fish-label">Fish</span>
-            <span class="hunt-fish-timer" id="btn-fish-timer">Ready!</span>
+            <svg class="hunt-fish-ring" viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="18"/>
+              <circle class="ring-fill" id="fish-ring-fill" cx="22" cy="22" r="18"/>
+            </svg>
+            <div class="hunt-fish-inner">
+              <i class="fa-solid fa-fish hunt-fish-icon"></i>
+              <span class="hunt-fish-label">Fish</span>
+              <span class="hunt-fish-timer" id="btn-fish-timer">Ready!</span>
+            </div>
           </button>
 
         </div>
