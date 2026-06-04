@@ -7,7 +7,7 @@
 import { state } from "../state.js";
 import { getCrateInventory, CRATE_TYPES } from "../crates.js";
 import { COOLDOWNS } from "../data/pets-data.js";
-import { renderBoosterBadges } from "./ui-mine.js";
+import { renderBoosterBadges, renderMinePanel } from "./ui-mine.js";
 import { setText, toggleClass, showToast, formatCooldown } from "./ui-core.js";
 
 // SVG ring circumference for r=18 circle
@@ -155,6 +155,9 @@ export function animateCrateOpen(result) {
   showCrateReward(result.crateData, loot);
   showToast(`🎁 ${loot.label}! ${loot.description}`, "success", 4000);
   renderCratesPanel();
+  // Refresh the mine panel booster section so boosters appear
+  // immediately whether the player is on the mine tab or switches to it.
+  renderMinePanel();
   renderBoosterBadges();
 }
 
