@@ -9,6 +9,7 @@ import {
   gmSetPickaxe, gmSetBackpack,
   gmSetRebirths, gmSetPrestigeTokens,
   gmSetCashEarned,
+  gmAddCrate, gmRemoveCrate,
 } from "../gm.js";
 import {
   grantVipByPlayerId,
@@ -69,6 +70,12 @@ async function handleGMClick(e) {
     return;
   }
 
+  // Crate add/remove buttons
+  if (e.target.id === "btn-gm-add-crate" || e.target.id === "btn-gm-remove-crate") {
+    handleGMCrateAction(e.target.id === "btn-gm-add-crate" ? "add" : "remove");
+    return;
+  }
+
   const setBtn = e.target.closest("[data-gm-action]");
   if (!setBtn) return;
 
@@ -109,6 +116,43 @@ async function handleGMClick(e) {
     renderHUD();
     renderMinePanel();
     renderGMPanel();
+  }
+}
+
+function handleGMCrateAction(mode) {
+  const crateSelect = document.getElementById("gm-crate-select");
+  const amountInput = document.getElementById("gm-crate-amount");
+  const msgEl       = document.getElementById("gm-crate-message");
+
+  const crateId = crateSelect?.value;
+  const amount  = amountInput?.value?.trim();
+
+  if (!crateId) {
+    if (msgEl) { msgEl.textContent = "Select a crate type."; msgEl.style.color = "#f44336"; }
+    return;
+  }
+  if (!amount || amount === "0") {
+    if (msgEl) { msgEl.textContent = "Enter an amount (min 1)."; msgEl.style.color = "#f44336"; }
+    return;
+  }
+
+  const result = mode === "add"
+    ? gmAddCrate(crateId, amount)
+    : gmRemoveCrate(crateId, amount);
+
+  if (msgEl) {
+    msgEl.textContent = result.message;
+    msgEl.style.color = result.success ? "#4caf50" : "#f44336";
+  }
+
+  if (result.success) {
+    if (amountInput) amountInput.value = "";
+    renderGMPanel();
+    // Also refresh crates panel if it's visible
+    const cratesPanel = document.getElementById("panel-crates");
+    if (cratesPanel?.classList.contains("active")) {
+      import("../ui/ui-crates.js").then(({ renderCratesPanel }) => renderCratesPanel());
+    }
   }
 }
 
