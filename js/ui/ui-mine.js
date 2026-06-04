@@ -239,13 +239,12 @@ export function animateSell(cashEarned) {
 
 const MAX_LOG_ENTRIES = 40;
 
-// Returns a human-readable relative time string for the mining log
-// e.g. "just now", "5s ago", "2m ago"
 function _relativeTime(ts) {
-  const diffSec = Math.floor((Date.now() - ts) / 1000);
-  if (diffSec < 5)  return "just now";
-  if (diffSec < 60) return diffSec + "s ago";
-  return Math.floor(diffSec / 60) + "m ago";
+  return new Date(ts).toLocaleTimeString([], {
+    hour:   "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 // oreId: string like "coal" | "diamond" | null (for sell entries)
