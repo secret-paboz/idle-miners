@@ -236,7 +236,8 @@ export function renderGMPanel() {
       </div>
     </div>
 
-  `;\n}
+  `;
+}
 
 // ============================================================
 // SECTION 4 — LEADERBOARD PANEL
