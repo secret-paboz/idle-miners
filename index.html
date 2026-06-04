@@ -207,9 +207,46 @@
       <div class="card">
         <div class="card-title">Timed Crates</div>
         <div class="crate-timers">
-          <div id="timer-hourly"></div>
-          <div id="timer-daily"></div>
-          <div id="timer-weekly"></div>
+
+          <div id="timer-hourly" class="crate-timer-slot">
+            <svg class="crate-timer-ring" viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="18"/>
+              <circle class="ring-fill" id="ring-hourly" cx="22" cy="22" r="18"/>
+            </svg>
+            <div class="crate-timer-inner">
+              <i class="fa-solid fa-box crate-timer-icon" style="color:#78909c"></i>
+              <span class="crate-timer-name">Hourly</span>
+              <span class="crate-timer-value" id="val-timer-hourly">--:--</span>
+              <button class="btn-claim-crate disabled" id="btn-claim-hourly" data-claim="hourly" disabled>Claim</button>
+            </div>
+          </div>
+
+          <div id="timer-daily" class="crate-timer-slot">
+            <svg class="crate-timer-ring" viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="18"/>
+              <circle class="ring-fill" id="ring-daily" cx="22" cy="22" r="18"/>
+            </svg>
+            <div class="crate-timer-inner">
+              <i class="fa-solid fa-gift crate-timer-icon" style="color:#42a5f5"></i>
+              <span class="crate-timer-name">Daily</span>
+              <span class="crate-timer-value" id="val-timer-daily">--:--</span>
+              <button class="btn-claim-crate disabled" id="btn-claim-daily" data-claim="daily" disabled>Claim</button>
+            </div>
+          </div>
+
+          <div id="timer-weekly" class="crate-timer-slot">
+            <svg class="crate-timer-ring" viewBox="0 0 44 44" aria-hidden="true">
+              <circle class="ring-track" cx="22" cy="22" r="18"/>
+              <circle class="ring-fill" id="ring-weekly" cx="22" cy="22" r="18"/>
+            </svg>
+            <div class="crate-timer-inner">
+              <i class="fa-solid fa-crown crate-timer-icon" style="color:#ab47bc"></i>
+              <span class="crate-timer-name">Weekly</span>
+              <span class="crate-timer-value" id="val-timer-weekly">--:--</span>
+              <button class="btn-claim-crate disabled" id="btn-claim-weekly" data-claim="weekly" disabled>Claim</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
