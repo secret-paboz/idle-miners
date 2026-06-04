@@ -183,6 +183,11 @@ function bindEvents() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") saveState();
   });
+
+  // Mobile fallback: browsers (especially iOS Safari) don't reliably
+  // fire pagehide/visibilitychange before killing a tab. Stamp
+  // lastOnlineTime every 10s so the worst-case drift is only 10s.
+  setInterval(() => { state.lastOnlineTime = Date.now(); }, 10_000);
 }
 
 // ============================================================
