@@ -171,6 +171,40 @@ export async function cloudLoad() {
 }
 
 // ============================================================
+// SECTION 3b — CLOUD DELETE
+// Wipes the player's game_data in Supabase by nulling it out.
+// Called by handleResetSave() for registered accounts.
+// ============================================================
+
+export async function deleteCloudSave() {
+  const client = window.supabaseClient;
+  if (!client) return { success: false, message: "No cloud connection." };
+
+  try {
+    const { data: sessionData } = await client.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+
+    if (!userId) return { success: false, message: "Not logged in." };
+
+    const { error } = await client
+      .from("player_saves")
+      .update({ game_data: null })
+      .eq("id", userId);
+
+    if (error) {
+      console.warn("[deleteCloudSave] Supabase error:", error.message);
+      return { success: false, message: "Failed to delete cloud save." };
+    }
+
+    return { success: true, message: "Cloud save deleted." };
+
+  } catch (err) {
+    console.warn("[deleteCloudSave] Unexpected error:", err.message);
+    return { success: false, message: "Cloud delete error." };
+  }
+}
+
+// ============================================================
 // SECTION 4 — CONFLICT RESOLUTION
 // ============================================================
 
