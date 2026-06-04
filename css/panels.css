@@ -599,64 +599,153 @@
    SECTION 3 — CRATES PANEL
    ============================================================ */
 
+/* ── Timed crate timer row ── */
 .crate-timers {
-  display:        flex;
-  flex-direction: column;
-  gap:            8px;
-  margin-bottom:  16px;
+  display: flex;
+  gap:     10px;
 }
 
-.crate-timer {
+/* Each timer slot is a button-like card with SVG ring */
+.crate-timer-slot {
+  flex:            1;
+  position:        relative;
   display:         flex;
   align-items:     center;
-  justify-content: space-between;
-  padding:         10px 14px;
+  justify-content: center;
+  padding:         14px 8px;
   background:      var(--bg-card);
   border:          1px solid var(--border);
-  border-radius:   var(--radius-md);
-  gap:             10px;
+  border-radius:   var(--radius-lg);
+  overflow:        hidden;
+  transition:      border-color var(--transition), box-shadow var(--transition);
 }
 
-.crate-timer.ready   { border-color: var(--color-success); }
-.crate-timer.waiting { border-color: var(--border); opacity: 0.8; }
-.crate-timer.waiting .timer-value { color: var(--text-muted); font-size: 12px; }
+.crate-timer-slot.ready {
+  border-color: var(--color-success);
+  box-shadow:   0 0 14px rgba(76,175,80,0.18);
+}
 
-.timer-label { font-size: 13px; font-weight: 600; flex: 1; }
-.timer-value { font-size: 12px; color: var(--text-muted); }
+.crate-timer-slot.waiting { opacity: 0.85; }
+
+/* SVG ring — same pattern as hunt/fish */
+.crate-timer-ring {
+  position:  absolute;
+  top:       50%;
+  left:      50%;
+  transform: translate(-50%, -50%);
+  width:     72px;
+  height:    72px;
+  opacity:   0.18;
+}
+
+.crate-timer-slot.ready .crate-timer-ring { opacity: 0; }
+
+/* ring-track and ring-fill reuse the shared pet ring styles */
+
+/* Inner stack */
+.crate-timer-inner {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            3px;
+  position:       relative;
+  z-index:        1;
+}
+
+.crate-timer-icon {
+  font-size:  18px;
+  transition: color var(--transition);
+}
+
+.crate-timer-slot.ready .crate-timer-icon { color: var(--color-success) !important; }
+
+.crate-timer-name {
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--text-secondary);
+}
+
+.crate-timer-value {
+  font-size:            10px;
+  color:                var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-height:           14px;
+}
+
+.crate-timer-slot.ready .crate-timer-value {
+  color:       var(--color-success);
+  font-weight: 600;
+}
 
 .btn-claim-crate {
-  font-size:     12px;
-  font-weight:   600;
-  padding:       5px 12px;
+  font-size:     10px;
+  font-weight:   700;
+  padding:       4px 10px;
   border-radius: var(--radius-sm);
   background:    var(--color-success);
   color:         #fff;
-  transition:    opacity var(--transition);
+  margin-top:    2px;
+  transition:    opacity var(--transition), transform var(--transition);
 }
 
+.btn-claim-crate:hover:not(.disabled) { transform: scale(1.05); }
+
 .btn-claim-crate.disabled {
-  opacity:    0.35;
+  opacity:    0.3;
   cursor:     not-allowed;
   background: var(--bg-secondary);
   color:      var(--text-muted);
 }
 
-/* Crate inventory */
+/* ── Crate inventory ── */
 #crate-inventory {
   display:        flex;
   flex-direction: column;
-  gap:            8px;
+  gap:            10px;
+}
+
+/* Empty state */
+.crate-inventory-empty {
+  text-align:  center;
+  color:       var(--text-muted);
+  font-size:   12px;
+  padding:     20px 0;
+  font-style:  italic;
 }
 
 .crate-card {
+  position:      relative;
   display:       flex;
   align-items:   center;
   gap:           12px;
-  padding:       12px 14px;
+  padding:       12px 14px 12px 17px;
   background:    var(--bg-card);
-  border:        1px solid var(--crate-color, var(--border));
+  border:        1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow:    0 0 8px var(--crate-glow, transparent);
+  overflow:      hidden;
+  transition:    border-color var(--transition), box-shadow var(--transition);
+}
+
+/* Left color accent bar */
+.crate-card::before {
+  content:       "";
+  position:      absolute;
+  left:          0;
+  top:           0;
+  bottom:        0;
+  width:         3px;
+  background:    var(--crate-color, var(--border));
+  border-radius: 3px 0 0 3px;
+}
+
+.crate-card.has-crates {
+  border-color: color-mix(in srgb, var(--crate-color) 35%, transparent);
+  box-shadow:   0 0 10px color-mix(in srgb, var(--crate-color) 10%, transparent);
+}
+
+.crate-card.no-crates {
+  opacity: 0.45;
+  filter:  saturate(0.3);
 }
 
 .crate-icon {
@@ -668,20 +757,66 @@
 }
 
 .crate-info  { flex: 1; min-width: 0; }
-.crate-name  { font-size: 13px; font-weight: 700; }
-.crate-desc  { font-size: 11px; color: var(--text-muted); }
-.crate-count { font-size: 18px; font-weight: 700; color: var(--crate-color); min-width: 28px; text-align: center; }
+.crate-name  { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.crate-desc  { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
 
-.crate-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+/* Loot preview pills */
+.crate-loot-preview {
+  display:   flex;
+  gap:       4px;
+  flex-wrap: wrap;
+}
+
+.crate-loot-pill {
+  font-size:     9px;
+  font-weight:   600;
+  padding:       1px 6px;
+  border-radius: 99px;
+  background:    color-mix(in srgb, var(--crate-color) 12%, transparent);
+  color:         var(--crate-color);
+  border:        1px solid color-mix(in srgb, var(--crate-color) 30%, transparent);
+  white-space:   nowrap;
+}
+
+.crate-count {
+  font-size:   20px;
+  font-weight: 800;
+  color:       var(--crate-color);
+  min-width:   28px;
+  text-align:  center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.crate-count-label {
+  font-size: 9px;
+  color:     var(--text-muted);
+  text-align: center;
+}
+
+.crate-count-wrap {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  flex-shrink:    0;
+  min-width:      32px;
+}
+
+.crate-actions {
+  display:        flex;
+  flex-direction: column;
+  gap:            5px;
+  flex-shrink:    0;
+}
 
 .btn-open-crate,
 .btn-open-all-crate {
   font-size:     11px;
   font-weight:   600;
-  padding:       5px 10px;
+  padding:       5px 11px;
   border-radius: var(--radius-sm);
   white-space:   nowrap;
-  transition:    background var(--transition), color var(--transition);
+  transition:    background var(--transition), transform var(--transition);
 }
 
 .btn-open-crate {
@@ -689,14 +824,25 @@
   color:      #000;
 }
 
+.btn-open-crate:hover:not(.disabled)     { transform: scale(1.04); }
+.btn-open-crate:active:not(.disabled)    { transform: scale(0.97); }
+
 .btn-open-all-crate {
   background: transparent;
   border:     1px solid var(--crate-color, var(--border));
   color:      var(--crate-color);
 }
 
+.btn-open-all-crate:hover:not(.disabled)  { background: color-mix(in srgb, var(--crate-color) 15%, transparent); }
+.btn-open-all-crate:active:not(.disabled) { transform: scale(0.97); }
+
 .btn-open-crate.disabled,
-.btn-open-all-crate.disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-open-all-crate.disabled {
+  opacity: 0.25;
+  cursor:  not-allowed;
+}
+
+/* ── Reward card (pop-in on open) ── */
 
 /* ============================================================
    SECTION 4 — PRESTIGE PANEL
