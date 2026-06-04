@@ -72,7 +72,8 @@ const DEFAULT_STATE = {
   crates: {},
 
   // Offline progress tracking
-  lastOnlineTime: 0,
+  // -1 = first boot (no offline progress); gets stamped to Date.now() in initState()
+  lastOnlineTime: -1,
 
   // Tracking
   lastSaveTime: 0,
@@ -114,9 +115,12 @@ function initState() {
   Object.assign(state, loaded);
 
   const now = Date.now();
-  if (state.lastHourlyTime === -1) state.lastHourlyTime = now;
-  if (state.lastDailyTime  === -1) state.lastDailyTime  = now;
-  if (state.lastWeeklyTime === -1) state.lastWeeklyTime = now;
+  if (state.lastHourlyTime  === -1) state.lastHourlyTime  = now;
+  if (state.lastDailyTime   === -1) state.lastDailyTime   = now;
+  if (state.lastWeeklyTime  === -1) state.lastWeeklyTime  = now;
+  // First-ever boot: stamp now so the next session can calculate offline progress.
+  // Also handles legacy saves that stored 0 (falsy) — treat those as "just now".
+  if (!state.lastOnlineTime || state.lastOnlineTime === -1) state.lastOnlineTime = now;
 
   // Expire VIP locally if past expiry
   if (state.vipExpiresAt > 0 && Date.now() > state.vipExpiresAt) {
@@ -177,6 +181,9 @@ function clampState() {
   if (typeof state.nickname !== "string")    state.nickname    = "";
   if (typeof state.currentOreId !== "string") state.currentOreId = "dirt";
   if (typeof state.dimension !== "string")   state.dimension   = "earth";
+
+  // Offline tracking — must be a positive finite number
+  state.lastOnlineTime = pos(state.lastOnlineTime);
 
   // Boosters — clamp multipliers to sane range [1, 100]
   if (state.boosters && typeof state.boosters === "object") {
