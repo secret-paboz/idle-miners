@@ -176,6 +176,13 @@ function bindEvents() {
   bindSettingsEvents();
   bindGMEvents();
   bindDelegatedEvents();
+
+  // Stamp lastOnlineTime whenever the player leaves — this is what
+  // makes offline progress work correctly on next boot.
+  window.addEventListener("pagehide", () => saveState());
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") saveState();
+  });
 }
 
 // ============================================================
