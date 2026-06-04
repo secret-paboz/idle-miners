@@ -107,7 +107,7 @@ export function showRegisterModal() {
 // ============================================================
 
 export function renderGMPanel() {
-  const floatBtn = document.getElementById("btn-gm-float");
+  const floatBtn  = document.getElementById("btn-gm-float");
   const container = document.getElementById("gm-panel-content");
 
   if (!isGameMasterSync()) {
@@ -115,65 +115,128 @@ export function renderGMPanel() {
     return;
   }
 
-  // Show the floating GM button
   if (floatBtn) floatBtn.style.display = "flex";
-
   if (!container) return;
 
   const hidden = isGMHiddenFromLeaderboard();
 
+  // Current crate inventory for live counts in the dropdown
+  const crateOptions = [
+    { id: "hourly",    label: "Hourly",    icon: "📦" },
+    { id: "daily",     label: "Daily",     icon: "🎁" },
+    { id: "weekly",    label: "Weekly",    icon: "👑" },
+    { id: "common",    label: "Common",    icon: "🟫" },
+    { id: "rare",      label: "Rare",      icon: "🔵" },
+    { id: "legendary", label: "Legendary", icon: "🟡" },
+  ];
+
+  const crateInventorySummary = crateOptions
+    .map(c => `<span class="gm-crate-pill">${c.icon} ${c.label}: <strong>${state.crates[c.id] || 0}</strong></span>`)
+    .join("");
+
   container.innerHTML = `
-    <div class="gm-section-label">Leaderboard</div>
-    <button class="btn-gm-toggle ${hidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-lb-toggle">
-      ${hidden ? "Hidden from leaderboard" : "Visible on leaderboard"}
-    </button>
 
-    <div class="gm-section-label">Set Values</div>
-    <div class="gm-grid">
-      ${[
-        ["Cash",              "cash",       state.cash],
-        ["Shards",            "shards",     state.shards],
-        ["Ore",               "ore",        state.ore],
-        ["Player Level",      "level",      state.level],
-        ["XP",                "xp",         state.xp],
-        ["Pickaxe Level",     "pickaxe",    state.pickaxeLevel],
-        ["Backpack Level",    "backpack",   state.backpackLevel],
-        ["Rebirths",          "rebirths",   state.rebirths],
-        ["Prestige Tokens",   "ptokens",    state.prestigeTokens],
-        ["Total Cash Earned", "cashearned", state.cashEarned],
-      ].map(([label, action, current]) => `
-        <div class="gm-row">
-          <label>${label}</label>
-          <input class="gm-input" id="gm-input-${action}" type="number" min="0" placeholder="${current}">
-          <button class="btn-gm-set" data-gm-action="${action}">Set</button>
+    <!-- ── SECTION: Leaderboard ── -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="fa-solid fa-trophy"></i> Leaderboard
+      </div>
+      <div class="gm-card-body">
+        <button class="btn-gm-toggle ${hidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-lb-toggle">
+          <i class="fa-solid fa-eye${hidden ? "-slash" : ""}"></i>
+          ${hidden ? "Hidden from leaderboard" : "Visible on leaderboard"}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SECTION: Set Values ── -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="fa-solid fa-sliders"></i> Set Values
+      </div>
+      <div class="gm-card-body">
+        <div class="gm-grid">
+          ${[
+            ["💰 Cash",              "cash",       state.cash],
+            ["💎 Shards",            "shards",     state.shards],
+            ["⛏️ Ore",              "ore",        state.ore],
+            ["⭐ Player Level",      "level",      state.level],
+            ["✨ XP",                "xp",         state.xp],
+            ["🪓 Pickaxe Level",     "pickaxe",    state.pickaxeLevel],
+            ["🎒 Backpack Level",    "backpack",   state.backpackLevel],
+            ["🔄 Rebirths",          "rebirths",   state.rebirths],
+            ["🏅 Prestige Tokens",   "ptokens",    state.prestigeTokens],
+            ["📊 Total Cash Earned", "cashearned", state.cashEarned],
+          ].map(([label, action, current]) => `
+            <div class="gm-row">
+              <label class="gm-row-label">${label}</label>
+              <div class="gm-row-controls">
+                <input class="gm-input" id="gm-input-${action}" type="number" min="0" placeholder="${current}">
+                <button class="btn-gm-set" data-gm-action="${action}">Set</button>
+              </div>
+            </div>
+          `).join("")}
         </div>
-      `).join("")}
+        <div class="gm-message" id="gm-message"></div>
+      </div>
     </div>
-    <div class="gm-message" id="gm-message"></div>
 
-    <div class="gm-section-label">👑 VIP Management</div>
-    <div class="gm-vip-section">
-      <div class="gm-vip-row">
-        <input class="gm-input gm-vip-input" id="gm-vip-playerid" type="text"
-               placeholder="Player ID (e.g. Piererra)" autocomplete="off">
-        <input class="gm-input gm-vip-days"  id="gm-vip-days"     type="number"
-               min="1" max="365" placeholder="Days">
+    <!-- ── SECTION: Crate Management ── -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="fa-solid fa-box-open"></i> Crate Management
       </div>
-      <div class="gm-vip-actions">
-        <button class="btn-gm-vip btn-gm-grant"  id="btn-gm-grant-vip">
-          <i class="fa-solid fa-crown"></i> Grant VIP
-        </button>
-        <button class="btn-gm-vip btn-gm-revoke" id="btn-gm-revoke-vip">
-          <i class="fa-solid fa-ban"></i> Revoke VIP
-        </button>
-        <button class="btn-gm-vip btn-gm-check"  id="btn-gm-check-vip">
-          <i class="fa-solid fa-magnifying-glass"></i> Check
-        </button>
+      <div class="gm-card-body">
+        <div class="gm-crate-inventory">${crateInventorySummary}</div>
+        <div class="gm-crate-controls">
+          <select class="gm-input gm-crate-select" id="gm-crate-select">
+            ${crateOptions.map(c => `
+              <option value="${c.id}">${c.icon} ${c.label} (${state.crates[c.id] || 0})</option>
+            `).join("")}
+          </select>
+          <input class="gm-input gm-crate-amount" id="gm-crate-amount"
+                 type="number" min="1" max="999" placeholder="Amount">
+        </div>
+        <div class="gm-crate-actions">
+          <button class="btn-gm-crate btn-gm-crate-add" id="btn-gm-add-crate">
+            <i class="fa-solid fa-plus"></i> Add
+          </button>
+          <button class="btn-gm-crate btn-gm-crate-remove" id="btn-gm-remove-crate">
+            <i class="fa-solid fa-minus"></i> Remove
+          </button>
+        </div>
+        <div class="gm-message" id="gm-crate-message"></div>
       </div>
-      <div class="gm-message" id="gm-vip-message"></div>
     </div>
-  `;
-}
+
+    <!-- ── SECTION: VIP Management ── -->
+    <div class="gm-card">
+      <div class="gm-card-header">
+        <i class="fa-solid fa-crown"></i> VIP Management
+      </div>
+      <div class="gm-card-body">
+        <div class="gm-vip-row">
+          <input class="gm-input gm-vip-input" id="gm-vip-playerid" type="text"
+                 placeholder="Player ID" autocomplete="off">
+          <input class="gm-input gm-vip-days" id="gm-vip-days" type="number"
+                 min="1" max="365" placeholder="Days">
+        </div>
+        <div class="gm-vip-actions">
+          <button class="btn-gm-vip btn-gm-grant" id="btn-gm-grant-vip">
+            <i class="fa-solid fa-crown"></i> Grant
+          </button>
+          <button class="btn-gm-vip btn-gm-revoke" id="btn-gm-revoke-vip">
+            <i class="fa-solid fa-ban"></i> Revoke
+          </button>
+          <button class="btn-gm-vip btn-gm-check" id="btn-gm-check-vip">
+            <i class="fa-solid fa-magnifying-glass"></i> Check
+          </button>
+        </div>
+        <div class="gm-message" id="gm-vip-message"></div>
+      </div>
+    </div>
+
+  `;\n}
 
 // ============================================================
 // SECTION 4 — LEADERBOARD PANEL
