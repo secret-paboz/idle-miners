@@ -74,7 +74,7 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  const crateBtn = e.target.closest("[data-crate]");
+  const crateBtn = e.target.closest("[data-crate]:not([data-crate-all])");
   if (crateBtn && !crateBtn.disabled) {
     const result = openCrate(crateBtn.dataset.crate);
     animateCrateOpen(result);
