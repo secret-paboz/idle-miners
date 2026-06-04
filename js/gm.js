@@ -161,3 +161,37 @@ export function gmAdjustCash(delta) {
 export function gmAdjustShards(delta) {
   return gmSetShards(state.shards + parseInt(delta, 10));
 }
+
+// ============================================================
+// SECTION 4 — CRATE MANAGEMENT
+// ============================================================
+
+export function gmAddCrate(crateId, amount) {
+  const { CRATE_TYPES } = window.__crateTypes || {};
+  // Validate crateId against known types at runtime via import-free check
+  const validIds = ["hourly","daily","weekly","common","rare","legendary"];
+  if (!validIds.includes(crateId)) return { success: false, message: `Unknown crate type: ${crateId}.` };
+
+  const n = parseInt(amount, 10);
+  if (isNaN(n) || n < 1) return { success: false, message: "Amount must be at least 1." };
+
+  state.crates[crateId] = (state.crates[crateId] || 0) + n;
+  saveState();
+  return { success: true, message: `Added ${n}x ${crateId} crate(s). Total: ${state.crates[crateId]}.` };
+}
+
+export function gmRemoveCrate(crateId, amount) {
+  const validIds = ["hourly","daily","weekly","common","rare","legendary"];
+  if (!validIds.includes(crateId)) return { success: false, message: `Unknown crate type: ${crateId}.` };
+
+  const current = state.crates[crateId] || 0;
+  if (current <= 0) return { success: false, message: `No ${crateId} crates to remove.` };
+
+  const n = parseInt(amount, 10);
+  if (isNaN(n) || n < 1) return { success: false, message: "Amount must be at least 1." };
+
+  const removed = Math.min(n, current);
+  state.crates[crateId] = current - removed;
+  saveState();
+  return { success: true, message: `Removed ${removed}x ${crateId} crate(s). Remaining: ${state.crates[crateId]}.` };
+}
