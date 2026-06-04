@@ -432,3 +432,128 @@
 .btn-gm-grant:hover  { background: rgba(76,175,80,0.28);  }
 .btn-gm-revoke:hover { background: rgba(244,67,54,0.28);  }
 .btn-gm-check:hover  { background: rgba(66,165,245,0.28); }
+
+/* ── GM card layout (redesigned panel) ── */
+.gm-card {
+  background:    rgba(255,193,7,0.05);
+  border:        1px solid rgba(255,193,7,0.18);
+  border-radius: 10px;
+  overflow:      hidden;
+  margin-bottom: 10px;
+}
+
+.gm-card-header {
+  display:        flex;
+  align-items:    center;
+  gap:            7px;
+  padding:        9px 12px;
+  background:     rgba(255,193,7,0.1);
+  font-size:      11px;
+  font-weight:    700;
+  color:          #ffc107;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.gm-card-header i { font-size: 13px; }
+
+.gm-card-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Updated gm-row to use label + controls sub-layout */
+.gm-row {
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+}
+
+.gm-row-label {
+  font-size: 11px;
+  color:     var(--text-muted);
+}
+
+.gm-row-controls {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  gap: 5px;
+}
+
+/* ── Crate management ── */
+.gm-crate-inventory {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       5px;
+  margin-bottom: 4px;
+}
+
+.gm-crate-pill {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           3px;
+  padding:       3px 7px;
+  background:    rgba(255,255,255,0.06);
+  border:        1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  font-size:     11px;
+  color:         var(--text-muted);
+}
+
+.gm-crate-pill strong { color: var(--text-primary); }
+
+.gm-crate-controls {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 6px;
+}
+
+.gm-crate-select {
+  appearance:    none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23aaa'/%3E%3C/svg%3E");
+  background-repeat:   no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+  cursor: pointer;
+}
+
+.gm-crate-amount { text-align: center; }
+
+.gm-crate-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.btn-gm-crate {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             5px;
+  padding:         7px 8px;
+  border-radius:   6px;
+  font-size:       12px;
+  font-weight:     700;
+  cursor:          pointer;
+  transition:      background 0.15s;
+  border:          1px solid;
+}
+
+.btn-gm-crate-add {
+  background:   rgba(76,175,80,0.15);
+  border-color: rgba(76,175,80,0.4);
+  color:        #4caf50;
+}
+
+.btn-gm-crate-add:hover { background: rgba(76,175,80,0.28); }
+
+.btn-gm-crate-remove {
+  background:   rgba(244,67,54,0.15);
+  border-color: rgba(244,67,54,0.4);
+  color:        #f44336;
+}
+
+.btn-gm-crate-remove:hover { background: rgba(244,67,54,0.28); }
