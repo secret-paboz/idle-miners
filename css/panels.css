@@ -547,11 +547,17 @@
 }
 
 .pet-shard-cost {
-  font-size:   10px;
-  color:       var(--text-muted);
-  display:     flex;
-  align-items: center;
-  gap:         3px;
+  font-size:      10px;
+  color:          var(--text-muted);
+  display:        flex;
+  flex-direction: column;
+  gap:            1px;
+}
+
+.pet-next-effect {
+  font-size: 9px;
+  color:     var(--text-muted);
+  opacity:   0.7;
 }
 
 .pet-upgrade-btn {
@@ -698,58 +704,232 @@
 
 .rebirth-section,
 .prestige-section {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
-.prestige-status-row {
-  display:         flex;
-  justify-content: space-between;
-  align-items:     center;
-  margin-bottom:   10px;
-}
-
-.prestige-token-badge {
+/* ── Top header row (stat + keep/reset pills) ── */
+.prestige-card-top {
   display:       flex;
-  align-items:   center;
-  gap:           6px;
-  background:    rgba(255,193,7,0.12);
-  border:        1px solid #ffc107;
-  border-radius: 99px;
-  padding:       4px 12px;
-  font-size:     13px;
+  gap:           12px;
+  align-items:   flex-start;
+  margin-bottom: 14px;
+}
+
+.prestige-card-top-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.prestige-card-top-right {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            6px;
+  flex-shrink:    0;
+}
+
+/* Stat row: big number + label + bonus */
+.prestige-stat-row {
+  display:     flex;
+  align-items: baseline;
+  gap:         5px;
+  margin-top:  3px;
+}
+
+.prestige-stat-val {
+  font-size:   22px;
+  font-weight: 800;
+  color:       var(--text-primary);
+  line-height: 1;
+}
+
+.prestige-stat-lbl {
+  font-size:   11px;
+  color:       var(--text-muted);
+  font-weight: 500;
+}
+
+.prestige-stat-bonus {
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--color-success);
+  margin-left: 4px;
+}
+
+/* Keep / reset pill groups */
+.prestige-keep-reset {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  align-items:    flex-end;
+}
+
+.prestige-keeps,
+.prestige-resets {
+  display: flex;
+  gap:     4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.prestige-pill {
+  font-size:     9px;
   font-weight:   700;
+  padding:       2px 7px;
+  border-radius: 99px;
+  display:       inline-flex;
+  align-items:   center;
+  gap:           3px;
+  white-space:   nowrap;
+}
+
+.prestige-pill.keep {
+  background: rgba(76,175,80,0.12);
+  color:      var(--color-success);
+  border:     1px solid rgba(76,175,80,0.3);
+}
+
+.prestige-pill.reset {
+  background: rgba(244,67,54,0.1);
+  color:      #ef5350;
+  border:     1px solid rgba(244,67,54,0.25);
+}
+
+/* Reset warning in prestige section */
+.prestige-reset-warn {
+  font-size:   10px;
+  color:       #ef5350;
+  opacity:     0.7;
+  display:     flex;
+  align-items: center;
+  gap:         4px;
+}
+
+/* Token badge */
+.prestige-token-badge {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           5px;
+  background:    rgba(255,193,7,0.12);
+  border:        1px solid rgba(255,193,7,0.4);
+  border-radius: 99px;
+  padding:       4px 11px;
+  font-size:     14px;
+  font-weight:   800;
   color:         #ffc107;
 }
 
+.prestige-token-lbl {
+  font-size:   10px;
+  font-weight: 500;
+  color:       rgba(255,193,7,0.7);
+}
+
+/* ── Progress rows ── */
+.prestige-progress-row {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  margin-bottom:   4px;
+}
+
+.prestige-progress-label {
+  font-size:   11px;
+  font-weight: 600;
+  color:       var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prestige-progress-val {
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rebirth bars — purple tint */
+.progress-bar--rebirth {
+  margin-bottom: 10px;
+}
+
+.progress-fill--rebirth {
+  background: linear-gradient(90deg, #7b1fa2, #ce93d8);
+}
+
+.progress-fill--rebirth.done {
+  background: #ab47bc;
+  box-shadow: 0 0 6px rgba(171,71,188,0.5);
+}
+
+/* Prestige bars — gold tint */
+.progress-bar--prestige {
+  margin-bottom: 10px;
+}
+
+.progress-fill--prestige {
+  background: linear-gradient(90deg, #f57f17, #ffc107);
+}
+
+.progress-fill--prestige.done {
+  background: #ffc107;
+  box-shadow: 0 0 6px rgba(255,193,7,0.5);
+}
+
+/* ── Action buttons ── */
 .btn-rebirth,
 .btn-prestige {
-  width:         100%;
-  padding:       13px;
-  font-size:     15px;
-  font-weight:   700;
-  border-radius: var(--radius-md);
-  margin-top:    10px;
-  transition:    opacity var(--transition), box-shadow var(--transition);
-  background:    var(--bg-card);
-  color:         var(--text-muted);
-  border:        1px solid var(--border);
+  width:           100%;
+  padding:         12px;
+  font-size:       14px;
+  font-weight:     700;
+  border-radius:   var(--radius-md);
+  margin-top:      12px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  transition:      background var(--transition), box-shadow var(--transition),
+                   transform var(--transition);
+  background:      var(--bg-card);
+  color:           var(--text-muted);
+  border:          1px solid var(--border);
 }
 
 .btn-rebirth.eligible {
-  background: linear-gradient(135deg, #7b1fa2, #ab47bc);
-  color:      #fff;
-  border:     none;
-  box-shadow: 0 4px 18px rgba(171,71,188,0.4);
+  background:  linear-gradient(135deg, #7b1fa2, #ab47bc);
+  color:       #fff;
+  border:      none;
+  box-shadow:  0 4px 18px rgba(171,71,188,0.35);
+  animation:   prestige-btn-pulse 2s ease-in-out infinite;
 }
 
 .btn-prestige.eligible {
-  background: linear-gradient(135deg, #f57f17, #ffc107);
-  color:      #000;
-  border:     none;
-  box-shadow: 0 4px 18px rgba(255,193,7,0.4);
+  background:  linear-gradient(135deg, #f57f17, #ffc107);
+  color:       #000;
+  border:      none;
+  box-shadow:  0 4px 18px rgba(255,193,7,0.35);
+  animation:   prestige-btn-pulse 2s ease-in-out infinite;
 }
 
-/* Prestige shop */
+@keyframes prestige-btn-pulse {
+  0%, 100% { transform: scale(1);    }
+  50%       { transform: scale(1.02); }
+}
+
+.btn-rebirth:active,
+.btn-prestige:active { transform: scale(0.97); }
+
+/* ── Prestige shop title token hint ── */
+.prestige-shop-token-hint {
+  font-size:   11px;
+  font-weight: 700;
+  color:       #ffc107;
+  margin-left: 8px;
+  opacity:     0.85;
+}
+
+/* ── Prestige shop cards ── */
 #prestige-shop {
   display:        flex;
   flex-direction: column;
@@ -760,52 +940,126 @@
   background:    var(--bg-card);
   border:        1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding:       14px;
+  padding:       12px 14px;
+  position:      relative;
+  overflow:      hidden;
   transition:    border-color var(--transition), box-shadow var(--transition);
 }
 
-.prestige-card.can-afford {
-  border-color: var(--prestige-color, var(--accent));
-  box-shadow:   0 0 14px var(--prestige-glow, transparent);
+/* Left accent bar — colored when can afford */
+.prestige-card::before {
+  content:       "";
+  position:      absolute;
+  left:          0;
+  top:           0;
+  bottom:        0;
+  width:         3px;
+  background:    var(--border);
+  border-radius: 3px 0 0 3px;
+  transition:    background var(--transition);
 }
 
-.prestige-card.maxed { opacity: 0.6; }
+.prestige-card.can-afford::before {
+  background: var(--prestige-color, var(--accent));
+}
 
+.prestige-card.can-afford {
+  border-color: color-mix(in srgb, var(--prestige-color, var(--accent)) 40%, transparent);
+  box-shadow:   0 0 16px color-mix(in srgb, var(--prestige-color, transparent) 12%, transparent);
+}
+
+.prestige-card.maxed {
+  opacity: 0.55;
+}
+
+.prestige-card.maxed::before {
+  background: var(--color-success);
+}
+
+/* Card header */
 .prestige-card-header {
   display:       flex;
   align-items:   center;
   gap:           8px;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
-.prestige-card-header i { font-size: 18px; }
-.prestige-name          { font-weight: 700; flex: 1; }
-.prestige-level         { font-size: 12px; color: var(--text-muted); }
-.prestige-desc          { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.prestige-card-header i { font-size: 17px; flex-shrink: 0; }
+.prestige-name          { font-size: 13px; font-weight: 700; flex: 1; }
+.prestige-level         { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+/* Level bar inside shop card */
+.prestige-level-bar {
+  width:         100%;
+  height:        3px;
+  background:    var(--border);
+  border-radius: 2px;
+  overflow:      hidden;
+  margin-bottom: 8px;
+}
+
+.prestige-level-fill {
+  height:        100%;
+  background:    var(--prestige-color, var(--accent));
+  border-radius: 2px;
+  transition:    width 0.4s ease;
+  opacity:       0.7;
+}
+
+.prestige-desc {
+  font-size:     11px;
+  color:         var(--text-muted);
+  margin-bottom: 7px;
+  line-height:   1.4;
+}
 
 .prestige-effect {
   display:       flex;
+  align-items:   center;
   gap:           8px;
   font-size:     12px;
+  font-weight:   600;
   margin-bottom: 10px;
 }
 
 .effect-current { color: var(--text-secondary); }
+.effect-arrow   { color: var(--text-muted); font-size: 10px; }
 .effect-next    { color: var(--prestige-color, var(--accent)); }
 
+/* Buy button */
 .btn-buy-prestige {
-  width:         100%;
-  padding:       9px;
-  border-radius: var(--radius-sm);
-  font-weight:   600;
-  font-size:     13px;
-  background:    var(--prestige-color, var(--accent));
-  color:         #000;
-  transition:    opacity var(--transition);
+  width:           100%;
+  padding:         9px;
+  border-radius:   var(--radius-sm);
+  font-weight:     700;
+  font-size:       13px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  background:      color-mix(in srgb, var(--prestige-color, var(--accent)) 90%, #000 10%);
+  color:           #000;
+  transition:      opacity var(--transition), transform var(--transition);
 }
 
-.btn-buy-prestige.disabled { opacity: 0.35; cursor: not-allowed; }
-.btn-buy-prestige.maxed    { background: var(--bg-secondary); color: var(--text-muted); cursor: default; }
+.btn-buy-prestige:hover:not(:disabled) { transform: scale(1.02); }
+.btn-buy-prestige:active:not(:disabled) { transform: scale(0.97); }
+
+.btn-buy-prestige.disabled {
+  opacity:        0.3;
+  cursor:         not-allowed;
+  background:     var(--bg-secondary);
+  color:          var(--text-muted);
+}
+
+.btn-buy-prestige.maxed {
+  background: var(--bg-secondary);
+  color:      var(--color-success);
+  border:     1px solid rgba(76,175,80,0.3);
+  cursor:     default;
+  font-size:  12px;
+  opacity:    1;
+}
 
 /* ============================================================
    MINING LOG FEED
