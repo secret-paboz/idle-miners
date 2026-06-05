@@ -486,25 +486,41 @@ export async function lookupPlayer(query) {
  * Used by GM to remotely set values, crates, boosters etc.
  * `patch` is a plain object merged into their existing game_data.
  */
-export async function gmApplyToPlayer(targetId, patch) {
+/**
+ * Apply a partial game_data patch to a target player's cloud save.
+ * @param {string} targetId       - Supabase user UUID of the target player
+ * @param {object} patch          - Partial game_data object to deep-merge
+ * @param {object} [cachedData]   - Pre-loaded game_data to avoid re-fetch race condition
+ *                                  Pass target.gameData from the handler when applying
+ *                                  multiple patches in a row.
+ */
+export async function gmApplyToPlayer(targetId, patch, cachedData = null) {
   const client = window.supabaseClient;
   if (!client) return { success: false, message: "No cloud connection." };
 
   try {
-    // Load their current game_data
-    const { data, error } = await client
-      .from("player_saves")
-      .select("game_data, nickname")
-      .eq("id", targetId)
-      .single();
+    let existing;
+    let nickname = "Player";
 
-    if (error || !data) {
-      return { success: false, message: "Player not found." };
+    if (cachedData) {
+      // Use caller-supplied data — avoids re-fetch race when applying multiple patches
+      existing = cachedData;
+    } else {
+      const { data, error } = await client
+        .from("player_saves")
+        .select("game_data, nickname")
+        .eq("id", targetId)
+        .single();
+
+      if (error || !data) {
+        return { success: false, message: "Player not found." };
+      }
+
+      nickname = data.nickname;
+      existing = typeof data.game_data === "string"
+        ? JSON.parse(data.game_data)
+        : (data.game_data || {});
     }
-
-    const existing = typeof data.game_data === "string"
-      ? JSON.parse(data.game_data)
-      : (data.game_data || {});
 
     // Deep merge patch into existing — supports nested objects (boosters, crates)
     const merged = _deepMerge(existing, patch);
@@ -518,7 +534,8 @@ export async function gmApplyToPlayer(targetId, patch) {
       return { success: false, message: "Failed to apply changes." };
     }
 
-    return { success: true, message: `Changes applied to ${data.nickname}.` };
+    // Return merged so caller can update their cached copy immediately
+    return { success: true, message: `Changes applied to ${nickname}.`, merged };
   } catch {
     return { success: false, message: "Apply failed. Please try again." };
   }
@@ -540,4 +557,50 @@ function _deepMerge(target, source) {
     }
   }
   return result;
+}
+
+// ============================================================
+// SECTION 7 — GM LEADERBOARD VISIBILITY FOR OTHER PLAYERS
+// ============================================================
+
+/**
+ * Toggle leaderboard visibility for a specific player by their Supabase user ID.
+ * Used by GM to hide/show any player from the leaderboard.
+ */
+export async function toggleLeaderboardVisibilityForPlayer(targetId) {
+  const client = window.supabaseClient;
+  if (!client) return { success: false, message: "No cloud connection." };
+
+  try {
+    const { data, error } = await client
+      .from("leaderboard")
+      .select("hidden, nickname")
+      .eq("id", targetId)
+      .single();
+
+    if (error || !data) {
+      return { success: false, message: "Player has no leaderboard entry yet." };
+    }
+
+    const newHidden = !data.hidden;
+
+    const { error: updateError } = await client
+      .from("leaderboard")
+      .update({ hidden: newHidden })
+      .eq("id", targetId);
+
+    if (updateError) {
+      return { success: false, message: "Failed to update leaderboard visibility." };
+    }
+
+    return {
+      success: true,
+      hidden:  newHidden,
+      message: newHidden
+        ? `${data.nickname} is now hidden from leaderboard.`
+        : `${data.nickname} is now visible on leaderboard.`,
+    };
+  } catch {
+    return { success: false, message: "Toggle failed. Please try again." };
+  }
 }
