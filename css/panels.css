@@ -303,6 +303,51 @@
 
 .booster-badge.booster-vip .booster-text { color: #ffc107; }
 
+/* GM buff badge — red with shiny shimmer sweep */
+.booster-badge.booster-gm {
+  position:     relative;
+  overflow:     hidden;
+  border-color: rgba(244,67,54,0.6);
+  background:   rgba(244,67,54,0.1);
+  animation:    gm-badge-pulse 2.2s ease-in-out infinite;
+}
+
+.booster-badge.booster-gm .booster-text {
+  color:       #f44336;
+  font-weight: 700;
+}
+
+.booster-badge.booster-gm .booster-timer { color: rgba(244,67,54,0.7); }
+
+/* Shimmer sweep overlay */
+.booster-badge.booster-gm::after {
+  content:    "";
+  position:   absolute;
+  top:        0;
+  left:       -75%;
+  width:      50%;
+  height:     100%;
+  background: linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(255,255,255,0.18) 50%,
+    transparent 100%
+  );
+  animation: gm-shimmer-sweep 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes gm-badge-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(244,67,54,0.3); }
+  50%       { box-shadow: 0 0 12px rgba(244,67,54,0.65); }
+}
+
+@keyframes gm-shimmer-sweep {
+  0%   { left: -75%; }
+  60%  { left: 125%; }
+  100% { left: 125%; }
+}
+
 .booster-timer {
   color:           var(--text-muted);
   font-size:       11px;
