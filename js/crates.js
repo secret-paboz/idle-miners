@@ -178,6 +178,7 @@ export function getBoosterStatus() {
       endsAt:     booster.endsAt,
       remaining:  isActive ? Math.ceil((booster.endsAt - now) / 1000) : 0,
       formatted:  isActive ? formatBoosterTime(booster.endsAt - now) : "Inactive",
+      isGm:       booster.isGm === true,
     };
   }
   return status;
