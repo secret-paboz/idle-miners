@@ -6,8 +6,6 @@
 
 import {
   toggleGMLeaderboardVisibility,
-  gmSetBooster,
-  gmClearBooster,
   buildBoosterPatch,
   buildCratePatch,
 } from "../gm.js";
@@ -41,7 +39,6 @@ function gmMsg(id, text, success) {
 // ============================================================
 
 export function bindGMEvents() {
-  on("tab-gm",       "click", handleToggleGMModal);
   on("btn-gm-close", "click", handleToggleGMModal);
 
   const gmModal = document.getElementById("gm-modal");
