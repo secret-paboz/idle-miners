@@ -6,6 +6,7 @@ import { sellOre, upgradePickaxe, upgradeBackpack } from "../economy.js";
 import { showToast } from "../ui/ui-core.js";
 import { renderMinePanel, animateSell } from "../ui/ui-mine.js";
 import { renderHUD } from "../ui/ui-hud.js";
+import { submitLeaderboardScore } from "../leaderboard.js";
 
 function on(id, event, handler) {
   const el = document.getElementById(id);
@@ -22,6 +23,8 @@ function handleSell() {
   const result = sellOre();
   if (result.cashEarned > 0) {
     animateSell(result.cashEarned);
+    // Submit leaderboard score on sell so cash_earned stays current
+    submitLeaderboardScore().catch(() => {});
   } else {
     showToast("Nothing to sell!", "error", 1500);
   }
