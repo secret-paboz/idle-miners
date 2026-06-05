@@ -144,6 +144,14 @@ function renderStatsModal() {
   const power     = computeMiningPower();
   const dimension = getDimension(state.dimension);
 
+  // Player ID — show "Guest" for guest players
+  const playerIdEl = document.getElementById("stat-player-id");
+  if (playerIdEl) {
+    playerIdEl.textContent = state.isGuest
+      ? "Guest (not saved)"
+      : (state.playerId || "—");
+  }
+
   setText("stat-mining-power",    "1–" + formatNumber(power) + "/s");
   setText("stat-dimension",       dimension?.name || "Earth");
   setText("stat-dimension-multi", (dimension?.valueMulti ?? 1) + "x");
