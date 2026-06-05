@@ -184,7 +184,8 @@
 
 .lb-modal-title i { color: var(--accent); }
 
-.lb-modal-close {
+.lb-modal-close,
+.lb-modal-refresh {
   width:           32px;
   height:          32px;
   border-radius:   50%;
@@ -197,11 +198,22 @@
   align-items:     center;
   justify-content: center;
   transition:      background var(--transition), color var(--transition);
+  flex-shrink:     0;
 }
 
-.lb-modal-close:hover {
+.lb-modal-close:hover,
+.lb-modal-refresh:hover {
   background: var(--border-bright);
   color:      var(--text-primary);
+}
+
+.lb-modal-refresh.spinning i {
+  animation: lb-spin 0.7s linear infinite;
+}
+
+@keyframes lb-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 /* Tabs inside modal */
