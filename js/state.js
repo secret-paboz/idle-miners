@@ -179,9 +179,10 @@ function clampState() {
   if (typeof state.gmHiddenFromLeaderboard !== "boolean") state.gmHiddenFromLeaderboard = false;
 
   // Strings
-  if (typeof state.nickname !== "string")    state.nickname    = "";
+  if (typeof state.nickname !== "string")     state.nickname     = "";
+  if (typeof state.playerId !== "string")     state.playerId     = "";
   if (typeof state.currentOreId !== "string") state.currentOreId = "dirt";
-  if (typeof state.dimension !== "string")   state.dimension   = "earth";
+  if (typeof state.dimension !== "string")    state.dimension    = "earth";
 
   // Offline tracking — must be a positive finite number
   state.lastOnlineTime = pos(state.lastOnlineTime);
@@ -211,6 +212,7 @@ function saveState() {
 function resetStateForRebirth() {
   const kept = {
     nickname:          state.nickname,
+    playerId:          state.playerId,
     isGuest:           state.isGuest,
     isVip:             state.isVip,
     vipExpiresAt:      state.vipExpiresAt,
@@ -248,6 +250,7 @@ function resetStateForPrestige() {
   const now = Date.now();
   const kept = {
     nickname:         state.nickname,
+    playerId:         state.playerId,
     isGuest:          state.isGuest,
     isVip:            state.isVip,
     vipExpiresAt:     state.vipExpiresAt,
