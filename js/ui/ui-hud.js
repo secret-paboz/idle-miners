@@ -10,7 +10,6 @@ import { formatNumber, computeMiningPower, computeOreValue } from "../economy.js
 import { getDimension } from "../data/dimensions-data.js";
 import { getMineTier, rollOre } from "../data/mines-data.js";
 import { setText, xpForLevel, openVipModal } from "./ui-core.js";
-import { isGameMasterSync } from "../gm.js";
 
 export function renderHUD() {
   const isActiveVip = state.isVip && Date.now() < state.vipExpiresAt;
@@ -109,9 +108,6 @@ export function renderHUD() {
   const guestBadge = document.getElementById("hud-guest-badge");
   if (guestBadge) guestBadge.style.display = state.isGuest ? "inline-flex" : "none";
 
-  // GM tab visibility
-  const gmTab = document.getElementById("tab-gm");
-  if (gmTab) gmTab.style.display = isGameMasterSync() ? "flex" : "none";
 }
 
 // ============================================================
