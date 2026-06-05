@@ -224,6 +224,7 @@ export function gmSetBooster(boosterKey, multiplier, durationMinutes) {
   state.boosters[boosterKey] = {
     multiplier: mult,
     endsAt:     Date.now() + mins * 60 * 1000,
+    isGm:       true,
   };
 
   saveState();
@@ -256,6 +257,7 @@ export function buildBoosterPatch(boosterKey, multiplier, durationMinutes) {
       [boosterKey]: {
         multiplier: parseFloat(multiplier),
         endsAt:     Date.now() + parseFloat(durationMinutes) * 60 * 1000,
+        isGm:       true,
       },
     },
   };
