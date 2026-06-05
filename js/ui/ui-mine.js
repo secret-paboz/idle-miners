@@ -127,7 +127,7 @@ export function renderBoosterBadges() {
   const vipBadge = isActiveVip ? `
     <div class="booster-badge booster-vip">
       <i class="fa-solid fa-crown"></i>
-      <span class="booster-text">VIP 2× Sell</span>
+      <span class="booster-text">VIP 2\u00d7 Sell</span>
     </div>
   ` : "";
 
@@ -136,16 +136,29 @@ export function renderBoosterBadges() {
     .map(([key, b]) => {
       const msLeft = b.endsAt - Date.now();
       const urgent = msLeft > 0 && msLeft < 5 * 60 * 1000;
+
+      if (b.isGm) {
+        // GM buff — red badge with shimmer + "GM" prefix
+        return `
+          <div class="booster-badge booster-gm ${urgent ? "expiring-soon" : ""}">
+            <i class="${boosterIcon(key)}"></i>
+            <span class="booster-text">GM ${b.multiplier}\u00d7 ${boosterLabel(key)}</span>
+            <span class="booster-timer ${urgent ? "urgent" : ""}">${b.formatted}</span>
+          </div>
+        `;
+      }
+
+      // Normal crate booster
       return `
         <div class="booster-badge booster-${key} ${urgent ? "expiring-soon" : ""}">
           <i class="${boosterIcon(key)}"></i>
-          <span class="booster-text">${b.multiplier}x ${boosterLabel(key)}</span>
+          <span class="booster-text">${b.multiplier}\u00d7 ${boosterLabel(key)}</span>
           <span class="booster-timer ${urgent ? "urgent" : ""}">${b.formatted}</span>
         </div>
       `;
     }).join("");
 
-  const combined  = vipBadge + badges;
+  const combined   = vipBadge + badges;
   const hasContent = combined.trim().length > 0;
 
   container.innerHTML = hasContent ? combined : `
