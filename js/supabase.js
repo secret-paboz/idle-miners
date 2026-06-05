@@ -134,7 +134,7 @@ export async function cloudLoad() {
 
     const { data, error } = await client
       .from("player_saves")
-      .select("nickname, game_data, is_vip, vip_expires_at, updated_at")
+      .select("nickname, player_id, game_data, is_vip, vip_expires_at, updated_at")
       .eq("id", userId)
       .single();
 
@@ -152,6 +152,7 @@ export async function cloudLoad() {
 
     Object.assign(state, cloudData, {
       nickname:     data.nickname,
+      playerId:     data.player_id || "",
       isGuest:      false,
       isVip,
       vipExpiresAt,
@@ -405,4 +406,128 @@ export async function checkVipByPlayerId(playerId) {
   } catch {
     return { success: false, message: "Check failed. Please try again." };
   }
+}
+
+// ============================================================
+// SECTION 6 — GM PLAYER LOOKUP + REMOTE APPLY
+// ============================================================
+
+/**
+ * Look up a player by player_id or nickname.
+ * Returns their profile + current game_data for GM actions.
+ */
+export async function lookupPlayer(query) {
+  const client = window.supabaseClient;
+  if (!client) return { success: false, message: "No cloud connection." };
+
+  const clean = query.trim().toLowerCase();
+  if (!clean) return { success: false, message: "Enter a Player ID or nickname." };
+
+  try {
+    // Try player_id first (exact match)
+    let { data, error } = await client
+      .from("player_saves")
+      .select("id, player_id, nickname, is_vip, vip_expires_at, game_data, dimension")
+      .eq("player_id", clean)
+      .single();
+
+    // Fallback: search by nickname (case-insensitive)
+    if (error || !data) {
+      const res = await client
+        .from("player_saves")
+        .select("id, player_id, nickname, is_vip, vip_expires_at, game_data, dimension")
+        .ilike("nickname", clean)
+        .limit(1)
+        .single();
+      data  = res.data;
+      error = res.error;
+    }
+
+    if (error || !data) {
+      return { success: false, message: `Player "${clean}" not found.` };
+    }
+
+    const now   = Date.now();
+    const isVip = data.is_vip === true && (data.vip_expires_at ?? 0) > now;
+
+    const gameData = typeof data.game_data === "string"
+      ? JSON.parse(data.game_data)
+      : (data.game_data || {});
+
+    return {
+      success:    true,
+      id:         data.id,
+      playerId:   data.player_id,
+      nickname:   data.nickname,
+      isVip,
+      vipExpiry:  data.vip_expires_at,
+      dimension:  gameData.dimension  || "earth",
+      rebirths:   gameData.rebirths   || 0,
+      level:      gameData.level      || 1,
+      gameData,
+    };
+  } catch {
+    return { success: false, message: "Lookup failed. Please try again." };
+  }
+}
+
+/**
+ * Apply a partial game_data patch to a target player's cloud save.
+ * Used by GM to remotely set values, crates, boosters etc.
+ * `patch` is a plain object merged into their existing game_data.
+ */
+export async function gmApplyToPlayer(targetId, patch) {
+  const client = window.supabaseClient;
+  if (!client) return { success: false, message: "No cloud connection." };
+
+  try {
+    // Load their current game_data
+    const { data, error } = await client
+      .from("player_saves")
+      .select("game_data, nickname")
+      .eq("id", targetId)
+      .single();
+
+    if (error || !data) {
+      return { success: false, message: "Player not found." };
+    }
+
+    const existing = typeof data.game_data === "string"
+      ? JSON.parse(data.game_data)
+      : (data.game_data || {});
+
+    // Deep merge patch into existing — supports nested objects (boosters, crates)
+    const merged = _deepMerge(existing, patch);
+
+    const { error: updateError } = await client
+      .from("player_saves")
+      .update({ game_data: merged })
+      .eq("id", targetId);
+
+    if (updateError) {
+      return { success: false, message: "Failed to apply changes." };
+    }
+
+    return { success: true, message: `Changes applied to ${data.nickname}.` };
+  } catch {
+    return { success: false, message: "Apply failed. Please try again." };
+  }
+}
+
+function _deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] !== null &&
+      typeof source[key] === "object" &&
+      !Array.isArray(source[key]) &&
+      typeof target[key] === "object" &&
+      target[key] !== null
+    ) {
+      result[key] = _deepMerge(target[key], source[key]);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
 }
