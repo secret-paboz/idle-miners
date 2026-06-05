@@ -195,3 +195,88 @@ export function gmRemoveCrate(crateId, amount) {
   saveState();
   return { success: true, message: `Removed ${removed}x ${crateId} crate(s). Remaining: ${state.crates[crateId]}.` };
 }
+
+// ============================================================
+// SECTION 5 — GM BOOSTER MANAGEMENT
+// ============================================================
+
+const VALID_BOOSTER_KEYS = ["miningSpeed", "sellValue", "xpGain"];
+
+/**
+ * Set a booster on the LOCAL player's state.
+ * For remote players, use gmApplyToPlayer() with a booster patch.
+ */
+export function gmSetBooster(boosterKey, multiplier, durationMinutes) {
+  if (!VALID_BOOSTER_KEYS.includes(boosterKey)) {
+    return { success: false, message: `Unknown booster: ${boosterKey}.` };
+  }
+
+  const mult = parseFloat(multiplier);
+  const mins = parseFloat(durationMinutes);
+
+  if (isNaN(mult) || mult < 1) {
+    return { success: false, message: "Multiplier must be at least 1." };
+  }
+  if (isNaN(mins) || mins < 1) {
+    return { success: false, message: "Duration must be at least 1 minute." };
+  }
+
+  state.boosters[boosterKey] = {
+    multiplier: mult,
+    endsAt:     Date.now() + mins * 60 * 1000,
+  };
+
+  saveState();
+  return {
+    success: true,
+    message: `${boosterKey} set to ${mult}x for ${mins} min.`,
+  };
+}
+
+/**
+ * Clear a booster on the LOCAL player's state.
+ */
+export function gmClearBooster(boosterKey) {
+  if (!VALID_BOOSTER_KEYS.includes(boosterKey)) {
+    return { success: false, message: `Unknown booster: ${boosterKey}.` };
+  }
+
+  state.boosters[boosterKey] = { multiplier: 1, endsAt: 0 };
+  saveState();
+  return { success: true, message: `${boosterKey} booster cleared.` };
+}
+
+/**
+ * Build a booster patch object for use with gmApplyToPlayer().
+ * Only patches the specific booster key, leaves others intact.
+ */
+export function buildBoosterPatch(boosterKey, multiplier, durationMinutes) {
+  return {
+    boosters: {
+      [boosterKey]: {
+        multiplier: parseFloat(multiplier),
+        endsAt:     Date.now() + parseFloat(durationMinutes) * 60 * 1000,
+      },
+    },
+  };
+}
+
+/**
+ * Build a crate patch object for use with gmApplyToPlayer().
+ * mode: "add" | "remove"
+ */
+export function buildCratePatch(currentCrates, crateId, amount, mode) {
+  const current = currentCrates[crateId] || 0;
+  const n       = parseInt(amount, 10);
+
+  const newCount = mode === "add"
+    ? current + n
+    : Math.max(0, current - n);
+
+  return {
+    crates: {
+      ...currentCrates,
+      [crateId]: newCount,
+    },
+  };
+}
