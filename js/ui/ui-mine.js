@@ -145,10 +145,10 @@ export function renderBoosterBadges() {
       `;
     }).join("");
 
-  const hasContent = vipBadge || badges;
+  const combined  = vipBadge + badges;
+  const hasContent = combined.trim().length > 0;
 
-  // Empty state: hint to open Crates instead of a dead-end message
-  container.innerHTML = hasContent || `
+  container.innerHTML = hasContent ? combined : `
     <div>
       <span class="no-boosters"><i class="fa-solid fa-circle-info"></i> No active boosters</span>
       <div class="no-boosters-hint">
