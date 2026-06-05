@@ -15,10 +15,10 @@ import {
   checkVipByPlayerId,
   lookupPlayer,
   gmApplyToPlayer,
+  toggleLeaderboardVisibilityForPlayer,
 } from "../supabase.js";
 import { showToast } from "../ui/ui-core.js";
-import { renderHUD } from "../ui/ui-hud.js";
-import { renderMinePanel, renderBoosterBadges } from "../ui/ui-mine.js";
+import { renderBoosterBadges } from "../ui/ui-mine.js";
 import { renderGMPanel } from "../ui/ui-settings.js";
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -30,8 +30,8 @@ function on(id, event, handler) {
 function gmMsg(id, text, success) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.textContent   = text;
-  el.style.color   = success ? "#4caf50" : success === false ? "#f44336" : "#aaa";
+  el.textContent = text;
+  el.style.color = success ? "#4caf50" : success === false ? "#f44336" : "#aaa";
 }
 
 // ============================================================
@@ -64,10 +64,16 @@ function handleToggleGMModal() {
 
 async function handleGMClick(e) {
 
-  // ── Leaderboard toggle ──
+  // ── GM own leaderboard toggle ──
   if (e.target.id === "btn-gm-lb-toggle") {
     await toggleGMLeaderboardVisibility();
     renderGMPanel();
+    return;
+  }
+
+  // ── Target player leaderboard toggle ──
+  if (e.target.id === "btn-gm-target-lb-toggle") {
+    await handleGMTargetLbToggle();
     return;
   }
 
@@ -84,7 +90,7 @@ async function handleGMClick(e) {
     return;
   }
 
-  // ── VIP actions ──
+  // ── VIP actions (use target.playerId — no input needed) ──
   if (e.target.id === "btn-gm-grant-vip")  { await handleGMGrantVip();  return; }
   if (e.target.id === "btn-gm-revoke-vip") { await handleGMRevokeVip(); return; }
   if (e.target.id === "btn-gm-check-vip")  { await handleGMCheckVip();  return; }
@@ -130,12 +136,32 @@ async function handleGMLookup() {
   }
 
   window.__gmTarget = result;
-  gmMsg("gm-lookup-message", `Found: ${result.nickname}`, true);
   renderGMPanel();
+  gmMsg("gm-lookup-message", `Found: ${result.nickname}`, true);
 }
 
 // ============================================================
-// SECTION 4 — SET VALUES (applied to target player remotely)
+// SECTION 4 — TARGET LEADERBOARD TOGGLE
+// ============================================================
+
+async function handleGMTargetLbToggle() {
+  const target = window.__gmTarget;
+  if (!target) return;
+
+  gmMsg("gm-lookup-message", "Updating leaderboard visibility...", null);
+  const result = await toggleLeaderboardVisibilityForPlayer(target.id);
+  gmMsg("gm-lookup-message", result.message, result.success);
+
+  if (result.success) {
+    // Update cached target so toggle button reflects new state
+    target.lbHidden = result.hidden;
+    renderGMPanel();
+  }
+}
+
+// ============================================================
+// SECTION 5 — SET VALUES
+// Race condition fix: pass cachedData so no re-fetch happens
 // ============================================================
 
 async function handleGMSetValue(action) {
@@ -167,21 +193,24 @@ async function handleGMSetValue(action) {
 
   gmMsg("gm-message", "Applying...", null);
 
+  // Pass cached gameData to avoid re-fetch race condition
   const patch  = { [field]: Math.floor(n) };
-  const result = await gmApplyToPlayer(target.id, patch);
+  const result = await gmApplyToPlayer(target.id, patch, target.gameData);
 
   gmMsg("gm-message", result.message, result.success);
 
   if (result.success) {
     if (input) input.value = "";
-    // Update cached game_data so counts refresh on re-render
-    if (target.gameData) target.gameData[field] = Math.floor(n);
+    // Use merged result to keep cache fully up to date
+    if (result.merged) target.gameData = result.merged;
+    else if (target.gameData) target.gameData[field] = Math.floor(n);
     renderGMPanel();
   }
 }
 
 // ============================================================
-// SECTION 5 — GM BUFFS / BOOSTERS
+// SECTION 6 — GM BUFFS / BOOSTERS
+// Race condition fix: pass cachedData + update from result.merged
 // ============================================================
 
 async function handleGMBooster(boosterKey, mode) {
@@ -189,14 +218,12 @@ async function handleGMBooster(boosterKey, mode) {
   if (!target) { gmMsg("gm-booster-message", "No player selected.", false); return; }
 
   if (mode === "clear") {
-    const patch  = { boosters: { [boosterKey]: { multiplier: 1, endsAt: 0 } } };
+    const patch  = { boosters: { [boosterKey]: { multiplier: 1, endsAt: 0, isGm: false } } };
     gmMsg("gm-booster-message", "Clearing...", null);
-    const result = await gmApplyToPlayer(target.id, patch);
+    const result = await gmApplyToPlayer(target.id, patch, target.gameData);
     gmMsg("gm-booster-message", result.message, result.success);
     if (result.success) {
-      if (target.gameData?.boosters) {
-        target.gameData.boosters[boosterKey] = { multiplier: 1, endsAt: 0 };
-      }
+      if (result.merged) target.gameData = result.merged;
       renderGMPanel();
       renderBoosterBadges();
     }
@@ -209,30 +236,34 @@ async function handleGMBooster(boosterKey, mode) {
   const mult = parseFloat(multInput?.value);
   const mins = parseFloat(minsInput?.value);
 
-  if (isNaN(mult) || mult < 1) { gmMsg("gm-booster-message", "Multiplier must be ≥ 1.", false); return; }
-  if (isNaN(mins) || mins < 1) { gmMsg("gm-booster-message", "Duration must be ≥ 1 min.", false); return; }
+  if (isNaN(mult) || mult < 1) { gmMsg("gm-booster-message", "Multiplier must be \u2265 1.", false); return; }
+  if (isNaN(mins) || mins < 1) { gmMsg("gm-booster-message", "Duration must be \u2265 1 min.", false); return; }
 
   gmMsg("gm-booster-message", "Applying GM Buff...", null);
 
   const patch  = buildBoosterPatch(boosterKey, mult, mins);
-  const result = await gmApplyToPlayer(target.id, patch);
+
+  // KEY FIX: pass target.gameData as cachedData so the write uses
+  // the latest local copy — avoids overwriting previous buffs when
+  // applying multiple boosts quickly without reloading
+  const result = await gmApplyToPlayer(target.id, patch, target.gameData);
 
   gmMsg("gm-booster-message", result.message, result.success);
 
   if (result.success) {
     if (multInput) multInput.value = "";
     if (minsInput) minsInput.value = "";
-    // Update cached game_data
-    if (!target.gameData.boosters) target.gameData.boosters = {};
-    target.gameData.boosters[boosterKey] = patch.boosters[boosterKey];
+    // Update cached gameData from the merged result so next patch is correct
+    if (result.merged) target.gameData = result.merged;
     renderGMPanel();
     renderBoosterBadges();
-    showToast(`GM Buff applied: ${boosterKey} ${mult}x for ${mins}min`, "success", 3000);
+    showToast(`GM Buff: ${boosterKey} ${mult}x for ${mins}min`, "success", 3000);
   }
 }
 
 // ============================================================
-// SECTION 6 — CRATE MANAGEMENT
+// SECTION 7 — CRATE MANAGEMENT
+// Race condition fix: same cachedData pattern
 // ============================================================
 
 async function handleGMCrate(crateId, mode) {
@@ -242,10 +273,7 @@ async function handleGMCrate(crateId, mode) {
   const amtInput = document.getElementById(`gm-crate-amt-${crateId}`);
   const amount   = amtInput?.value?.trim();
 
-  if (!amount || amount === "0") {
-    gmMsg("gm-crate-message", "Enter an amount (min 1).", false);
-    return;
-  }
+  if (!amount || amount === "0") { gmMsg("gm-crate-message", "Enter an amount (min 1).", false); return; }
 
   const n = parseInt(amount, 10);
   if (isNaN(n) || n < 1) { gmMsg("gm-crate-message", "Invalid amount.", false); return; }
@@ -254,64 +282,54 @@ async function handleGMCrate(crateId, mode) {
 
   const currentCrates = target.gameData?.crates || {};
   const patch         = buildCratePatch(currentCrates, crateId, n, mode);
-  const result        = await gmApplyToPlayer(target.id, patch);
+
+  // Pass cachedData to avoid re-fetch overwriting previous crate changes
+  const result = await gmApplyToPlayer(target.id, patch, target.gameData);
 
   gmMsg("gm-crate-message", result.message, result.success);
 
   if (result.success) {
     if (amtInput) amtInput.value = "";
-    // Update cached crates so counts update on re-render
-    if (!target.gameData.crates) target.gameData.crates = {};
-    target.gameData.crates = patch.crates;
+    if (result.merged) target.gameData = result.merged;
     renderGMPanel();
     showToast(`${mode === "add" ? "Added" : "Removed"} ${n}x ${crateId} crate`, "success", 2500);
   }
 }
 
 // ============================================================
-// SECTION 7 — VIP MANAGEMENT
+// SECTION 8 — VIP MANAGEMENT
+// Uses target.playerId directly — no Player ID input needed
 // ============================================================
 
 async function handleGMGrantVip() {
-  const playerIdInput = document.getElementById("gm-vip-playerid");
-  const daysInput     = document.getElementById("gm-vip-days");
-  const playerId      = playerIdInput?.value?.trim();
-  const days          = parseInt(daysInput?.value?.trim(), 10);
+  const target   = window.__gmTarget;
+  const daysInput = document.getElementById("gm-vip-days");
+  const days      = parseInt(daysInput?.value?.trim(), 10);
 
-  if (!playerId) { gmMsg("gm-vip-message", "Enter a Player ID.", false); return; }
+  if (!target) { gmMsg("gm-vip-message", "Look up a player first.", false); return; }
   if (!days || days < 1) { gmMsg("gm-vip-message", "Enter valid days (min 1).", false); return; }
 
   gmMsg("gm-vip-message", "Granting VIP...", null);
-  const result = await grantVipByPlayerId(playerId, days);
+  const result = await grantVipByPlayerId(target.playerId, days);
   gmMsg("gm-vip-message", result.message, result.success);
-
-  if (result.success) {
-    if (playerIdInput) playerIdInput.value = "";
-    if (daysInput)     daysInput.value     = "";
-  }
+  if (result.success && daysInput) daysInput.value = "";
 }
 
 async function handleGMRevokeVip() {
-  const playerIdInput = document.getElementById("gm-vip-playerid");
-  const playerId      = playerIdInput?.value?.trim();
-
-  if (!playerId) { gmMsg("gm-vip-message", "Enter a Player ID.", false); return; }
+  const target = window.__gmTarget;
+  if (!target) { gmMsg("gm-vip-message", "Look up a player first.", false); return; }
 
   gmMsg("gm-vip-message", "Revoking...", null);
-  const result = await revokeVipByPlayerId(playerId);
+  const result = await revokeVipByPlayerId(target.playerId);
   gmMsg("gm-vip-message", result.message, result.success);
-
-  if (result.success && playerIdInput) playerIdInput.value = "";
 }
 
 async function handleGMCheckVip() {
-  const playerIdInput = document.getElementById("gm-vip-playerid");
-  const playerId      = playerIdInput?.value?.trim();
-
-  if (!playerId) { gmMsg("gm-vip-message", "Enter a Player ID.", false); return; }
+  const target = window.__gmTarget;
+  if (!target) { gmMsg("gm-vip-message", "Look up a player first.", false); return; }
 
   gmMsg("gm-vip-message", "Checking...", null);
-  const result = await checkVipByPlayerId(playerId);
+  const result = await checkVipByPlayerId(target.playerId);
   gmMsg("gm-vip-message", result.message,
     result.success ? (result.isVip ? true : null) : false);
 }
