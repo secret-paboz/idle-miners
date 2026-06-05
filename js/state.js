@@ -9,6 +9,7 @@ const GUEST_KEY = "idle_miners_guest";
 const DEFAULT_STATE = {
   // Identity
   nickname: "",
+  playerId: "",   // Supabase player_id (e.g. "piererra") — loaded on login
   isGuest: true,
 
   // VIP status (authoritative copy comes from Supabase on login)
