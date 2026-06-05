@@ -107,16 +107,8 @@ export function showRegisterModal() {
 // ============================================================
 
 export function renderGMPanel() {
-  const floatBtn  = document.getElementById("btn-gm-float");
   const container = document.getElementById("gm-panel-content");
-
-  if (!isGameMasterSync()) {
-    if (floatBtn) floatBtn.style.display = "none";
-    return;
-  }
-
-  if (floatBtn) floatBtn.style.display = "flex";
-  if (!container) return;
+  if (!isGameMasterSync() || !container) return;
 
   const hidden  = isGMHiddenFromLeaderboard();
   const target  = window.__gmTarget || null; // { id, playerId, nickname, isVip, level, rebirths, dimension, gameData }
@@ -250,50 +242,60 @@ export function renderGMPanel() {
       </div>
     </div>
 
-    <!-- ── SET VALUES (locked until target selected) ── -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
+    <!-- ── SET VALUES (hidden until target selected) ── -->
+    ${target ? `
+    <div class="gm-card">
       <div class="gm-card-header">
         <i class="fa-solid fa-sliders"></i> Set Values
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
+        <span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>
       </div>
       <div class="gm-card-body">
         <div class="gm-grid">${setValueRows}</div>
         <div class="gm-message" id="gm-message"></div>
       </div>
     </div>
+    ` : ""}
 
-    <!-- ── CRATES (locked until target selected) ── -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
+    <!-- ── CRATES (hidden until target selected) ── -->
+    ${target ? `
+    <div class="gm-card">
       <div class="gm-card-header">
         <i class="fa-solid fa-boxes-stacked"></i> Crates
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
+        <span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>
       </div>
       <div class="gm-card-body">
         ${crateRows}
         <div class="gm-message" id="gm-crate-message"></div>
       </div>
     </div>
+    ` : ""}
 
-    <!-- ── GM BUFFS / BOOSTERS (locked until target selected) ── -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
+    <!-- ── GM BUFFS / BOOSTERS (hidden until target selected) ── -->
+    ${target ? `
+    <div class="gm-card">
       <div class="gm-card-header">
         <i class="fa-solid fa-bolt"></i> GM Buffs
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
+        <span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>
       </div>
       <div class="gm-card-body">
         ${boosterRows}
         <div class="gm-message" id="gm-booster-message"></div>
       </div>
     </div>
+    ` : ""}
 
-    <!-- ── VIP MANAGEMENT ── -->
+    <!-- ── VIP MANAGEMENT (hidden until target selected) ── -->
+    ${target ? `
     <div class="gm-card">
-      <div class="gm-card-header"><i class="fa-solid fa-crown" style="color:#ffc107"></i> VIP Management</div>
+      <div class="gm-card-header">
+        <i class="fa-solid fa-crown" style="color:#ffc107"></i> VIP Management
+        <span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>
+      </div>
       <div class="gm-card-body">
         <div class="gm-vip-row">
           <input class="gm-input gm-vip-input" id="gm-vip-playerid" type="text"
                  placeholder="Player ID" autocomplete="off"
-                 value="${target ? escapeHTML(target.playerId) : ""}">
+                 value="${escapeHTML(target.playerId)}">
           <input class="gm-input gm-vip-days" id="gm-vip-days" type="number"
                  min="1" max="365" placeholder="Days">
         </div>
@@ -305,6 +307,7 @@ export function renderGMPanel() {
         <div class="gm-message" id="gm-vip-message"></div>
       </div>
     </div>
+    ` : ""}
 
   `;
 }
