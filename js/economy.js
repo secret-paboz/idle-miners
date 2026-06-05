@@ -411,6 +411,11 @@ export function calculateOfflineProgress() {
   const ore      = rollOre(mineTier);
   const oreId    = state.currentOreId || "dirt";
 
+  // Bug fix 3: check booster active at START of offline period, not end
+  const offlineStart    = state.lastOnlineTime;
+  const xpBoosterActive = state.boosters.xpGain.endsAt > offlineStart;
+  const xpMultiplier    = xpBoosterActive ? state.boosters.xpGain.multiplier : 1;
+
   let totalMined = 0;
   let totalCash  = 0;
   let totalXp    = 0;
@@ -422,20 +427,19 @@ export function calculateOfflineProgress() {
       const secsToFill = spaceLeft > 0 ? Math.ceil(spaceLeft / power) : 0;
 
       if (secsToFill === 0 || secsToFill > secondsLeft) {
-        // Last partial fill — not enough time to fill the backpack fully
+        // Last partial fill
         const mined  = Math.min(power * secondsLeft, Math.max(0, maxCap - state.ore));
         state.ore   += mined;
         totalMined  += mined;
-        totalXp     += ore.xpPerBlock * mined;
+        totalXp     += ore.xpPerBlock * mined * xpMultiplier;
         secondsLeft  = 0;
       } else {
-        // Full fill — mine until backpack is full, then auto-sell
+        // Full fill — mine until backpack full, then auto-sell
         state.ore   += spaceLeft;
         totalMined  += spaceLeft;
-        totalXp     += ore.xpPerBlock * spaceLeft;
+        totalXp     += ore.xpPerBlock * spaceLeft * xpMultiplier;
         secondsLeft -= secsToFill;
 
-        // Auto-sell the full backpack
         const value       = computeOreValue(oreId, true);
         const cash        = Math.floor(state.ore * value);
         totalCash        += cash;
@@ -445,24 +449,29 @@ export function calculateOfflineProgress() {
       }
     }
   } else {
+    // Bug fix 4: if backpack already full, sell it first then mine
+    if (state.ore >= maxCap && state.ore > 0) {
+      const value       = computeOreValue(oreId, true);
+      const cash        = Math.floor(state.ore * value);
+      totalCash        += cash;
+      state.cash       += cash;
+      state.cashEarned += cash;
+      state.ore         = 0;
+    }
+
     // Non-VIP: one fill only, capped at remaining backpack space
     const remaining = Math.max(0, maxCap - state.ore);
     const mined     = Math.min(power * secondsLeft, remaining);
-    if (mined <= 0) return null;
     state.ore  += mined;
     totalMined += mined;
-    totalXp    += ore.xpPerBlock * mined;
+    totalXp    += ore.xpPerBlock * mined * xpMultiplier;
   }
 
-  if (totalMined <= 0) return null;
+  if (totalMined <= 0 && totalCash <= 0) return null;
 
   state.blocksMined += totalMined;
 
-  // Apply XP booster if still active
-  if (state.boosters.xpGain.endsAt > now) {
-    totalXp = Math.floor(totalXp * state.boosters.xpGain.multiplier);
-  }
-  state.xp += totalXp;
+  state.xp += Math.floor(totalXp);
   checkLevelUp();
   saveState();
 
