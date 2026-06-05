@@ -424,10 +424,10 @@ export async function lookupPlayer(query) {
   if (!clean) return { success: false, message: "Enter a Player ID or nickname." };
 
   try {
-    // Try player_id first (exact match)
+    // Step 1: Find player by player_id or nickname (no game_data — avoids RLS block)
     let { data, error } = await client
       .from("player_saves")
-      .select("id, player_id, nickname, is_vip, vip_expires_at, game_data, dimension")
+      .select("id, player_id, nickname, is_vip, vip_expires_at")
       .eq("player_id", clean)
       .single();
 
@@ -435,7 +435,7 @@ export async function lookupPlayer(query) {
     if (error || !data) {
       const res = await client
         .from("player_saves")
-        .select("id, player_id, nickname, is_vip, vip_expires_at, game_data, dimension")
+        .select("id, player_id, nickname, is_vip, vip_expires_at")
         .ilike("nickname", clean)
         .limit(1)
         .single();
@@ -447,12 +447,22 @@ export async function lookupPlayer(query) {
       return { success: false, message: `Player "${clean}" not found.` };
     }
 
+    // Step 2: Fetch game_data separately — gracefully fall back if RLS blocks it
+    let gameData = {};
+    const gdRes = await client
+      .from("player_saves")
+      .select("game_data")
+      .eq("id", data.id)
+      .single();
+
+    if (gdRes.data?.game_data) {
+      gameData = typeof gdRes.data.game_data === "string"
+        ? JSON.parse(gdRes.data.game_data)
+        : (gdRes.data.game_data || {});
+    }
+
     const now   = Date.now();
     const isVip = data.is_vip === true && (data.vip_expires_at ?? 0) > now;
-
-    const gameData = typeof data.game_data === "string"
-      ? JSON.parse(data.game_data)
-      : (data.game_data || {});
 
     return {
       success:    true,
