@@ -114,11 +114,19 @@ export function openCrate(crateId) {
   const loot = rollWeighted(crateData.lootTable);
 
   if (loot.type === "booster") {
-    const booster    = state.boosters[loot.boosterKey];
-    const now        = Date.now();
-    const currentEnd = booster.endsAt > now ? booster.endsAt : now;
-    booster.multiplier = Math.max(booster.multiplier, loot.multiplier);
-    booster.endsAt     = currentEnd + loot.duration;
+    const booster = state.boosters[loot.boosterKey];
+    const now     = Date.now();
+
+    // Bug fix 1: cap total stacked duration at 2 hours max
+    const MAX_BOOSTER_STACK = 2 * 60 * 60 * 1000;
+    const currentEnd        = booster.endsAt > now ? booster.endsAt : now;
+    booster.endsAt          = Math.min(currentEnd + loot.duration, now + MAX_BOOSTER_STACK);
+
+    // Bug fix 2: only keep higher multiplier if still active,
+    // otherwise reset to the new crate's multiplier
+    booster.multiplier = booster.endsAt > now && booster.endsAt > currentEnd
+      ? Math.max(booster.multiplier, loot.multiplier)
+      : loot.multiplier;
   }
 
   saveState();
