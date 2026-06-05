@@ -15,7 +15,8 @@ import { renderMinePanel } from "../ui/ui-mine.js";
 import { renderPetsPanel } from "../ui/ui-pets.js";
 import { renderCratesPanel, animateCrateOpen } from "../ui/ui-crates.js";
 import { renderPrestigePanel } from "../ui/ui-prestige.js";
-import { renderSettingsPanel, showRegisterModal } from "../ui/ui-settings.js";
+import { renderSettingsPanel, renderGMPanel, showRegisterModal } from "../ui/ui-settings.js";
+import { updateFabGmVisibility } from "../ui/ui-core.js";
 
 export function bindDelegatedEvents() {
   document.addEventListener("click", handleDelegatedClick);
@@ -27,10 +28,14 @@ export async function handleAuthChange(direction) {
     if (winner === "cloud") await cloudLoad();
     renderHUD();
     renderSettingsPanel();
+    renderGMPanel();
+    updateFabGmVisibility();
   } else {
     loginAsGuest();
     renderHUD();
     renderSettingsPanel();
+    renderGMPanel();
+    updateFabGmVisibility();
   }
 }
 
@@ -134,6 +139,8 @@ async function handleLogin() {
     showToast(result.message, "success", 3000);
     renderHUD();
     renderSettingsPanel();
+    renderGMPanel();
+    updateFabGmVisibility();
   } else {
     if (msgEl) msgEl.textContent = result.message;
     showToast(result.message, "error", 3000);
@@ -168,6 +175,8 @@ async function handleRegister() {
     if (modal) modal.remove();
     renderHUD();
     renderSettingsPanel();
+    renderGMPanel();
+    updateFabGmVisibility();
   } else {
     if (msgEl) msgEl.textContent = result.message;
   }
@@ -184,6 +193,8 @@ async function handleLogout() {
       showToast("Logged out.", "info", 2000);
       renderHUD();
       renderSettingsPanel();
+      renderGMPanel();
+      updateFabGmVisibility();
     },
   });
 }
