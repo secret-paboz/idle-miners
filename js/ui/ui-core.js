@@ -158,6 +158,19 @@ export function openLeaderboardModal() {
   const modal = document.getElementById("leaderboard-modal");
   if (modal) modal.style.display = "flex";
   loadAndRenderLeaderboard("cash_earned");
+
+  // Wire refresh button once
+  const refreshBtn = document.getElementById("btn-leaderboard-refresh");
+  if (refreshBtn && !refreshBtn._wired) {
+    refreshBtn.addEventListener("click", async () => {
+      refreshBtn.classList.add("spinning");
+      refreshBtn.disabled = true;
+      await loadAndRenderLeaderboard(_lbCategory);
+      refreshBtn.classList.remove("spinning");
+      refreshBtn.disabled = false;
+    });
+    refreshBtn._wired = true;
+  }
 }
 
 // Category config for tabs
