@@ -72,6 +72,11 @@ async function boot() {
 
   hideBootSpinner();
 
+  // Submit score on startup so leaderboard is current after page reload
+  if (!state.isGuest) {
+    submitLeaderboardScore().catch(() => {});
+  }
+
   onAuthChange(({ event }) => {
     if (event === "SIGNED_IN")  handleAuthChange("in");
     if (event === "SIGNED_OUT") handleAuthChange("out");
