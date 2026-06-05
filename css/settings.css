@@ -443,13 +443,6 @@
   transition:    opacity var(--transition);
 }
 
-/* Locked state — dimmed until player selected */
-.gm-card-locked {
-  opacity:        0.45;
-  pointer-events: none;
-  user-select:    none;
-}
-
 .gm-card-header {
   display:        flex;
   align-items:    center;
@@ -472,15 +465,6 @@
   color:       var(--color-success);
   text-transform: none;
   letter-spacing: 0;
-}
-
-.gm-card-locked-hint {
-  margin-left: auto;
-  font-size:   10px;
-  color:       var(--text-muted);
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 400;
 }
 
 .gm-card-body {
@@ -732,7 +716,9 @@
   transition: background var(--transition);
 }
 
-.btn-gm-remove:hover { background: rgba(244,67,54,0.25); }.btn-gm-crate {
+.btn-gm-remove:hover { background: rgba(244,67,54,0.25); }
+
+.btn-gm-crate {
   display:         flex;
   align-items:     center;
   justify-content: center;
