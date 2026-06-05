@@ -184,8 +184,7 @@
 
 .lb-modal-title i { color: var(--accent); }
 
-.lb-modal-close,
-.lb-modal-refresh {
+.lb-modal-close {
   width:           32px;
   height:          32px;
   border-radius:   50%;
@@ -198,22 +197,11 @@
   align-items:     center;
   justify-content: center;
   transition:      background var(--transition), color var(--transition);
-  flex-shrink:     0;
 }
 
-.lb-modal-close:hover,
-.lb-modal-refresh:hover {
+.lb-modal-close:hover {
   background: var(--border-bright);
   color:      var(--text-primary);
-}
-
-.lb-modal-refresh.spinning i {
-  animation: lb-spin 0.7s linear infinite;
-}
-
-@keyframes lb-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
 }
 
 /* Tabs inside modal */
@@ -688,6 +676,11 @@
   padding:       12px 14px;
 }
 
+/* Full-width cell — spans both columns (used for Player ID) */
+.stats-modal-cell--full {
+  grid-column: 1 / -1;
+}
+
 .stats-modal-label {
   font-size:     11px;
   font-weight:   600;
@@ -701,6 +694,15 @@
   font-size:   16px;
   font-weight: 700;
   color:       var(--accent);
+}
+
+/* Player ID — monospace, smaller, copyable feel */
+.stats-modal-playerid {
+  font-size:   13px;
+  font-family: "Courier New", monospace;
+  color:       var(--text-secondary);
+  letter-spacing: 0.04em;
+  user-select: all; /* tap to select whole ID */
 }
 
 .hud-nickname-btn {
