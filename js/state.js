@@ -62,11 +62,12 @@ const DEFAULT_STATE = {
     wingsEndsAt: 0,
   },
 
-  // Active boosters from crates
+  // Active boosters from crates or GM
+  // isGm: true means applied by a Game Master (shown differently in UI)
   boosters: {
-    miningSpeed: { multiplier: 1, endsAt: 0 },
-    sellValue:   { multiplier: 1, endsAt: 0 },
-    xpGain:      { multiplier: 1, endsAt: 0 },
+    miningSpeed: { multiplier: 1, endsAt: 0, isGm: false },
+    sellValue:   { multiplier: 1, endsAt: 0, isGm: false },
+    xpGain:      { multiplier: 1, endsAt: 0, isGm: false },
   },
 
   // Crate inventory { crateId: count }
@@ -187,12 +188,13 @@ function clampState() {
   // Offline tracking — must be a positive finite number
   state.lastOnlineTime = pos(state.lastOnlineTime);
 
-  // Boosters — clamp multipliers to sane range [1, 100]
+  // Boosters — clamp multipliers to sane range [1, 100], preserve isGm flag
   if (state.boosters && typeof state.boosters === "object") {
     for (const key of ["miningSpeed", "sellValue", "xpGain"]) {
       if (state.boosters[key]) {
         state.boosters[key].multiplier = Math.min(100, Math.max(1, nn(state.boosters[key].multiplier, 1)));
         state.boosters[key].endsAt     = pos(state.boosters[key].endsAt);
+        state.boosters[key].isGm       = state.boosters[key].isGm === true;
       }
     }
   }
