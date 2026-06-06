@@ -53,11 +53,21 @@ export function renderSettingsPanel() {
           <div class="auth-message" id="login-message"></div>
           <div class="auth-switch">
             Don't have an account?
-            <a href="#" id="btn-show-register">Register here!</a>
+            <a href="javascript:void(0)" id="btn-show-register">Register here!</a>
           </div>
         </div>
       </div>
     `;
+  }
+
+  // Directly bind the register link after rendering, so it always works
+  // regardless of event delegation timing
+  const regLink = document.getElementById("btn-show-register");
+  if (regLink) {
+    regLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      showRegisterModal();
+    });
   }
 
 }
