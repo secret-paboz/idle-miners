@@ -1083,7 +1083,15 @@
 .login-screen-links a:hover { opacity: 0.75; }
 
 /* ============================================================
-   SECTION 10 — FORGOT PASSWORD MODAL
+   SECTION 10 — REGISTER MODAL (z-index override)
+   ============================================================ */
+
+#register-modal {
+  z-index: 950;
+}
+
+/* ============================================================
+   SECTION 11 — FORGOT PASSWORD MODAL
    ============================================================ */
 
 #forgot-password-modal {
