@@ -9,12 +9,6 @@
 //   800ms so rapid upgrades don't create a 30-second backlog.
 // - processToastQueue() fade delay reduced from 400ms to 150ms.
 //
-// CHANGED (offline progress):
-// - showOfflineProgress() replaced toast with a proper modal
-//   showing time away, blocks mined, and cash earned (VIP).
-// - Added showCloudOfflineBanner() / hideCloudOfflineBanner()
-//   for persistent "playing offline" warning when Supabase fails.
-//
 // CHANGED (globals):
 // - Removed window.__gameState and window.__formatNumber reads.
 //   Now imports state and formatNumber directly via ES modules.
@@ -433,66 +427,6 @@ export function showModal({ title, message, confirmText = "Confirm", cancelText 
   document.getElementById("modal-cancel").onclick = () => {
     modal.classList.remove("visible");
     if (onCancel) onCancel();
-  };
-}
-
-// ============================================================
-// SECTION 4 — OFFLINE PROGRESS POPUP
-// ============================================================
-
-export function showOfflineProgress(result) {
-  if (!result) return;
-
-  // Build human-readable time string (supports days for long absences)
-  const totalSecs = result.seconds || 0;
-  const d = Math.floor(totalSecs / 86400);
-  const h = Math.floor((totalSecs % 86400) / 3600);
-  const m = Math.floor((totalSecs % 3600) / 60);
-  const timeStr = d > 0
-    ? `${d}d ${h}h ${m}m`
-    : h > 0
-      ? `${h}h ${m}m`
-      : `${m}m`;
-
-  let overlay = document.getElementById("offline-modal-overlay");
-  if (!overlay) {
-    overlay    = document.createElement("div");
-    overlay.id = "offline-modal-overlay";
-    document.body.appendChild(overlay);
-  }
-
-  const cashRow = result.isVip && result.cashEarned > 0 ? `
-    <div class="offline-stat">
-      <span class="offline-stat-value">$${formatNumber(result.cashEarned)}</span>
-      <span class="offline-stat-label">Cash earned</span>
-    </div>
-  ` : "";
-
-  overlay.innerHTML = `
-    <div class="offline-modal">
-      <div class="offline-modal-icon">${result.isVip ? "👑" : "⛏️"}</div>
-      <div class="offline-modal-title">Welcome back!</div>
-      <div class="offline-modal-time">
-        Your miner worked for <strong>${escapeHTML(timeStr)}</strong> while you were away
-      </div>
-      <div class="offline-modal-stats">
-        <div class="offline-stat">
-          <span class="offline-stat-value">${formatNumber(result.mined)}</span>
-          <span class="offline-stat-label">Blocks mined</span>
-        </div>
-        ${cashRow}
-      </div>
-      <button class="btn-offline-collect" id="btn-offline-collect">
-        <i class="fa-solid fa-hand-holding-dollar"></i> Collect
-      </button>
-    </div>
-  `;
-
-  overlay.classList.add("visible");
-
-  document.getElementById("btn-offline-collect").onclick = () => {
-    overlay.classList.remove("visible");
-    setTimeout(() => overlay.remove(), 300);
   };
 }
 
