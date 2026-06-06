@@ -333,3 +333,29 @@ export function onAuthChange(callback) {
     callback({ event, session });
   });
 }
+
+// ============================================================
+// SECTION 10 — PASSWORD RESET
+// ============================================================
+
+export async function sendPasswordReset(email) {
+  const client = getClient();
+  if (!client) return { success: false, message: "Not connected to server." };
+
+  const emailCheck = validateEmail(email);
+  if (!emailCheck.valid) return { success: false, message: emailCheck.message };
+
+  try {
+    const { error } = await client.auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      { redirectTo: window.location.origin }
+    );
+
+    if (error) return { success: false, message: "Could not send reset email. Please try again." };
+
+    return { success: true, message: "Password reset email sent! Check your inbox." };
+
+  } catch (err) {
+    return { success: false, message: "Something went wrong. Please try again." };
+  }
+}
