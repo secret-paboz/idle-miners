@@ -117,14 +117,15 @@ export function openCrate(crateId) {
     const booster = state.boosters[loot.boosterKey];
     const now     = Date.now();
 
-    // Bug fix 1: cap total stacked duration at 2 hours max
+    // Cap total stacked duration at 2 hours max
     const MAX_BOOSTER_STACK = 2 * 60 * 60 * 1000;
-    const currentEnd        = booster.endsAt > now ? booster.endsAt : now;
+    const wasActive         = booster.endsAt > now;
+    const currentEnd        = wasActive ? booster.endsAt : now;
     booster.endsAt          = Math.min(currentEnd + loot.duration, now + MAX_BOOSTER_STACK);
 
-    // Bug fix 2: only keep higher multiplier if still active,
-    // otherwise reset to the new crate's multiplier
-    booster.multiplier = booster.endsAt > now && booster.endsAt > currentEnd
+    // Only keep the higher multiplier if the booster was already active,
+    // otherwise always reset to the new crate's multiplier.
+    booster.multiplier = wasActive
       ? Math.max(booster.multiplier, loot.multiplier)
       : loot.multiplier;
 
