@@ -464,6 +464,18 @@ export async function lookupPlayer(query) {
     const now   = Date.now();
     const isVip = data.is_vip === true && (data.vip_expires_at ?? 0) > now;
 
+    // Step 3: Fetch leaderboard hidden status so the toggle button reflects
+    // the real server state — not just what was set in this session.
+    let lbHidden = false;
+    const lbRes = await client
+      .from("leaderboard")
+      .select("hidden")
+      .eq("id", data.id)
+      .single();
+    if (lbRes.data) {
+      lbHidden = lbRes.data.hidden === true;
+    }
+
     return {
       success:    true,
       id:         data.id,
@@ -471,6 +483,7 @@ export async function lookupPlayer(query) {
       nickname:   data.nickname,
       isVip,
       vipExpiry:  data.vip_expires_at,
+      lbHidden,
       dimension:  gameData.dimension  || "earth",
       rebirths:   gameData.rebirths   || 0,
       level:      gameData.level      || 1,
