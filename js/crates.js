@@ -127,6 +127,10 @@ export function openCrate(crateId) {
     booster.multiplier = booster.endsAt > now && booster.endsAt > currentEnd
       ? Math.max(booster.multiplier, loot.multiplier)
       : loot.multiplier;
+
+    // Always clear GM flag when a crate applies a booster —
+    // crate boosters are never GM buffs, even if one was active before.
+    booster.isGm = false;
   }
 
   saveState();
