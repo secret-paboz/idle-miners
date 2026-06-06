@@ -10,7 +10,7 @@ import {
   formatNumber,
   tryAutoSell,
 } from "./economy.js";
-import { initTabs, switchTab, showToast, showOfflineProgress, showBootSpinner, hideBootSpinner, updateFabGmVisibility } from "./ui/ui-core.js";
+import { initTabs, switchTab, showToast, showOfflineProgress, showBootSpinner, hideBootSpinner, updateFabGmVisibility, showLoginScreen } from "./ui/ui-core.js";
 import { renderHUD } from "./ui/ui-hud.js";
 import { renderMinePanel, animateMiningTick } from "./ui/ui-mine.js";
 import { renderPetCooldowns } from "./ui/ui-pets.js";
@@ -54,7 +54,6 @@ async function boot() {
       showToast("Cloud save loaded.", "info", 3000);
     }
   } else {
-    if (!state.nickname) loginAsGuest();
     window.__gmVerified = false;
   }
 
@@ -71,6 +70,17 @@ async function boot() {
   bindEvents();
 
   hideBootSpinner();
+
+  // Show login screen for guests / logged-out players
+  if (!session.loggedIn) {
+    showLoginScreen({
+      onGuest: () => {
+        if (!state.nickname) loginAsGuest();
+        renderHUD();
+        renderSettingsPanel();
+      },
+    });
+  }
 
   // Submit score on startup so leaderboard is current after page reload
   if (!state.isGuest) {
