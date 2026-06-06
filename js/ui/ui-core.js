@@ -505,7 +505,7 @@ export function showLoginScreen({ onGuest } = {}) {
       </div>
 
       <div class="login-screen-form">
-        <input type="email"    id="ls-email"    placeholder="Email address"  autocomplete="email" />
+        <input type="text"     id="ls-player-id" placeholder="Player ID"      autocomplete="username" />
         <input type="password" id="ls-password" placeholder="Password"       autocomplete="current-password" />
         <div class="login-screen-message" id="ls-message"></div>
         <button class="login-screen-btn login-screen-btn--primary" id="ls-btn-login">
@@ -533,12 +533,12 @@ export function showLoginScreen({ onGuest } = {}) {
 
   // ── Log In ──────────────────────────────────────────────
   document.getElementById("ls-btn-login").addEventListener("click", async () => {
-    const email    = document.getElementById("ls-email")?.value?.trim();
+    const playerId = document.getElementById("ls-player-id")?.value?.trim();
     const password = document.getElementById("ls-password")?.value;
     const msgEl    = document.getElementById("ls-message");
 
-    if (!email || !password) {
-      msgEl.textContent = "Please enter your email and password.";
+    if (!playerId || !password) {
+      msgEl.textContent = "Please enter your Player ID and password.";
       return;
     }
 
@@ -548,7 +548,7 @@ export function showLoginScreen({ onGuest } = {}) {
     msgEl.textContent = "";
 
     const { loginUser } = await import("../auth.js");
-    const result = await loginUser(email, password);
+    const result = await loginUser(playerId, password);
 
     if (result.success) {
       hideLoginScreen();
