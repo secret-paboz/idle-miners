@@ -51,16 +51,8 @@ const DEFAULT_STATE = {
   dimension: "earth",
   dimensionUnlocked: ["earth"],
 
-  // Pets owned { petId: { owned, level, unlockedAbility } }
+  // Pets owned { petId: { owned, level } }
   pets: {},
-
-  // Active buffs
-  buffs: {
-    rageActive: false,
-    rageEndsAt: 0,
-    wingsActive: false,
-    wingsEndsAt: 0,
-  },
 
   // Active boosters from crates or GM
   // isGm: true means applied by a Game Master (shown differently in UI)
@@ -73,20 +65,13 @@ const DEFAULT_STATE = {
   // Crate inventory { crateId: count }
   crates: {},
 
-  // Offline progress tracking
-  // -1 = first boot (no offline progress); gets stamped to Date.now() in initState()
-  lastOnlineTime: -1,
-
   // Tracking
   lastSaveTime: 0,
   lastHuntTime: 0,
   lastFishTime: 0,
-  lastQuestTime: 0,
   lastHourlyTime: -1,
   lastDailyTime: -1,
   lastWeeklyTime: -1,
-  lastRageTime: 0,
-  lastWingsTime: 0,
 
   // GM preferences (persisted)
   gmHiddenFromLeaderboard: false,
@@ -120,10 +105,6 @@ function initState() {
   if (state.lastHourlyTime  === -1) state.lastHourlyTime  = now;
   if (state.lastDailyTime   === -1) state.lastDailyTime   = now;
   if (state.lastWeeklyTime  === -1) state.lastWeeklyTime  = now;
-  // First-ever boot: stamp now so the next session can calculate offline progress.
-  // Also handles legacy saves that stored 0 (falsy) — treat those as "just now".
-  if (!state.lastOnlineTime || state.lastOnlineTime === -1) state.lastOnlineTime = now;
-
   // Expire VIP locally if past expiry
   if (state.vipExpiresAt > 0 && Date.now() > state.vipExpiresAt) {
     state.isVip       = false;
@@ -185,9 +166,6 @@ function clampState() {
   if (typeof state.currentOreId !== "string") state.currentOreId = "dirt";
   if (typeof state.dimension !== "string")    state.dimension    = "earth";
 
-  // Offline tracking — must be a positive finite number
-  state.lastOnlineTime = pos(state.lastOnlineTime);
-
   // Boosters — clamp multipliers to sane range [1, 100], preserve isGm flag
   if (state.boosters && typeof state.boosters === "object") {
     for (const key of ["miningSpeed", "sellValue", "xpGain"]) {
@@ -201,8 +179,7 @@ function clampState() {
 }
 
 function saveState() {
-  state.lastSaveTime   = Date.now();
-  state.lastOnlineTime = Date.now();
+  state.lastSaveTime = Date.now();
   clampState();
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
@@ -233,7 +210,6 @@ function resetStateForRebirth() {
     lastHourlyTime:    state.lastHourlyTime,
     lastDailyTime:     state.lastDailyTime,
     lastWeeklyTime:    state.lastWeeklyTime,
-    lastOnlineTime:    state.lastOnlineTime,
   };
 
   const fresh = deepCopy(DEFAULT_STATE);
@@ -262,7 +238,6 @@ function resetStateForPrestige() {
     lastHourlyTime:   now,
     lastDailyTime:    now,
     lastWeeklyTime:   now,
-    lastOnlineTime:   now,
   };
 
   const fresh = deepCopy(DEFAULT_STATE);
