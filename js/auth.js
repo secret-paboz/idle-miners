@@ -139,6 +139,7 @@ export async function registerUser(playerId, password, nickname, email) {
       id:             user.id,
       player_id:      playerId.trim().toLowerCase(),
       nickname:       nickname.trim(),
+      email:          email.trim().toLowerCase(),
       game_data:      JSON.stringify({ ...state, nickname: nickname.trim(), isGuest: false }),
       updated_at:     new Date().toISOString(),
       is_vip:         false,
@@ -171,18 +172,37 @@ export async function registerUser(playerId, password, nickname, email) {
 }
 
 // ============================================================
-// SECTION 5 — LOGIN (email + password)
+// SECTION 5 — LOGIN (player_id + password)
 // ============================================================
 
-export async function loginUser(email, password) {
+async function lookupEmailByPlayerId(playerId) {
+  const client = getClient();
+  if (!client) return null;
+
+  const { data, error } = await client
+    .from("player_saves")
+    .select("email")
+    .eq("player_id", playerId.trim().toLowerCase())
+    .single();
+
+  if (error || !data) return null;
+  return data.email;
+}
+
+export async function loginUser(playerId, password) {
   const client = getClient();
   if (!client) return { success: false, message: "Not connected to server." };
 
-  if (!email || !password)
-    return { success: false, message: "Please enter your email and password." };
+  if (!playerId || !password)
+    return { success: false, message: "Please enter your Player ID and password." };
 
-  const emailCheck = validateEmail(email);
-  if (!emailCheck.valid) return { success: false, message: emailCheck.message };
+  const idCheck = validatePlayerId(playerId);
+  if (!idCheck.valid) return { success: false, message: idCheck.message };
+
+  // Look up the real email from player_saves
+  const email = await lookupEmailByPlayerId(playerId);
+  if (!email)
+    return { success: false, message: "Player ID not found." };
 
   try {
     const { data, error } = await client.auth.signInWithPassword({
@@ -190,7 +210,7 @@ export async function loginUser(email, password) {
       password: password,
     });
 
-    if (error) return { success: false, message: "Invalid email or password." };
+    if (error) return { success: false, message: "Invalid Player ID or password." };
 
     const user   = data.user;
     const loaded = await loadCloudSave(user.id);
