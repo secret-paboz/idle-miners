@@ -552,6 +552,117 @@ export function hideBootSpinner() {
 }
 
 // ============================================================
+// SECTION 5b — LOGIN SCREEN
+// ============================================================
+
+export function showLoginScreen({ onGuest } = {}) {
+  const existing = document.getElementById("login-screen");
+  if (existing) return;
+
+  const screen     = document.createElement("div");
+  screen.id        = "login-screen";
+  screen.innerHTML = `
+    <div class="login-screen-box">
+
+      <div class="login-screen-logo">
+        <i class="fa-solid fa-helmet-safety login-screen-logo-icon"></i>
+        <div class="login-screen-title">Idle Miners</div>
+        <div class="login-screen-subtitle">Mine. Sell. Prestige. Repeat.</div>
+      </div>
+
+      <div class="login-screen-form">
+        <input type="email"    id="ls-email"    placeholder="Email address"  autocomplete="email" />
+        <input type="password" id="ls-password" placeholder="Password"       autocomplete="current-password" />
+        <div class="login-screen-message" id="ls-message"></div>
+        <button class="login-screen-btn login-screen-btn--primary" id="ls-btn-login">
+          <i class="fa-solid fa-right-to-bracket"></i> Log In
+        </button>
+      </div>
+
+      <div class="login-screen-divider"><span>or</span></div>
+
+      <button class="login-screen-btn login-screen-btn--guest" id="ls-btn-guest">
+        <i class="fa-solid fa-user-secret"></i> Play as Guest
+      </button>
+
+      <div class="login-screen-links">
+        <span>Don't have an account? <a href="#" id="ls-link-register">Register here.</a></span>
+        <a href="#" id="ls-link-forgot">Forgot your password?</a>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(screen);
+  // Trigger fade-in on next frame
+  requestAnimationFrame(() => screen.classList.add("visible"));
+
+  // ── Log In ──────────────────────────────────────────────
+  document.getElementById("ls-btn-login").addEventListener("click", async () => {
+    const email    = document.getElementById("ls-email")?.value?.trim();
+    const password = document.getElementById("ls-password")?.value;
+    const msgEl    = document.getElementById("ls-message");
+
+    if (!email || !password) {
+      msgEl.textContent = "Please enter your email and password.";
+      return;
+    }
+
+    const btn = document.getElementById("ls-btn-login");
+    btn.disabled     = true;
+    btn.innerHTML    = `<i class="fa-solid fa-spinner fa-spin"></i> Logging in…`;
+    msgEl.textContent = "";
+
+    const { loginUser } = await import("../auth.js");
+    const result = await loginUser(email, password);
+
+    if (result.success) {
+      hideLoginScreen();
+      const { showToast } = await import("./ui-core.js");
+      showToast(result.message, "success", 3000);
+    } else {
+      msgEl.textContent = result.message;
+      btn.disabled      = false;
+      btn.innerHTML     = `<i class="fa-solid fa-right-to-bracket"></i> Log In`;
+    }
+  });
+
+  // ── Guest ────────────────────────────────────────────────
+  document.getElementById("ls-btn-guest").addEventListener("click", () => {
+    hideLoginScreen();
+    if (onGuest) onGuest();
+  });
+
+  // ── Register ─────────────────────────────────────────────
+  document.getElementById("ls-link-register").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const { showRegisterModal } = await import("./ui-settings.js");
+    showRegisterModal();
+  });
+
+  // ── Forgot Password ──────────────────────────────────────
+  document.getElementById("ls-link-forgot").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const { showForgotPasswordModal } = await import("./ui-settings.js");
+    showForgotPasswordModal();
+  });
+
+  // ── Enter key submits login ──────────────────────────────
+  screen.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      document.getElementById("ls-btn-login")?.click();
+    }
+  });
+}
+
+export function hideLoginScreen() {
+  const screen = document.getElementById("login-screen");
+  if (!screen) return;
+  screen.classList.add("fade-out");
+  setTimeout(() => screen.remove(), 400);
+}
+
+// ============================================================
 // SECTION 6 — DOM HELPERS
 // ============================================================
 
