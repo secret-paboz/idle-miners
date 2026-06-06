@@ -3,13 +3,13 @@
 // ============================================================
 
 import { state } from "../state.js";
-import { loginUser, registerUser, logoutUser } from "../auth.js";
+import { loginUser, registerUser, logoutUser, sendPasswordReset } from "../auth.js";
 import { cloudLoad, resolveConflict } from "../supabase.js";
 import { loginAsGuest } from "../auth.js";
 import { upgradePet } from "../economy.js";
 import { openCrate, openAllOfType } from "../crates.js";
 import { purchasePrestigeUpgrade } from "../prestige.js";
-import { showToast, showModal } from "../ui/ui-core.js";
+import { showToast, showModal, hideLoginScreen } from "../ui/ui-core.js";
 import { renderHUD } from "../ui/ui-hud.js";
 import { renderMinePanel } from "../ui/ui-mine.js";
 import { renderPetsPanel } from "../ui/ui-pets.js";
@@ -24,6 +24,7 @@ export function bindDelegatedEvents() {
 
 export async function handleAuthChange(direction) {
   if (direction === "in") {
+    hideLoginScreen();
     const winner = await resolveConflict();
     if (winner === "cloud") await cloudLoad();
     renderHUD();
@@ -64,6 +65,11 @@ async function handleDelegatedClick(e) {
 
   if (e.target.id === "btn-logout") {
     await handleLogout();
+    return;
+  }
+
+  if (e.target.id === "fp-btn-send") {
+    await handleForgotPassword();
     return;
   }
 
@@ -197,6 +203,29 @@ async function handleLogout() {
       updateFabGmVisibility();
     },
   });
+}
+
+export async function handleForgotPassword() {
+  const email = document.getElementById("fp-email")?.value?.trim();
+  const msgEl = document.getElementById("fp-message");
+
+  if (!email) {
+    if (msgEl) msgEl.textContent = "Please enter your email address.";
+    return;
+  }
+
+  const btn = document.getElementById("fp-btn-send");
+  if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+  if (msgEl) { msgEl.textContent = ""; msgEl.className = "auth-message"; }
+
+  const result = await sendPasswordReset(email);
+
+  if (btn) { btn.disabled = false; btn.textContent = "Send Reset Link"; }
+
+  if (msgEl) {
+    msgEl.textContent = result.message;
+    msgEl.classList.add(result.success ? "auth-message--success" : "auth-message--error");
+  }
 }
 
 function applyDimensionTheme(dimensionId) {
