@@ -8,9 +8,6 @@
 // - computeOreValue()    — removed wings buff block entirely
 // - activateAbility()    — removed (legendaries are now passive)
 // - prestigeUpgradeCost() — flat 1 token always (was currentLevel+1)
-// - calculateOfflineProgress() — VIP now loops mine→sell cycles for
-//   the full offline duration instead of one fill only. Fixes bug
-//   where a full backpack on close caused zero offline progress.
 // ============================================================
 
 import { state, saveState, resetStateForRebirth, resetStateForPrestige } from "./state.js";
@@ -384,108 +381,7 @@ export function buyPrestigeUpgrade(upgradeKey) {
 }
 
 // ============================================================
-// SECTION 7 — OFFLINE PROGRESSION
-// ============================================================
-
-export function calculateOfflineProgress() {
-  if (!state.lastOnlineTime) return null;
-
-  const now     = Date.now();
-  const elapsed = now - state.lastOnlineTime;
-
-  if (!isFinite(elapsed) || elapsed <= 0 || elapsed > 30 * 24 * 60 * 60 * 1000) return null;
-
-  const isActiveVip = state.isVip && now < state.vipExpiresAt;
-  const maxOffline  = isActiveVip
-    ? 12 * 60 * 60 * 1000
-    :  8 * 60 * 60 * 1000;
-
-  const effectiveMs  = Math.min(elapsed, maxOffline);
-  let   secondsLeft  = Math.floor(effectiveMs / 1000);
-
-  if (secondsLeft < 10) return null;
-
-  const power    = computeMiningPower();
-  const maxCap   = computeMaxCapacity();
-  const mineTier = getMineTier(state.level);
-  const ore      = rollOre(mineTier);
-  const oreId    = state.currentOreId || "dirt";
-
-  // Bug fix 3: check booster active at START of offline period, not end
-  const offlineStart    = state.lastOnlineTime;
-  const xpBoosterActive = state.boosters.xpGain.endsAt > offlineStart;
-  const xpMultiplier    = xpBoosterActive ? state.boosters.xpGain.multiplier : 1;
-
-  let totalMined = 0;
-  let totalCash  = 0;
-  let totalXp    = 0;
-
-  if (isActiveVip) {
-    // VIP: simulate full mine→sell cycles for the entire offline duration
-    while (secondsLeft > 0) {
-      const spaceLeft  = Math.max(0, maxCap - state.ore);
-      const secsToFill = spaceLeft > 0 ? Math.ceil(spaceLeft / power) : 0;
-
-      if (secsToFill === 0 || secsToFill > secondsLeft) {
-        // Last partial fill
-        const mined  = Math.min(power * secondsLeft, Math.max(0, maxCap - state.ore));
-        state.ore   += mined;
-        totalMined  += mined;
-        totalXp     += ore.xpPerBlock * mined * xpMultiplier;
-        secondsLeft  = 0;
-      } else {
-        // Full fill — mine until backpack full, then auto-sell
-        state.ore   += spaceLeft;
-        totalMined  += spaceLeft;
-        totalXp     += ore.xpPerBlock * spaceLeft * xpMultiplier;
-        secondsLeft -= secsToFill;
-
-        const value       = computeOreValue(oreId, true);
-        const cash        = Math.floor(state.ore * value);
-        totalCash        += cash;
-        state.cash       += cash;
-        state.cashEarned += cash;
-        state.ore         = 0;
-      }
-    }
-  } else {
-    // Bug fix 4: if backpack already full, sell it first then mine
-    if (state.ore >= maxCap && state.ore > 0) {
-      const value       = computeOreValue(oreId, true);
-      const cash        = Math.floor(state.ore * value);
-      totalCash        += cash;
-      state.cash       += cash;
-      state.cashEarned += cash;
-      state.ore         = 0;
-    }
-
-    // Non-VIP: one fill only, capped at remaining backpack space
-    const remaining = Math.max(0, maxCap - state.ore);
-    const mined     = Math.min(power * secondsLeft, remaining);
-    state.ore  += mined;
-    totalMined += mined;
-    totalXp    += ore.xpPerBlock * mined * xpMultiplier;
-  }
-
-  if (totalMined <= 0 && totalCash <= 0) return null;
-
-  state.blocksMined += totalMined;
-
-  state.xp += Math.floor(totalXp);
-  checkLevelUp();
-  saveState();
-
-  return {
-    seconds:    Math.floor(effectiveMs / 1000),
-    mined:      totalMined,
-    hours:      (effectiveMs / 3600000).toFixed(1),
-    cashEarned: totalCash,
-    isVip:      isActiveVip,
-  };
-}
-
-// ============================================================
-// SECTION 8 — NUMBER FORMATTER
+// SECTION 7 — NUMBER FORMATTER
 // ============================================================
 
 export function formatNumber(n) {
