@@ -922,3 +922,263 @@
 .vip-modal-discord-btn:active {
   transform: scale(0.97);
 }
+
+/* ============================================================
+   SECTION 9 — LOGIN SCREEN
+   ============================================================ */
+
+#login-screen {
+  position:        fixed;
+  inset:           0;
+  background:      var(--bg-primary);
+  z-index:         900;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         24px;
+  opacity:         0;
+  transition:      opacity 0.35s ease;
+}
+
+#login-screen.visible  { opacity: 1; }
+#login-screen.fade-out { opacity: 0; pointer-events: none; }
+
+.login-screen-box {
+  width:         100%;
+  max-width:     360px;
+  display:       flex;
+  flex-direction: column;
+  gap:           16px;
+}
+
+/* ── Logo ── */
+.login-screen-logo {
+  text-align:    center;
+  margin-bottom: 8px;
+}
+
+.login-screen-logo-icon {
+  font-size:   48px;
+  color:       var(--accent);
+  filter:      drop-shadow(0 0 14px var(--accent-glow));
+  display:     block;
+  margin-bottom: 10px;
+}
+
+.login-screen-title {
+  font-size:   26px;
+  font-weight: 700;
+  color:       var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.login-screen-subtitle {
+  font-size:  13px;
+  color:      var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ── Form ── */
+.login-screen-form {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.login-screen-form input {
+  width:         100%;
+  padding:       12px 14px;
+  background:    var(--bg-input);
+  border:        1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  color:         var(--text-primary);
+  font-size:     14px;
+  transition:    border-color var(--transition);
+}
+
+.login-screen-form input:focus {
+  border-color: var(--accent);
+}
+
+.login-screen-form input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Message ── */
+.login-screen-message {
+  font-size:  13px;
+  color:      var(--color-error);
+  min-height: 18px;
+  text-align: center;
+}
+
+/* ── Buttons ── */
+.login-screen-btn {
+  width:         100%;
+  padding:       13px;
+  border-radius: var(--radius-md);
+  font-size:     14px;
+  font-weight:   600;
+  transition:    opacity var(--transition), transform var(--transition);
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  gap:           8px;
+}
+
+.login-screen-btn:active  { transform: scale(0.97); }
+.login-screen-btn:disabled { opacity: 0.55; pointer-events: none; }
+
+.login-screen-btn--primary {
+  background: var(--accent);
+  color:      #000;
+}
+
+.login-screen-btn--primary:hover { opacity: 0.88; }
+
+.login-screen-btn--guest {
+  background: var(--bg-card);
+  color:      var(--text-secondary);
+  border:     1px solid var(--border-bright);
+}
+
+.login-screen-btn--guest:hover {
+  border-color: var(--text-secondary);
+  color:        var(--text-primary);
+}
+
+/* ── Divider ── */
+.login-screen-divider {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  color:       var(--text-muted);
+  font-size:   12px;
+}
+
+.login-screen-divider::before,
+.login-screen-divider::after {
+  content:    "";
+  flex:       1;
+  height:     1px;
+  background: var(--border);
+}
+
+/* ── Links ── */
+.login-screen-links {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  font-size:      13px;
+  color:          var(--text-muted);
+  text-align:     center;
+}
+
+.login-screen-links a {
+  color:      var(--accent);
+  transition: opacity var(--transition);
+}
+
+.login-screen-links a:hover { opacity: 0.75; }
+
+/* ============================================================
+   SECTION 10 — FORGOT PASSWORD MODAL
+   ============================================================ */
+
+#forgot-password-modal {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.8);
+  z-index:         950;
+  display:         none;
+  align-items:     center;
+  justify-content: center;
+  padding:         24px;
+}
+
+#forgot-password-modal.visible { display: flex; }
+
+.forgot-password-box {
+  background:    var(--bg-card);
+  border:        1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  padding:       24px;
+  width:         100%;
+  max-width:     340px;
+  display:       flex;
+  flex-direction: column;
+  gap:           14px;
+}
+
+.forgot-password-title {
+  font-size:   17px;
+  font-weight: 700;
+  color:       var(--text-primary);
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.forgot-password-desc {
+  font-size:   13px;
+  color:       var(--text-muted);
+  line-height: 1.6;
+}
+
+.forgot-password-box input {
+  width:         100%;
+  padding:       11px 14px;
+  background:    var(--bg-input);
+  border:        1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  color:         var(--text-primary);
+  font-size:     14px;
+  transition:    border-color var(--transition);
+}
+
+.forgot-password-box input:focus    { border-color: var(--accent); }
+.forgot-password-box input::placeholder { color: var(--text-muted); }
+
+.fp-message {
+  font-size:  13px;
+  min-height: 18px;
+  text-align: center;
+}
+
+.fp-message.auth-message--success { color: var(--color-success); }
+.fp-message.auth-message--error   { color: var(--color-error); }
+
+.forgot-password-actions {
+  display: flex;
+  gap:     10px;
+}
+
+.fp-btn-cancel,
+.fp-btn-send {
+  flex:          1;
+  padding:       11px;
+  border-radius: var(--radius-md);
+  font-size:     14px;
+  font-weight:   600;
+  transition:    opacity var(--transition), transform var(--transition);
+}
+
+.fp-btn-cancel:active,
+.fp-btn-send:active { transform: scale(0.97); }
+
+.fp-btn-cancel {
+  background: var(--bg-card);
+  border:     1px solid var(--border-bright);
+  color:      var(--text-secondary);
+}
+
+.fp-btn-cancel:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+.fp-btn-send {
+  background: var(--accent);
+  color:      #000;
+}
+
+.fp-btn-send:hover    { opacity: 0.88; }
+.fp-btn-send:disabled { opacity: 0.55; pointer-events: none; }
