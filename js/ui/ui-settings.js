@@ -103,8 +103,39 @@ export function showRegisterModal() {
 }
 
 // ============================================================
-// SECTION 3 — GM PANEL
+// SECTION 2b — FORGOT PASSWORD MODAL
 // ============================================================
+
+export function showForgotPasswordModal() {
+  const existing = document.getElementById("forgot-password-modal");
+  if (existing) { existing.classList.add("visible"); return; }
+
+  const modal = document.createElement("div");
+  modal.id        = "forgot-password-modal";
+  modal.className = "visible";
+
+  modal.innerHTML = `
+    <div class="forgot-password-box">
+      <div class="forgot-password-title">
+        <i class="fa-solid fa-key"></i> Reset Password
+      </div>
+      <div class="forgot-password-desc">
+        Enter your email address and we'll send you a link to reset your password.
+      </div>
+      <input type="email" id="fp-email" placeholder="Email address" autocomplete="email" />
+      <div class="fp-message auth-message" id="fp-message"></div>
+      <div class="forgot-password-actions">
+        <button class="fp-btn-cancel" id="fp-btn-cancel">Cancel</button>
+        <button class="fp-btn-send"   id="fp-btn-send">Send Reset Link</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById("fp-btn-cancel").addEventListener("click", () => modal.remove());
+  modal.addEventListener("click", e => { if (e.target === modal) modal.remove(); });
+}
 
 // Avatar color palette — deterministic from nickname
 const AVATAR_COLORS = [
