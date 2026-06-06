@@ -6,11 +6,10 @@
 import { state, initState, saveState } from "./state.js";
 import {
   tickMining,
-  calculateOfflineProgress,
   formatNumber,
   tryAutoSell,
 } from "./economy.js";
-import { initTabs, switchTab, showToast, showOfflineProgress, showBootSpinner, hideBootSpinner, updateFabGmVisibility, showLoginScreen } from "./ui/ui-core.js";
+import { initTabs, switchTab, showToast, showBootSpinner, hideBootSpinner, updateFabGmVisibility, showLoginScreen } from "./ui/ui-core.js";
 import { renderHUD } from "./ui/ui-hud.js";
 import { renderMinePanel, animateMiningTick } from "./ui/ui-mine.js";
 import { renderPetCooldowns } from "./ui/ui-pets.js";
@@ -56,9 +55,6 @@ async function boot() {
   } else {
     window.__gmVerified = false;
   }
-
-  const offlineResult = calculateOfflineProgress();
-  if (offlineResult) showOfflineProgress(offlineResult);
 
   renderHUD();
   renderGMPanel();
@@ -192,17 +188,10 @@ function bindEvents() {
   bindGMEvents();
   bindDelegatedEvents();
 
-  // Stamp lastOnlineTime whenever the player leaves — this is what
-  // makes offline progress work correctly on next boot.
   window.addEventListener("pagehide", () => saveState());
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") saveState();
   });
-
-  // Mobile fallback: browsers (especially iOS Safari) don't reliably
-  // fire pagehide/visibilitychange before killing a tab. Stamp
-  // lastOnlineTime every 10s so the worst-case drift is only 10s.
-  setInterval(() => { state.lastOnlineTime = Date.now(); }, 10_000);
 }
 
 // ============================================================
