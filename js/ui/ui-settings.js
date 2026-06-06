@@ -121,7 +121,14 @@ function getAvatarStyle(nickname) {
 }
 
 // Collapse state — persists across re-renders in the same session
-window.__gmCollapsed = window.__gmCollapsed || {};
+window.__gmCollapsed = window.__gmCollapsed || {
+  lookup:    false, // Player Lookup stays open — it's the entry point
+  setvalues: true,
+  crates:    true,
+  buffs:     true,
+  vip:       true,
+  log:       true,
+};
 
 function cardHeader(id, icon, label, extra = "") {
   const collapsed = window.__gmCollapsed[id] ? "collapsed" : "";
