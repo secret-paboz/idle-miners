@@ -8,7 +8,7 @@
 import { state } from "../state.js";
 import { formatNumber, computeMiningPower, computeOreValue } from "../economy.js";
 import { getDimension } from "../data/dimensions-data.js";
-import { getMineTier, rollOre } from "../data/mines-data.js";
+import { ORE_TYPES } from "../data/mines-data.js";
 import { setText, xpForLevel, openVipModal } from "./ui-core.js";
 
 export function renderHUD() {
@@ -66,9 +66,8 @@ export function renderHUD() {
   const rateEl = document.getElementById("hud-income-rate");
   if (rateEl) {
     const power      = computeMiningPower();
-    const mineTier   = getMineTier(state.level);
-    const ore        = rollOre(mineTier);
-    const oreValue   = computeOreValue(ore.id);
+    const oreId      = state.currentOreId || "dirt";
+    const oreValue   = computeOreValue(oreId);
     const cashPerSec = Math.floor((power / 2) * oreValue);
     rateEl.textContent = cashPerSec > 0 ? "+$" + formatNumber(cashPerSec) + "/s" : "";
   }
