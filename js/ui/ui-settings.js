@@ -6,7 +6,7 @@
 import { state } from "../state.js";
 import { getAuthStatus } from "../auth.js";
 import { LEADERBOARD_CATEGORIES, getRankBadge } from "../leaderboard.js";
-import { isGameMasterSync, isGMHiddenFromLeaderboard } from "../gm.js";
+import { isGameMasterSync } from "../gm.js";
 import { getDimension } from "../data/dimensions-data.js";
 import {
   escapeHTML,
@@ -106,19 +106,53 @@ export function showRegisterModal() {
 // SECTION 3 — GM PANEL
 // ============================================================
 
+// Avatar color palette — deterministic from nickname
+const AVATAR_COLORS = [
+  ["#f5a623","#1a1200"], ["#4caf50","#001a02"], ["#42a5f5","#001020"],
+  ["#ab47bc","#130018"], ["#ef5350","#1a0000"], ["#26c6da","#001518"],
+  ["#ffa726","#1a0e00"], ["#66bb6a","#001a04"],
+];
+
+function getAvatarStyle(nickname) {
+  let hash = 0;
+  for (let i = 0; i < nickname.length; i++) hash = (hash * 31 + nickname.charCodeAt(i)) >>> 0;
+  const [fg, bg] = AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  return `background:${bg};color:${fg};border:1.5px solid ${fg}40;`;
+}
+
+// Collapse state — persists across re-renders in the same session
+window.__gmCollapsed = window.__gmCollapsed || {};
+
+function cardHeader(id, icon, label, extra = "") {
+  const collapsed = window.__gmCollapsed[id] ? "collapsed" : "";
+  return `
+    <div class="gm-card ${collapsed}" id="gm-card-${id}">
+      <div class="gm-card-header" data-gm-toggle="${id}">
+        <i class="${icon}"></i> ${label}
+        ${extra}
+        <i class="fa-solid fa-chevron-down gm-card-chevron"></i>
+      </div>
+      <div class="gm-card-body">
+  `;
+}
+
+function cardClose() { return `</div></div>`; }
+
 export function renderGMPanel() {
   const container = document.getElementById("gm-panel-content");
   if (!isGameMasterSync()) return;
   if (!container) return;
 
-  const target  = window.__gmTarget || null;
-  const hidden  = isGMHiddenFromLeaderboard();
+  const target = window.__gmTarget || null;
 
-  const boosterRows = [
+  // ── Build booster rows ──
+  const boosterDefs = [
     { key: "miningSpeed", label: "Mining Speed", icon: "fa-solid fa-bolt",  color: "#42a5f5" },
     { key: "sellValue",   label: "Sell Value",   icon: "fa-solid fa-coins", color: "#ffc107" },
     { key: "xpGain",      label: "XP Gain",      icon: "fa-solid fa-star",  color: "#ab47bc" },
-  ].map(({ key, label, icon, color }) => {
+  ];
+
+  const boosterRows = boosterDefs.map(({ key, label, icon, color }) => {
     const src      = target?.gameData?.boosters?.[key] || {};
     const isActive = (src.endsAt || 0) > Date.now();
     const minsLeft = isActive ? Math.ceil((src.endsAt - Date.now()) / 60000) : 0;
@@ -130,23 +164,29 @@ export function renderGMPanel() {
             ${isActive ? `${src.multiplier}x &middot; ${minsLeft}m left ${src.isGm ? "(GM)" : ""}` : "Off"}
           </span>
         </div>
+        <div class="gm-quick-actions">
+          <button class="btn-gm-quick" data-gm-quick-boost="${key}" data-mult="2"  data-mins="30">2x/30m</button>
+          <button class="btn-gm-quick" data-gm-quick-boost="${key}" data-mult="5"  data-mins="60">5x/1h</button>
+          <button class="btn-gm-quick" data-gm-quick-boost="${key}" data-mult="10" data-mins="60">10x/1h</button>
+        </div>
         <div class="gm-booster-inputs">
-          <input class="gm-input" id="gm-booster-mult-${key}" type="number" min="1" max="100" placeholder="&times;" title="Multiplier">
-          <input class="gm-input" id="gm-booster-mins-${key}" type="number" min="1" max="1440" placeholder="min" title="Minutes">
+          <input class="gm-input" id="gm-booster-mult-${key}" type="number" min="1" max="100" placeholder="×" title="Multiplier" inputmode="numeric">
+          <input class="gm-input" id="gm-booster-mins-${key}" type="number" min="1" max="1440" placeholder="min" title="Minutes" inputmode="numeric">
           <button class="btn-gm-apply" data-gm-booster="${key}">Set</button>
-          <button class="btn-gm-clear" data-gm-booster-clear="${key}">&times;</button>
+          <button class="btn-gm-clear" data-gm-booster-clear="${key}">✕</button>
         </div>
       </div>
     `;
   }).join("");
 
+  // ── Build crate rows ──
   const crateOptions = [
-    { id: "common",    label: "Common",    icon: "fa-solid fa-box-open", color: "#9e9e9e" },
-    { id: "rare",      label: "Rare",      icon: "fa-solid fa-gem",      color: "#26c6da" },
-    { id: "legendary", label: "Legendary", icon: "fa-solid fa-trophy",   color: "#ffc107" },
-    { id: "hourly",    label: "Hourly",    icon: "fa-solid fa-box",      color: "#78909c" },
-    { id: "daily",     label: "Daily",     icon: "fa-solid fa-gift",     color: "#42a5f5" },
-    { id: "weekly",    label: "Weekly",    icon: "fa-solid fa-crown",    color: "#ab47bc" },
+    { id: "common",    label: "Common",    icon: "fa-solid fa-box-open",    color: "#9e9e9e" },
+    { id: "rare",      label: "Rare",      icon: "fa-solid fa-gem",         color: "#26c6da" },
+    { id: "legendary", label: "Legendary", icon: "fa-solid fa-trophy",      color: "#ffc107" },
+    { id: "hourly",    label: "Hourly",    icon: "fa-solid fa-box",         color: "#78909c" },
+    { id: "daily",     label: "Daily",     icon: "fa-solid fa-gift",        color: "#42a5f5" },
+    { id: "weekly",    label: "Weekly",    icon: "fa-solid fa-crown",       color: "#ab47bc" },
   ];
 
   const targetCrates = target?.gameData?.crates || {};
@@ -160,151 +200,174 @@ export function renderGMPanel() {
           <span>${label}</span>
           <span class="gm-crate-count">${count}</span>
         </div>
+        <div class="gm-quick-actions">
+          <button class="btn-gm-quick" data-gm-quick-crate-add="${id}" data-amount="1">+1</button>
+          <button class="btn-gm-quick" data-gm-quick-crate-add="${id}" data-amount="5">+5</button>
+          <button class="btn-gm-quick" data-gm-quick-crate-add="${id}" data-amount="10">+10</button>
+        </div>
         <div class="gm-crate-inputs">
-          <input class="gm-input" id="gm-crate-amt-${id}" type="number" min="1" max="999" placeholder="amt">
-          <button class="btn-gm-add"    data-gm-crate-add="${id}">+Add</button>
-          <button class="btn-gm-remove" data-gm-crate-remove="${id}">-Remove</button>
+          <input class="gm-input" id="gm-crate-amt-${id}" type="number" min="1" max="999" placeholder="amount" inputmode="numeric">
+          <button class="btn-gm-add"    data-gm-crate-add="${id}">+ Add</button>
+          <button class="btn-gm-remove" data-gm-crate-remove="${id}">− Remove</button>
         </div>
       </div>
     `;
   }).join("");
 
-  const setValueRows = [
-    ["Cash",             "cash",       target?.gameData?.cash],
-    ["Shards",           "shards",     target?.gameData?.shards],
-    ["Ore",              "ore",        target?.gameData?.ore],
-    ["Player Level",     "level",      target?.gameData?.level],
-    ["XP",               "xp",         target?.gameData?.xp],
-    ["Pickaxe Level",    "pickaxe",    target?.gameData?.pickaxeLevel],
-    ["Backpack Level",   "backpack",   target?.gameData?.backpackLevel],
-    ["Rebirths",         "rebirths",   target?.gameData?.rebirths],
-    ["Prestige Tokens",  "ptokens",    target?.gameData?.prestigeTokens],
-    ["Total Cash Earned","cashearned", target?.gameData?.cashEarned],
-  ].map(([label, action, current]) => `
-    <div class="gm-row">
-      <label class="gm-row-label">${label}</label>
-      <div class="gm-row-controls">
-        <span class="gm-row-current">${current !== undefined ? current : "\u2014"}</span>
-        <input class="gm-input" id="gm-input-${action}" type="number" min="0" placeholder="new value">
-        <button class="btn-gm-set" data-gm-action="${action}">Set</button>
-      </div>
-    </div>
-  `).join("");
+  // ── Build set-value rows ──
+  const valueFields = [
+    ["Cash",              "cash",       target?.gameData?.cash,          [0, 1e6, 1e9]],
+    ["Shards",            "shards",     target?.gameData?.shards,        [0, 100, 1000]],
+    ["Ore",               "ore",        target?.gameData?.ore,           [0, 500]],
+    ["Player Level",      "level",      target?.gameData?.level,         [1, 50, 100]],
+    ["XP",                "xp",         target?.gameData?.xp,            [0]],
+    ["Pickaxe Level",     "pickaxe",    target?.gameData?.pickaxeLevel,  [1, 50, 100]],
+    ["Backpack Level",    "backpack",   target?.gameData?.backpackLevel, [1, 50, 100]],
+    ["Rebirths",          "rebirths",   target?.gameData?.rebirths,      [0, 10, 50]],
+    ["Prestige Tokens",   "ptokens",    target?.gameData?.prestigeTokens,[0, 10, 100]],
+    ["Total Cash Earned", "cashearned", target?.gameData?.cashEarned,    [0]],
+  ];
 
+  const setValueRows = valueFields.map(([label, action, current, quickVals]) => {
+    const quickBtns = quickVals.map(v => {
+      const display = v >= 1e9 ? `${v/1e9}B` : v >= 1e6 ? `${v/1e6}M` : v >= 1e3 ? `${v/1e3}K` : String(v);
+      return `<button class="btn-gm-quick" data-gm-quick-set="${action}" data-value="${v}">${display}</button>`;
+    }).join("");
+    const fmt = current !== undefined
+      ? (current >= 1e9 ? `${(current/1e9).toFixed(1)}B` : current >= 1e6 ? `${(current/1e6).toFixed(1)}M` : current >= 1e3 ? `${(current/1e3).toFixed(1)}K` : String(current))
+      : "—";
+    return `
+      <div class="gm-row">
+        <div class="gm-row-label">${label}</div>
+        <div class="gm-quick-actions">${quickBtns}</div>
+        <div class="gm-row-controls">
+          <span class="gm-row-current">${fmt}</span>
+          <input class="gm-input" id="gm-input-${action}" type="number" min="0" placeholder="new value" inputmode="numeric">
+          <button class="btn-gm-set" data-gm-action="${action}">Set</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // ── Build audit log ──
+  const log = window.__gmLog || [];
+  const logHTML = log.length === 0
+    ? `<div class="gm-log-empty"><i class="fa-solid fa-clock-rotate-left"></i> No actions yet this session</div>`
+    : log.map(e => `
+        <div class="gm-log-entry log-${e.type}">
+          <i class="${e.icon} gm-log-icon"></i>
+          <span class="gm-log-text">${e.text}</span>
+          <span class="gm-log-time">${e.time}</span>
+        </div>
+      `).join("");
+
+  // ── Target avatar ──
+  const avatarHTML = target
+    ? `<div class="gm-target-avatar" style="${getAvatarStyle(target.nickname)}">${escapeHTML(target.nickname[0])}</div>`
+    : "";
+
+  // ── Assemble full panel ──
   container.innerHTML = `
 
-    <!-- LEADERBOARD (GM own) -->
-    <div class="gm-card">
-      <div class="gm-card-header"><i class="fa-solid fa-trophy"></i> My Leaderboard</div>
-      <div class="gm-card-body">
-        <button class="btn-gm-toggle ${hidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-lb-toggle">
-          <i class="fa-solid fa-eye${hidden ? "-slash" : ""}"></i>
-          ${hidden ? "Hidden from leaderboard" : "Visible on leaderboard"}
+    <!-- PLAYER LOOKUP — always visible -->
+    ${cardHeader("lookup", "fa-solid fa-magnifying-glass", "Player Lookup")}
+      <div class="gm-lookup-row">
+        <input class="gm-input gm-lookup-input" id="gm-lookup-query"
+               type="text" placeholder="Player ID or Nickname" autocomplete="off">
+        <button class="btn-gm-lookup" id="btn-gm-lookup">
+          <i class="fa-solid fa-search"></i> Search
         </button>
       </div>
-    </div>
+      <div class="gm-message" id="gm-lookup-message"></div>
 
-    <!-- PLAYER LOOKUP -->
-    <div class="gm-card">
-      <div class="gm-card-header"><i class="fa-solid fa-magnifying-glass"></i> Player Lookup</div>
-      <div class="gm-card-body">
-        <div class="gm-lookup-row">
-          <input class="gm-input gm-lookup-input" id="gm-lookup-query"
-                 type="text" placeholder="Player ID or Nickname" autocomplete="off">
-          <button class="btn-gm-lookup" id="btn-gm-lookup">
-            <i class="fa-solid fa-search"></i> Look Up
-          </button>
+      ${target ? `
+        <div class="gm-target-card">
+          <div class="gm-target-row">
+            ${avatarHTML}
+            <div class="gm-target-info">
+              <span class="gm-target-nickname">${escapeHTML(target.nickname)}</span>
+              <span class="gm-target-id">ID: ${escapeHTML(target.playerId)}</span>
+            </div>
+            <div class="gm-target-badges">
+              ${target.isVip ? `<span class="vip-badge vip-pulse"><i class="fa-solid fa-crown"></i> VIP</span>` : ""}
+              <span class="gm-target-stat">Lv.${target.level}</span>
+              <span class="gm-target-stat">${target.rebirths} ↺</span>
+            </div>
+          </div>
+          <div class="gm-target-actions">
+            <button class="btn-gm-target-lb ${target.lbHidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-target-lb-toggle">
+              <i class="fa-solid fa-eye${target.lbHidden ? "-slash" : ""}"></i>
+              ${target.lbHidden ? "Hidden on LB" : "Visible on LB"}
+            </button>
+            <button class="btn-gm-clear-target" id="btn-gm-clear-target">
+              <i class="fa-solid fa-xmark"></i> Clear
+            </button>
+          </div>
         </div>
-        <div class="gm-message" id="gm-lookup-message"></div>
+      ` : `
+        <div class="gm-target-empty">
+          <i class="fa-solid fa-user-slash"></i> No player selected — search above to unlock actions
+        </div>
+      `}
+    ${cardClose()}
 
-        ${target ? `
-          <div class="gm-target-card">
-            <div class="gm-target-row">
-              <div class="gm-target-info">
-                <span class="gm-target-nickname">${escapeHTML(target.nickname)}</span>
-                <span class="gm-target-id">ID: ${escapeHTML(target.playerId)}</span>
-              </div>
-              <div class="gm-target-badges">
-                ${target.isVip ? `<span class="vip-badge vip-pulse"><i class="fa-solid fa-crown"></i> VIP</span>` : ""}
-                <span class="gm-target-stat">Lv.${target.level}</span>
-                <span class="gm-target-stat">${target.rebirths} \u21ba</span>
-              </div>
-            </div>
-            <div class="gm-target-actions">
-              <button class="btn-gm-target-lb ${target.lbHidden ? "gm-toggle-off" : "gm-toggle-on"}" id="btn-gm-target-lb-toggle">
-                <i class="fa-solid fa-eye${target.lbHidden ? "-slash" : ""}"></i>
-                ${target.lbHidden ? "Hidden on LB" : "Visible on LB"}
-              </button>
-              <button class="btn-gm-clear-target" id="btn-gm-clear-target">
-                <i class="fa-solid fa-xmark"></i> Clear
-              </button>
-            </div>
-          </div>
-        ` : `
-          <div class="gm-target-empty">
-            <i class="fa-solid fa-user-slash"></i> No player selected
-          </div>
-        `}
-      </div>
-    </div>
-
-    <!-- SET VALUES -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
-      <div class="gm-card-header">
-        <i class="fa-solid fa-sliders"></i> Set Values
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
-      </div>
-      <div class="gm-card-body">
+    ${target ? `
+      <!-- SET VALUES -->
+      ${cardHeader("setvalues", "fa-solid fa-sliders", "Set Values", `<span class="gm-card-for">→ ${escapeHTML(target.nickname)}</span>`)}
         <div class="gm-grid">${setValueRows}</div>
         <div class="gm-message" id="gm-message"></div>
-      </div>
-    </div>
+      ${cardClose()}
 
-    <!-- CRATES -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
-      <div class="gm-card-header">
-        <i class="fa-solid fa-boxes-stacked"></i> Crates
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
-      </div>
-      <div class="gm-card-body">
+      <!-- CRATES -->
+      ${cardHeader("crates", "fa-solid fa-boxes-stacked", "Crates", `<span class="gm-card-for">→ ${escapeHTML(target.nickname)}</span>`)}
         ${crateRows}
         <div class="gm-message" id="gm-crate-message"></div>
-      </div>
-    </div>
+      ${cardClose()}
 
-    <!-- GM BUFFS -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
-      <div class="gm-card-header">
-        <i class="fa-solid fa-bolt"></i> GM Buffs
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
-      </div>
-      <div class="gm-card-body">
+      <!-- GM BUFFS -->
+      ${cardHeader("buffs", "fa-solid fa-bolt", "GM Buffs", `<span class="gm-card-for">→ ${escapeHTML(target.nickname)}</span>`)}
         ${boosterRows}
         <div class="gm-message" id="gm-booster-message"></div>
-      </div>
-    </div>
+      ${cardClose()}
 
-    <!-- VIP MANAGEMENT -->
-    <div class="gm-card ${!target ? "gm-card-locked" : ""}">
-      <div class="gm-card-header">
-        <i class="fa-solid fa-crown" style="color:#ffc107"></i> VIP Management
-        ${target ? `<span class="gm-card-for">&rarr; ${escapeHTML(target.nickname)}</span>` : `<span class="gm-card-locked-hint">Select a player first</span>`}
-      </div>
-      <div class="gm-card-body">
+      <!-- VIP MANAGEMENT -->
+      ${cardHeader("vip", "fa-solid fa-crown", "VIP Management", `<span class="gm-card-for">→ ${escapeHTML(target.nickname)}</span>`)}
         <div class="gm-vip-section">
           <div class="gm-vip-actions">
-            <input class="gm-input gm-vip-days" id="gm-vip-days" type="number"
-                   min="1" max="365" placeholder="Days (for grant)">
+            <input class="gm-input" id="gm-vip-days" type="number"
+                   min="1" max="365" placeholder="Days" inputmode="numeric">
             <button class="btn-gm-vip btn-gm-grant"  id="btn-gm-grant-vip"><i class="fa-solid fa-crown"></i> Grant</button>
             <button class="btn-gm-vip btn-gm-revoke" id="btn-gm-revoke-vip"><i class="fa-solid fa-ban"></i> Revoke</button>
             <button class="btn-gm-vip btn-gm-check"  id="btn-gm-check-vip"><i class="fa-solid fa-magnifying-glass"></i> Check</button>
           </div>
           <div class="gm-message" id="gm-vip-message"></div>
         </div>
+      ${cardClose()}
+    ` : ""}
+
+    <!-- AUDIT LOG — always visible -->
+    ${cardHeader("log", "fa-solid fa-clock-rotate-left", "Action Log",
+      log.length > 0 ? `<button class="gm-log-clear-btn" id="btn-gm-log-clear" style="margin-left:auto;text-transform:none;letter-spacing:0;font-size:10px">Clear</button>` : ""
+    )}
+      <div class="gm-log" id="gm-log-list">
+        ${logHTML}
       </div>
-    </div>
+    ${cardClose()}
 
   `;
+
+  // Re-attach accordion toggle listeners after render
+  container.querySelectorAll("[data-gm-toggle]").forEach(header => {
+    header.addEventListener("click", e => {
+      // Don't collapse if clicking inner buttons like log-clear
+      if (e.target.closest(".gm-log-clear-btn")) return;
+      const id   = header.dataset.gmToggle;
+      const card = document.getElementById(`gm-card-${id}`);
+      if (!card) return;
+      window.__gmCollapsed[id] = !window.__gmCollapsed[id];
+      card.classList.toggle("collapsed", window.__gmCollapsed[id]);
+    });
+  });
 }
 
 // ============================================================
