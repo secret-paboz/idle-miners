@@ -46,16 +46,37 @@ async function boot() {
   const session = await restoreSession();
 
   if (session.loggedIn) {
+    // Returning logged-in player — load save then start game immediately
     showBootSpinner("Loading save...");
     const winner = await resolveConflict();
     if (winner === "cloud") {
       await cloudLoad();
       showToast("Cloud save loaded.", "info", 3000);
     }
+    hideBootSpinner();
+    startGame();
   } else {
+    // Not logged in — show login screen first, start game only after they proceed
     window.__gmVerified = false;
+    hideBootSpinner();
+    showLoginScreen({
+      onGuest: () => {
+        if (!state.nickname) loginAsGuest();
+        startGame();
+      },
+      onLogin: () => {
+        startGame();
+      },
+    });
   }
 
+  onAuthChange(({ event }) => {
+    if (event === "SIGNED_IN")  handleAuthChange("in");
+    if (event === "SIGNED_OUT") handleAuthChange("out");
+  });
+}
+
+function startGame() {
   renderHUD();
   renderGMPanel();
   switchTab("mine");
@@ -65,28 +86,10 @@ async function boot() {
   startAutoSave();
   bindEvents();
 
-  hideBootSpinner();
-
-  // Show login screen for guests / logged-out players
-  if (!session.loggedIn) {
-    showLoginScreen({
-      onGuest: () => {
-        if (!state.nickname) loginAsGuest();
-        renderHUD();
-        renderSettingsPanel();
-      },
-    });
-  }
-
   // Submit score on startup so leaderboard is current after page reload
   if (!state.isGuest) {
     submitLeaderboardScore().catch(() => {});
   }
-
-  onAuthChange(({ event }) => {
-    if (event === "SIGNED_IN")  handleAuthChange("in");
-    if (event === "SIGNED_OUT") handleAuthChange("out");
-  });
 
   checkAndAwardTimedCrates();
 }
