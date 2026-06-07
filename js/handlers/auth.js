@@ -3,7 +3,7 @@
 // ============================================================
 
 import { state } from "../state.js";
-import { loginUser, registerUser, logoutUser, sendPasswordReset } from "../auth.js";
+import { registerUser, logoutUser, sendPasswordReset } from "../auth.js";
 import { cloudLoad, resolveConflict, stopRealtimeSync } from "../supabase.js";
 import { loginAsGuest } from "../auth.js";
 import { upgradePet } from "../economy.js";
@@ -70,10 +70,8 @@ async function handleDelegatedClick(e) {
     return;
   }
 
-  if (e.target.id === "btn-login") {
-    await handleLogin();
-    return;
-  }
+  // btn-login no longer exists (login is handled by the login screen)
+  // kept as safety no-op to avoid errors if stale markup is ever present
 
   if (e.target.id === "btn-register") {
     await handleRegister();
@@ -144,32 +142,6 @@ async function handleDelegatedClick(e) {
   }
 }
 
-async function handleLogin() {
-  const email    = document.getElementById("input-login-email")?.value?.trim();
-  const password = document.getElementById("input-login-password")?.value;
-  const msgEl    = document.getElementById("login-message");
-
-  if (!email || !password) {
-    if (msgEl) msgEl.textContent = "Please enter your email and password.";
-    return;
-  }
-
-  if (msgEl) msgEl.textContent = "Logging in...";
-
-  const result = await loginUser(email, password);
-
-  if (result.success) {
-    showToast(result.message, "success", 3000);
-    renderHUD();
-    renderSettingsPanel();
-    renderGMPanel();
-    updateFabGmVisibility();
-  } else {
-    if (msgEl) msgEl.textContent = result.message;
-    showToast(result.message, "error", 3000);
-  }
-}
-
 async function handleRegister() {
   const playerId  = document.getElementById("input-reg-playerid")?.value?.trim();
   const nickname  = document.getElementById("input-reg-nickname")?.value?.trim();
@@ -226,6 +198,7 @@ async function handleLogout() {
           const { startGameIfNeeded } = await import("../main.js");
           startGameIfNeeded();
           renderHUD();
+          renderSettingsPanel();
           renderGMPanel();
           updateFabGmVisibility();
         },
