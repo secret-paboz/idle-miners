@@ -16,7 +16,7 @@ import { renderPetCooldowns } from "./ui/ui-pets.js";
 import { renderCratesPanel, renderCrateTimers } from "./ui/ui-crates.js";
 import { renderPrestigePanel } from "./ui/ui-prestige.js";
 import { renderSettingsPanel, renderGMPanel } from "./ui/ui-settings.js";
-import { initSupabase, cloudLoad, resolveConflict, startAutoSave } from "./supabase.js";
+import { initSupabase, cloudLoad, resolveConflict, startAutoSave, startRealtimeSync } from "./supabase.js";
 import { restoreSession, loginAsGuest, onAuthChange } from "./auth.js";
 import { submitLeaderboardScore } from "./leaderboard.js";
 import { addCrate } from "./crates.js";
@@ -81,6 +81,21 @@ async function boot() {
 }
 
 export function startGameIfNeeded() {
+  // Re-login after logout — game loop already running, just re-render panels
+  // and start realtime sync for the new session
+  if (gameStarted) {
+    renderHUD();
+    renderGMPanel();
+    updateFabGmVisibility();
+    const client = window.supabaseClient;
+    if (client) {
+      client.auth.getSession().then(({ data }) => {
+        const userId = data?.session?.user?.id;
+        if (userId) startRealtimeSync(userId);
+      });
+    }
+    return;
+  }
   startGame();
 }
 
@@ -96,6 +111,17 @@ function startGame() {
   startGameLoop();
   startAutoSave();
   bindEvents();
+
+  // Start realtime sync for logged-in players
+  if (!state.isGuest) {
+    const client = window.supabaseClient;
+    if (client) {
+      client.auth.getSession().then(({ data }) => {
+        const userId = data?.session?.user?.id;
+        if (userId) startRealtimeSync(userId);
+      });
+    }
+  }
 
   // Submit score on startup so leaderboard is current after page reload
   if (!state.isGuest) {
