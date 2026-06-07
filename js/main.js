@@ -33,6 +33,8 @@ import { bindDelegatedEvents, handleAuthChange } from "./handlers/auth.js";
 // SECTION 1 — BOOT SEQUENCE
 // ============================================================
 
+let gameStarted = false;
+
 async function boot() {
   showBootSpinner("Starting up...");
 
@@ -43,10 +45,16 @@ async function boot() {
   }
   initState();
 
+  // Register auth listener BEFORE restoreSession so we don't miss events
+  onAuthChange(({ event }) => {
+    if (event === "SIGNED_IN")  handleAuthChange("in");
+    if (event === "SIGNED_OUT") handleAuthChange("out");
+  });
+
   const session = await restoreSession();
 
   if (session.loggedIn) {
-    // Returning logged-in player — load save then start game immediately
+    // Returning logged-in player — load save then start game
     showBootSpinner("Loading save...");
     const winner = await resolveConflict();
     if (winner === "cloud") {
@@ -56,7 +64,7 @@ async function boot() {
     hideBootSpinner();
     startGame();
   } else {
-    // Not logged in — show login screen first, start game only after they proceed
+    // Not logged in — show login screen, game starts only after they proceed
     window.__gmVerified = false;
     hideBootSpinner();
     showLoginScreen({
@@ -65,18 +73,21 @@ async function boot() {
         startGame();
       },
       onLogin: () => {
-        startGame();
+        // startGame() will be called by handleAuthChange("in") via SIGNED_IN event
+        // No need to call it here — avoids double-start
       },
     });
   }
+}
 
-  onAuthChange(({ event }) => {
-    if (event === "SIGNED_IN")  handleAuthChange("in");
-    if (event === "SIGNED_OUT") handleAuthChange("out");
-  });
+export function startGameIfNeeded() {
+  startGame();
 }
 
 function startGame() {
+  if (gameStarted) return;
+  gameStarted = true;
+
   renderHUD();
   renderGMPanel();
   switchTab("mine");
