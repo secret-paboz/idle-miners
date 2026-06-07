@@ -135,12 +135,17 @@ export async function registerUser(playerId, password, nickname, email) {
 
     const user = data.user;
 
+    // Set state identity before snapshotting into game_data
+    state.playerId = playerId.trim().toLowerCase();
+    state.nickname = nickname.trim();
+    state.isGuest  = false;
+
     const initialSave = {
       id:             user.id,
       player_id:      playerId.trim().toLowerCase(),
       nickname:       nickname.trim(),
       email:          email.trim().toLowerCase(),
-      game_data:      JSON.stringify({ ...state, nickname: nickname.trim(), isGuest: false }),
+      game_data:      JSON.stringify(state),
       updated_at:     new Date().toISOString(),
       is_vip:         false,
       vip_expires_at: 0,
