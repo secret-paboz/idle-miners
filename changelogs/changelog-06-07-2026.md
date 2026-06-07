@@ -42,4 +42,25 @@
 
 ---
 
+### 🔄 Realtime Sync
+
+- **GM actions now instant for all players** — All GM-applied changes (boosters, crates, cash, ore, shards, XP, level, pickaxe/backpack level, rebirths, prestige tokens, VIP, leaderboard visibility) are pushed via Supabase Realtime and appear on the target player's screen immediately without a reload.
+- **Full panel re-render on sync** — When a realtime update arrives, the HUD, mine panel, booster badges, crates panel, and prestige panel all re-render automatically.
+- **Realtime stopped on logout** — The realtime subscription is cleanly torn down when a player logs out.
+
+---
+
+### 🚪 Logout Changes
+
+- **Logout now returns to login screen** — Previously logging out kept the player in-game as a guest. Now it shows the login screen, matching the expected flow.
+- **Logout modal message updated** — Now reads "Your progress is saved to the cloud" instead of "You'll continue as a guest."
+
+---
+
+### ⚙️ Settings Panel
+
+- **Login form removed from guest settings** — The duplicate login form in the Settings panel has been removed. Guests now see a clean info message directing them to the login screen instead.
+
+---
+
 > *Keep mining! ⛏️*
