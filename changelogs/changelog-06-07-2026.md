@@ -24,4 +24,22 @@
 
 ---
 
+### 🚀 Boot & Session Changes
+
+- **Game no longer loads before login** — The game loop, renders, and auto-save now only start after the player logs in or chooses to play as guest. Previously the game was fully running behind the login screen.
+
+---
+
+### 🐛 Bug Fixes
+
+- **`player_id` saving as NULL on registration** — Fixed a bug where new player registrations had `player_id` as NULL in `player_saves`. The state identity (`playerId`, `nickname`, `isGuest`) is now set before the initial save snapshot is taken.
+
+---
+
+### 👑 VIP Changes
+
+- **Removed offline mining perks from VIP details** — The "12h Offline Mining" and "Full Offline Cycles" perks have been removed from both the active and inactive VIP modal, as offline mining is not implemented.
+
+---
+
 > *Keep mining! ⛏️*
