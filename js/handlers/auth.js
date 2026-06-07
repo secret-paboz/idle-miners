@@ -4,19 +4,19 @@
 
 import { state } from "../state.js";
 import { loginUser, registerUser, logoutUser, sendPasswordReset } from "../auth.js";
-import { cloudLoad, resolveConflict } from "../supabase.js";
+import { cloudLoad, resolveConflict, stopRealtimeSync } from "../supabase.js";
 import { loginAsGuest } from "../auth.js";
 import { upgradePet } from "../economy.js";
 import { openCrate, openAllOfType } from "../crates.js";
 import { purchasePrestigeUpgrade } from "../prestige.js";
-import { showToast, showModal, hideLoginScreen } from "../ui/ui-core.js";
+import { showToast, showModal, hideLoginScreen, showLoginScreen, updateFabGmVisibility } from "../ui/ui-core.js";
 import { renderHUD } from "../ui/ui-hud.js";
 import { renderMinePanel } from "../ui/ui-mine.js";
 import { renderPetsPanel } from "../ui/ui-pets.js";
 import { renderCratesPanel, animateCrateOpen } from "../ui/ui-crates.js";
 import { renderPrestigePanel } from "../ui/ui-prestige.js";
 import { renderSettingsPanel, renderGMPanel, showRegisterModal } from "../ui/ui-settings.js";
-import { updateFabGmVisibility } from "../ui/ui-core.js";
+
 
 export function bindDelegatedEvents() {
   document.addEventListener("click", handleDelegatedClick);
@@ -37,11 +37,23 @@ export async function handleAuthChange(direction) {
     renderGMPanel();
     updateFabGmVisibility();
   } else {
-    loginAsGuest();
-    renderHUD();
-    renderSettingsPanel();
-    renderGMPanel();
-    updateFabGmVisibility();
+    // SIGNED_OUT fired externally (e.g. token expired) — show login screen
+    stopRealtimeSync();
+    showLoginScreen({
+      onGuest: () => {
+        if (!state.nickname) loginAsGuest();
+        renderHUD();
+        renderGMPanel();
+        updateFabGmVisibility();
+      },
+      onLogin: async () => {
+        const { startGameIfNeeded } = await import("../main.js");
+        startGameIfNeeded();
+        renderHUD();
+        renderGMPanel();
+        updateFabGmVisibility();
+      },
+    });
   }
 }
 
@@ -196,16 +208,28 @@ async function handleRegister() {
 async function handleLogout() {
   showModal({
     title:       "Log Out?",
-    message:     "Your progress is saved. You'll continue as a guest.",
+    message:     "Your progress is saved to the cloud.",
     confirmText: "Log Out",
     cancelText:  "Cancel",
     onConfirm:   async () => {
+      stopRealtimeSync();
       await logoutUser();
       showToast("Logged out.", "info", 2000);
-      renderHUD();
-      renderSettingsPanel();
-      renderGMPanel();
-      updateFabGmVisibility();
+      showLoginScreen({
+        onGuest: () => {
+          if (!state.nickname) loginAsGuest();
+          renderHUD();
+          renderGMPanel();
+          updateFabGmVisibility();
+        },
+        onLogin: async () => {
+          const { startGameIfNeeded } = await import("../main.js");
+          startGameIfNeeded();
+          renderHUD();
+          renderGMPanel();
+          updateFabGmVisibility();
+        },
+      });
     },
   });
 }
