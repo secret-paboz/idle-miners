@@ -33,6 +33,7 @@ Mine ore, sell it for cash, prestige, collect pets, unlock dimensions — and co
 - 🎁 Crate system with random rewards
 - 🏆 Global leaderboard with opt-out toggle
 - ☁️ Cloud save with server-side anti-cheat validation
+- ⚡ Supabase Realtime — GM actions pushed instantly to target players, no reload needed
 - 👤 Account system (register / login / guest) via Supabase Auth
 - 🔑 VIP system with timed perks
 - 🛡️ GM (Game Master) role with full cheat panel
@@ -79,7 +80,7 @@ idle-miners/
 │   ├── state.js            # Game state definition + localStorage save/load
 │   ├── globals.js          # Shared runtime constants
 │   ├── auth.js             # Supabase auth (login, register, guest, reset)
-│   ├── supabase.js         # Cloud save/load, VIP, leaderboard gateway
+│   ├── supabase.js         # Cloud save/load, VIP, leaderboard gateway, Realtime sync
 │   ├── leaderboard.js      # Leaderboard fetch, submit, hide/show
 │   ├── economy.js          # Mining power, sell value, income calculations
 │   ├── prestige.js         # Prestige & rebirth logic
@@ -492,6 +493,7 @@ The `service_role` key (which does bypass RLS) **never leaves the server** and i
 - **Backpack Capacity** = `20 + (backpackLevel × 15) × (1 + petBackpackBonus) + (storagePrestige × 10)`
 - Ore auto-sells when the backpack fills
 - Game loop and auto-save only start after the player logs in or selects guest mode
+- Logout returns the player to the login screen and tears down the realtime subscription
 
 </details>
 
