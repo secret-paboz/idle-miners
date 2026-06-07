@@ -45,16 +45,9 @@ export function renderSettingsPanel() {
           <i class="fa-solid fa-user"></i>
           Playing as guest — progress saved locally only.
         </div>
-        <div class="auth-form" id="form-login">
-          <h3>Log In</h3>
-          <input type="email"    id="input-login-email"    placeholder="Email address" autocomplete="email">
-          <input type="password" id="input-login-password" placeholder="Password"      autocomplete="current-password">
-          <button class="btn-auth" id="btn-login">Log In</button>
-          <div class="auth-message" id="login-message"></div>
-          <div class="auth-switch">
-            Don't have an account?
-            <a href="javascript:void(0)" id="btn-show-register">Register here!</a>
-          </div>
+        <div class="settings-guest-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          To log in or create an account, use the login screen.
         </div>
       </div>
     `;
