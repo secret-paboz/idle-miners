@@ -27,6 +27,11 @@ export async function handleAuthChange(direction) {
     hideLoginScreen();
     const winner = await resolveConflict();
     if (winner === "cloud") await cloudLoad();
+
+    // Start the game if it hasn't started yet (user just logged in from login screen)
+    const { startGameIfNeeded } = await import("../main.js");
+    startGameIfNeeded();
+
     renderHUD();
     renderSettingsPanel();
     renderGMPanel();
