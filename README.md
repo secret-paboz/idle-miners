@@ -26,7 +26,7 @@ Mine ore, sell it for cash, prestige, collect pets, unlock dimensions — and co
 ## Features
 
 - ⛏️ Idle mining with auto-progression
-- 💰 Ore selling, cash economy, offline income
+- 💰 Ore selling, cash economy
 - 🔁 Prestige & Rebirth systems with permanent upgrades
 - 🐾 Pet collection (Common → Legendary) with passive bonuses
 - 🌍 9 unlockable Dimensions with unique multipliers
@@ -218,6 +218,7 @@ CREATE TABLE IF NOT EXISTS public.player_saves (
   id              UUID        PRIMARY KEY,  -- matches auth.users.id
   player_id       TEXT        NOT NULL UNIQUE,
   nickname        TEXT        NOT NULL DEFAULT 'Player',
+  email           TEXT,                     -- used for Player ID → email login lookup
   game_data       TEXT,                     -- JSON blob (stringified)
   is_vip          BOOLEAN     NOT NULL DEFAULT false,
   vip_expires_at  BIGINT      NOT NULL DEFAULT 0,  -- Unix ms timestamp
@@ -352,6 +353,7 @@ Pull requests get their own preview URL.
 | `id` | `uuid` PK | Matches `auth.users.id` |
 | `player_id` | `text` UNIQUE | Public-facing player identifier |
 | `nickname` | `text` | Display name |
+| `email` | `text` | Used for Player ID → email lookup during login |
 | `game_data` | `text` | Full game state as a JSON string |
 | `is_vip` | `boolean` | VIP status flag |
 | `vip_expires_at` | `bigint` | VIP expiry as Unix ms timestamp |
@@ -489,7 +491,7 @@ The `service_role` key (which does bypass RLS) **never leaves the server** and i
 - **Ore Value** = `oreBaseValue × dimensionMulti × rebirthBonus × greedBonus × merchantBonus × (1 + petSellBonus) × boosterMulti × vipBonus`
 - **Backpack Capacity** = `20 + (backpackLevel × 15) × (1 + petBackpackBonus) + (storagePrestige × 10)`
 - Ore auto-sells when the backpack fills
-- Offline income calculated on session restore based on elapsed time
+- Game loop and auto-save only start after the player logs in or selects guest mode
 
 </details>
 
