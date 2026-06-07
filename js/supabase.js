@@ -271,6 +271,92 @@ export function stopAutoSave() {
 }
 
 // ============================================================
+// SECTION 5b — REALTIME SYNC
+// Subscribes to the player's own row in player_saves.
+// When a GM patches game_data remotely, the update arrives
+// instantly and is merged into local state — no reload needed.
+// ============================================================
+
+let realtimeChannel = null;
+
+export function startRealtimeSync(userId) {
+  const client = window.supabaseClient;
+  if (!client || !userId) return;
+
+  // Clean up any existing subscription
+  if (realtimeChannel) {
+    client.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+
+  realtimeChannel = client
+    .channel(`player_saves:${userId}`)
+    .on(
+      "postgres_changes",
+      {
+        event:  "UPDATE",
+        schema: "public",
+        table:  "player_saves",
+        filter: `id=eq.${userId}`,
+      },
+      async (payload) => {
+        const incoming = payload.new;
+        if (!incoming) return;
+
+        // Parse game_data from DB
+        const gameData = typeof incoming.game_data === "string"
+          ? JSON.parse(incoming.game_data)
+          : incoming.game_data;
+
+        if (!gameData) return;
+
+        // Sync all GM-patchable game_data fields into local state
+        const SYNCED_FIELDS = [
+          "cash", "ore", "shards", "xp", "level",
+          "pickaxeLevel", "backpackLevel", "rebirths",
+          "prestigeTokens", "cashEarned",
+          "boosters", "crates",
+          "hideFromLeaderboard",
+        ];
+        for (const field of SYNCED_FIELDS) {
+          if (field in gameData) state[field] = gameData[field];
+        }
+
+        // Sync VIP status from column (authoritative, not from game_data)
+        const now          = Date.now();
+        const vipExpiresAt = incoming.vip_expires_at ?? 0;
+        const isVip        = incoming.is_vip === true && vipExpiresAt > now;
+        state.isVip        = isVip;
+        state.vipExpiresAt = vipExpiresAt;
+
+        // Re-render all affected panels
+        const { renderBoosterBadges, renderMinePanel } = await import("./ui/ui-mine.js");
+        const { renderHUD }                            = await import("./ui/ui-hud.js");
+        const { renderCratesPanel }                    = await import("./ui/ui-crates.js");
+        const { renderPrestigePanel }                  = await import("./ui/ui-prestige.js");
+
+        renderHUD();
+        renderBoosterBadges();
+        renderMinePanel();
+        renderCratesPanel();
+        renderPrestigePanel();
+
+        saveState();
+        console.log("[Realtime] Player data synced from server.");
+      }
+    )
+    .subscribe();
+}
+
+export function stopRealtimeSync() {
+  const client = window.supabaseClient;
+  if (client && realtimeChannel) {
+    client.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+}
+
+// ============================================================
 // SECTION 6 — CONNECTION STATUS
 // ============================================================
 
