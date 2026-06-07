@@ -489,7 +489,7 @@ export function hideBootSpinner() {
 // SECTION 5b — LOGIN SCREEN
 // ============================================================
 
-export function showLoginScreen({ onGuest } = {}) {
+export function showLoginScreen({ onGuest, onLogin } = {}) {
   const existing = document.getElementById("login-screen");
   if (existing) return;
 
@@ -554,6 +554,7 @@ export function showLoginScreen({ onGuest } = {}) {
       hideLoginScreen();
       const { showToast } = await import("./ui-core.js");
       showToast(result.message, "success", 3000);
+      if (onLogin) onLogin();
     } else {
       msgEl.textContent = result.message;
       btn.disabled      = false;
