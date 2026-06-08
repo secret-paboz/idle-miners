@@ -227,17 +227,23 @@ function resetStateForRebirth() {
 function resetStateForPrestige() {
   const now = Date.now();
   const kept = {
-    nickname:         state.nickname,
-    playerId:         state.playerId,
-    isGuest:          state.isGuest,
-    isVip:            state.isVip,
-    vipExpiresAt:     state.vipExpiresAt,
-    prestiges:        state.prestiges + 1,
-    prestigeTokens:   state.prestigeTokens + 1,
-    prestigeUpgrades: state.prestigeUpgrades,
-    lastHourlyTime:   now,
-    lastDailyTime:    now,
-    lastWeeklyTime:   now,
+    nickname:          state.nickname,
+    playerId:          state.playerId,
+    isGuest:           state.isGuest,
+    isVip:             state.isVip,
+    vipExpiresAt:      state.vipExpiresAt,
+    prestiges:         state.prestiges + 1,
+    prestigeTokens:    state.prestigeTokens + 1,
+    prestigeUpgrades:  state.prestigeUpgrades,
+    rebirths:          state.rebirths,
+    dimensionUnlocked: state.dimensionUnlocked,
+    pets:              state.pets,
+    crates:            state.crates,
+    cashEarned:        state.cashEarned,
+    blocksMined:       state.blocksMined,
+    lastHourlyTime:    now,
+    lastDailyTime:     now,
+    lastWeeklyTime:    now,
   };
 
   const fresh = deepCopy(DEFAULT_STATE);
