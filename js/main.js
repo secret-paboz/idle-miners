@@ -28,6 +28,7 @@ import { bindLeaderboardEvents } from "./handlers/leaderboard.js";
 import { bindSettingsEvents }    from "./handlers/settings.js";
 import { bindGMEvents }          from "./handlers/gm.js";
 import { bindDelegatedEvents, handleAuthChange } from "./handlers/auth.js";
+import { initKeyboardShortcuts } from "./handlers/keys.js";
 
 // ============================================================
 // SECTION 1 — BOOT SEQUENCE
