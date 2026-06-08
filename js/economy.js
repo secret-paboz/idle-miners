@@ -353,7 +353,7 @@ export function doPrestige() {
     return { success: false, message: "Need 25 rebirths + level 200 gear." };
   }
   resetStateForPrestige();
-  return { success: true, message: `Prestige ${state.prestiges} complete! +1 Prestige Token.` };
+  return { success: true, message: `Prestige ${state.prestiges} complete! You earned +1 Prestige Token.` };
 }
 
 // Buy prestige shop upgrade
