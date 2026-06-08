@@ -23,6 +23,7 @@ const RING_CIRC = 2 * Math.PI * 18; // ≈ 113.1
 
 export function renderPetsPanel() {
   renderPetCooldowns();
+  renderPetBonusSummary();
   renderPetGrid();
 }
 
@@ -108,6 +109,66 @@ function getObtainHint(rarity) {
     case "legendary": return `<i class="fa-solid fa-fish"></i> Fish (rare)`;
     default:          return "Unknown";
   }
+}
+
+// ============================================================
+// SECTION 3b — PET BONUS SUMMARY
+// ============================================================
+
+function computePetBonusSummary() {
+  let miningBonus  = 0;
+  let sellBonus    = 0;
+  let backpackBonus = 0;
+
+  Object.entries(PETS_DATA).forEach(([petId, pet]) => {
+    const petState = state.pets[petId];
+    if (!petState?.owned) return;
+    const level = petState.level || 0;
+    const pct   = pet.modifier * level * 100;
+
+    switch (pet.rarity) {
+      case "common":
+        backpackBonus += pct;
+        break;
+      case "uncommon":
+        miningBonus += pct;
+        break;
+      case "rare":
+        sellBonus += pct;
+        break;
+      case "legendary":
+        if (pet.legendaryEffect === "mining") miningBonus += pct;
+        else sellBonus += pct;
+        break;
+    }
+  });
+
+  return { miningBonus, sellBonus, backpackBonus };
+}
+
+function renderPetBonusSummary() {
+  const container = document.getElementById("pets-bonus-summary");
+  if (!container) return;
+
+  const { miningBonus, sellBonus, backpackBonus } = computePetBonusSummary();
+  const hasAny = miningBonus > 0 || sellBonus > 0 || backpackBonus > 0;
+
+  container.innerHTML = `
+    <div class="pets-bonus-summary-label">Active Pet Bonuses</div>
+    <div class="pets-bonus-chip ${miningBonus === 0 ? "no-bonus" : ""}">
+      <i class="fa-solid fa-pickaxe"></i>
+      +${miningBonus.toFixed(0)}% Mining
+    </div>
+    <div class="pets-bonus-chip ${sellBonus === 0 ? "no-bonus" : ""}">
+      <i class="fa-solid fa-coins"></i>
+      +${sellBonus.toFixed(0)}% Sell
+    </div>
+    <div class="pets-bonus-chip ${backpackBonus === 0 ? "no-bonus" : ""}">
+      <i class="fa-solid fa-sack"></i>
+      +${backpackBonus.toFixed(0)}% Backpack
+    </div>
+    ${!hasAny ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">Own pets to gain bonuses</div>` : ""}
+  `;
 }
 
 function renderPetGrid() {
