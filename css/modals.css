@@ -11,11 +11,11 @@
   position:       fixed;
   bottom:         calc(var(--tabbar-height) + 14px);
   left:           50%;
-  transform:      translateX(-50%) translateY(20px);
+  transform:      translateX(-50%) translateY(16px) scale(0.96);
   background:     var(--bg-card);
   border:         1px solid var(--border-bright);
   border-radius:  var(--radius-xl);
-  padding:        10px 20px;
+  padding:        9px 16px;
   font-size:      13px;
   font-weight:    500;
   white-space:    nowrap;
@@ -25,17 +25,43 @@
   opacity:        0;
   pointer-events: none;
   z-index:        999;
-  transition:     opacity 0.15s ease, transform 0.15s ease;
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
+  box-shadow:     0 4px 20px rgba(0,0,0,0.5);
+  transition:     opacity var(--anim-fast) ease,
+                  transform var(--anim-normal) var(--anim-bounce);
 }
 
 .toast.show {
   opacity:   1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
-.toast-success { border-color: var(--color-success); color: var(--color-success); }
-.toast-error   { border-color: var(--color-error);   color: var(--color-error);   }
-.toast-info    { border-color: var(--color-info);    color: var(--color-info);    }
+/* Typed toast variants */
+.toast-success {
+  border-color: rgba(76,175,80,0.5);
+  background:   rgba(76,175,80,0.08);
+}
+.toast-success::before { content: "✓"; color: var(--color-success); font-weight: 800; }
+
+.toast-error {
+  border-color: rgba(244,67,54,0.5);
+  background:   rgba(244,67,54,0.08);
+}
+.toast-error::before { content: "✕"; color: var(--color-error); font-weight: 800; }
+
+.toast-info {
+  border-color: rgba(66,165,245,0.5);
+  background:   rgba(66,165,245,0.08);
+}
+.toast-info::before { content: "ℹ"; color: var(--color-info); font-size: 12px; }
+
+.toast-warning {
+  border-color: rgba(255,193,7,0.5);
+  background:   rgba(255,193,7,0.08);
+}
+.toast-warning::before { content: "⚠"; color: var(--color-warning); font-size: 11px; }
 
 /* ============================================================
    SECTION 2 — CONFIRM MODAL
@@ -54,7 +80,12 @@
 }
 
 #modal-overlay.visible,
-.modal-overlay.visible { display: flex; animation: fadeIn 0.2s ease; }
+.modal-overlay.visible { display: flex; animation: modalOverlayIn 0.2s ease; }
+
+@keyframes modalOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
 .modal-box {
   background:    var(--bg-card);
@@ -63,6 +94,12 @@
   padding:       24px 20px;
   width:         100%;
   max-width:     340px;
+  animation:     modalBoxIn var(--anim-normal) var(--anim-bounce);
+}
+
+@keyframes modalBoxIn {
+  from { opacity: 0; transform: scale(0.93) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 
 .modal-title   { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
@@ -81,7 +118,11 @@
   color:         var(--text-secondary);
   font-weight:   600;
   font-size:     14px;
+  cursor:        pointer;
+  transition:    background var(--transition), color var(--transition), transform var(--transition);
 }
+.btn-modal-cancel:hover  { background: var(--bg-card-hover); color: var(--text-primary); }
+.btn-modal-cancel:active { transform: scale(0.97); }
 
 .btn-modal-confirm {
   flex:          1;
@@ -91,7 +132,11 @@
   font-weight:   700;
   font-size:     14px;
   border-radius: var(--radius-md);
+  cursor:        pointer;
+  transition:    opacity var(--transition), transform var(--transition), box-shadow var(--transition);
 }
+.btn-modal-confirm:hover  { opacity: 0.88; box-shadow: 0 4px 14px var(--accent-glow); }
+.btn-modal-confirm:active { transform: scale(0.97); }
 
 /* ============================================================
    SECTION 3 — FLOATING LEADERBOARD BUTTON
@@ -1190,3 +1235,93 @@
 
 .fp-btn-send:hover    { opacity: 0.88; }
 .fp-btn-send:disabled { opacity: 0.55; pointer-events: none; }
+
+/* ============================================================
+   SECTION 12 — PRESTIGE / REBIRTH CONFIRM: KEEP vs LOSE LIST
+   ============================================================ */
+
+.prestige-confirm-lists {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  margin:         14px 0;
+}
+
+.prestige-confirm-group {
+  background:    var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding:       10px 12px;
+  border:        1px solid var(--border);
+}
+
+.prestige-confirm-group-title {
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom:  7px;
+}
+
+.prestige-confirm-group--keep .prestige-confirm-group-title {
+  color: var(--color-success);
+}
+
+.prestige-confirm-group--lose .prestige-confirm-group-title {
+  color: var(--color-error);
+}
+
+.prestige-confirm-items {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       5px;
+}
+
+.prestige-confirm-chip {
+  display:       flex;
+  align-items:   center;
+  gap:           4px;
+  padding:       3px 9px;
+  border-radius: 99px;
+  font-size:     11px;
+  font-weight:   600;
+}
+
+.prestige-confirm-group--keep .prestige-confirm-chip {
+  background:  rgba(76,175,80,0.1);
+  border:      1px solid rgba(76,175,80,0.3);
+  color:       var(--color-success);
+}
+
+.prestige-confirm-group--lose .prestige-confirm-chip {
+  background:  rgba(244,67,54,0.1);
+  border:      1px solid rgba(244,67,54,0.3);
+  color:       #ef9a9a;
+}
+
+/* ============================================================
+   SECTION 13 — CLOSE BUTTON CONSISTENCY
+   ============================================================ */
+
+.modal-close,
+.lb-modal-close,
+.gm-modal-close,
+.stats-modal-close {
+  transition: background var(--transition), color var(--transition),
+              transform var(--anim-fast) var(--anim-bounce) !important;
+}
+
+.modal-close:hover,
+.lb-modal-close:hover,
+.gm-modal-close:hover,
+.stats-modal-close:hover {
+  background: var(--border-bright) !important;
+  color:      var(--text-primary) !important;
+  transform:  scale(1.1);
+}
+
+.modal-close:active,
+.lb-modal-close:active,
+.gm-modal-close:active,
+.stats-modal-close:active {
+  transform: scale(0.93);
+}
