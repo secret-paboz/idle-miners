@@ -112,7 +112,8 @@
   gap:           2px;
 }
 
-#btn-sell:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(67,160,71,0.4); }
+#btn-sell:hover  { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(67,160,71,0.4); }
+#btn-sell:active { transform: scale(0.97); transition-duration: 0.08s; }
 
 #btn-sell.pulse {
   animation: sellPulse 1.5s ease-in-out infinite;
@@ -145,13 +146,29 @@
   background:     var(--bg-card);
   border:         1px solid var(--border);
   border-radius:  var(--radius-md);
-  transition:     border-color var(--transition), background var(--transition), box-shadow var(--transition);
+  cursor:         pointer;
+  transition:     border-color var(--transition), background var(--transition),
+                  box-shadow var(--transition), transform var(--transition);
+}
+
+.upgrade-btn:hover:not(.cannot-afford) {
+  transform:    translateY(-2px);
+  border-color: var(--border-bright);
+  box-shadow:   0 4px 12px rgba(0,0,0,0.3);
+}
+
+.upgrade-btn:active:not(.cannot-afford) {
+  transform: scale(0.97);
 }
 
 .upgrade-btn.can-afford {
   border-color: var(--accent);
   background:   var(--accent-dim);
   box-shadow:   0 0 10px rgba(255,193,7,0.2);
+}
+
+.upgrade-btn.can-afford:hover {
+  box-shadow: 0 0 18px rgba(255,193,7,0.35);
 }
 
 .upgrade-btn-label   { font-size: 11px; color: var(--text-muted); }
@@ -514,6 +531,20 @@
   box-shadow:   0 0 16px color-mix(in srgb, var(--rarity-color, transparent) 15%, transparent);
 }
 
+.pet-card.owned:hover {
+  transform:    translateY(-3px);
+  box-shadow:   0 6px 24px color-mix(in srgb, var(--rarity-color, transparent) 28%, transparent);
+  border-color: color-mix(in srgb, var(--rarity-color, var(--border)) 85%, transparent);
+  transition:   transform var(--anim-normal) var(--anim-bounce),
+                box-shadow var(--anim-normal) ease,
+                border-color var(--anim-normal) ease;
+}
+
+.pet-card {
+  transition: border-color var(--transition), box-shadow var(--transition),
+              transform var(--anim-normal) var(--anim-smooth);
+}
+
 /* Unowned — dimmed but readable, not invisible */
 .pet-card.unowned {
   opacity: 0.5;
@@ -668,6 +699,12 @@
 .crate-timer-slot.ready {
   border-color: var(--color-success);
   box-shadow:   0 0 14px rgba(76,175,80,0.18);
+  animation:    crateReadyPulse 2s ease-in-out infinite;
+}
+
+@keyframes crateReadyPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(76,175,80,0.18); }
+  50%       { box-shadow: 0 0 22px rgba(76,175,80,0.45); }
 }
 
 .crate-timer-slot.waiting { opacity: 0.85; }
@@ -730,10 +767,16 @@
   background:    var(--color-success);
   color:         #fff;
   margin-top:    2px;
-  transition:    opacity var(--transition), transform var(--transition);
+  cursor:        pointer;
+  transition:    opacity var(--transition), transform var(--transition),
+                 box-shadow var(--transition);
 }
 
-.btn-claim-crate:hover:not(.disabled) { transform: scale(1.05); }
+.btn-claim-crate:hover:not(.disabled) {
+  transform:  scale(1.06);
+  box-shadow: 0 3px 10px rgba(76,175,80,0.45);
+}
+.btn-claim-crate:active:not(.disabled) { transform: scale(0.96); }
 
 .btn-claim-crate.disabled {
   opacity:    0.3;
@@ -1313,3 +1356,59 @@
 
 .mining-log-ore   .mining-log-text { color: var(--text-primary); }
 .mining-log-sell  .mining-log-text { color: var(--color-success); }
+
+/* ── Pet bonus summary banner ── */
+.pets-bonus-summary {
+  display:       flex;
+  gap:           6px;
+  flex-wrap:     wrap;
+  padding:       10px 12px;
+  background:    var(--bg-card);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
+}
+
+.pets-bonus-summary-label {
+  width:          100%;
+  font-size:      10px;
+  font-weight:    600;
+  color:          var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom:  2px;
+}
+
+.pets-bonus-chip {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       4px 10px;
+  background:    var(--bg-secondary);
+  border:        1px solid var(--border-bright);
+  border-radius: 99px;
+  font-size:     11px;
+  font-weight:   600;
+  color:         var(--text-primary);
+}
+
+.pets-bonus-chip i {
+  font-size: 10px;
+  color:     var(--accent);
+}
+
+.pets-bonus-chip.no-bonus {
+  color:   var(--text-muted);
+  opacity: 0.5;
+}
+
+/* Ore bar tick shimmer */
+.ore-bar-fill.tick-flash {
+  animation: tickFlash 0.25s ease forwards;
+}
+
+@keyframes tickFlash {
+  0%   { filter: brightness(1); }
+  40%  { filter: brightness(1.4); }
+  100% { filter: brightness(1); }
+}
