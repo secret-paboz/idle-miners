@@ -68,7 +68,7 @@ export function renderHUD() {
     const power      = computeMiningPower();
     const oreId      = state.currentOreId || "dirt";
     const oreValue   = computeOreValue(oreId);
-    const cashPerSec = Math.floor((power / 2) * oreValue);
+    const cashPerSec = Math.floor(power * oreValue);
     rateEl.textContent = cashPerSec > 0 ? "+$" + formatNumber(cashPerSec) + "/s" : "";
   }
 
