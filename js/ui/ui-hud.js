@@ -61,7 +61,19 @@ export function renderHUD() {
   }
 
   // ── ROW 1: Cash + rate ─────────────────────────────────────
-  setText("hud-cash", "$" + formatNumber(state.cash));
+  const cashEl2 = document.getElementById("hud-cash");
+  if (cashEl2) {
+    cashEl2.textContent = "$" + formatNumber(state.cash);
+
+    // Subtle green tint at high income rates — thresholds are loose
+    const power2      = computeMiningPower();
+    const oreValue2   = computeOreValue(state.currentOreId || "dirt");
+    const rate2       = power2 * oreValue2;
+    if      (rate2 >= 100000) cashEl2.style.color = "#81c784"; // strong green
+    else if (rate2 >= 10000)  cashEl2.style.color = "#a5d6a7"; // light green
+    else if (rate2 >= 1000)   cashEl2.style.color = "#c8e6c9"; // very light
+    else                      cashEl2.style.color = "";         // default
+  }
 
   const rateEl = document.getElementById("hud-income-rate");
   if (rateEl) {
@@ -69,7 +81,23 @@ export function renderHUD() {
     const oreId      = state.currentOreId || "dirt";
     const oreValue   = computeOreValue(oreId);
     const cashPerSec = Math.floor(power * oreValue);
-    rateEl.textContent = cashPerSec > 0 ? "+$" + formatNumber(cashPerSec) + "/s" : "";
+    const rateText   = cashPerSec > 0 ? "+$" + formatNumber(cashPerSec) + "/s" : "";
+
+    // Pulse only when value changes
+    if (rateEl.textContent !== rateText && rateText) {
+      rateEl.classList.remove("rate-pulse");
+      void rateEl.offsetWidth;
+      rateEl.classList.add("rate-pulse");
+    }
+
+    rateEl.textContent = rateText;
+
+    // PC tooltip — exact unformatted value
+    if (cashPerSec > 0) {
+      rateEl.title = `$${cashPerSec.toLocaleString()} per second`;
+    } else {
+      rateEl.title = "";
+    }
   }
 
   // ── ROW 1: Level + Dimension ───────────────────────────────
