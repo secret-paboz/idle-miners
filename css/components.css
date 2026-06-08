@@ -13,6 +13,16 @@
   border-radius: var(--radius-lg);
   padding:       14px;
   margin-bottom: var(--gap-md);
+  transition:    border-color var(--transition), box-shadow var(--transition);
+}
+
+.card.interactive {
+  cursor: pointer;
+}
+
+.card.interactive:hover {
+  border-color: var(--border-bright);
+  box-shadow:   0 4px 20px rgba(0,0,0,0.3);
 }
 
 .card-title {
@@ -48,7 +58,8 @@
   height:        100%;
   background:    var(--accent);
   border-radius: 99px;
-  transition:    width 0.4s ease;
+  transition:    width var(--anim-slow) var(--anim-smooth),
+                 background var(--anim-normal) ease;
 }
 
 .progress-fill.done { background: var(--color-success); }
@@ -70,14 +81,16 @@
   transition:      opacity var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
-.btn-primary:hover  { opacity: 0.88; transform: translateY(-1px); }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary { cursor: pointer; }
+.btn-primary:hover  { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 4px 16px var(--accent-glow); }
+.btn-primary:active { transform: scale(0.97) translateY(0); transition-duration: 0.08s; }
 
 .btn-primary:disabled,
 .btn-primary.disabled {
   opacity:   0.35;
   cursor:    not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* ============================================================
@@ -284,4 +297,83 @@
   font-weight:    600;
   color:          var(--text-muted);
   letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   SECTION 9 — TOASTS (typed with icons)
+   ============================================================ */
+
+.toast {
+  display:       flex;
+  align-items:   center;
+  gap:           9px;
+  padding:       10px 14px;
+  border-radius: var(--radius-md);
+  font-size:     13px;
+  font-weight:   500;
+  background:    var(--bg-card);
+  border:        1px solid var(--border-bright);
+  box-shadow:    0 4px 20px rgba(0,0,0,0.5);
+  animation:     toastIn var(--anim-normal) var(--anim-bounce) both;
+  max-width:     320px;
+  cursor:        default;
+}
+
+.toast.toast-success {
+  border-color: rgba(76,175,80,0.4);
+  background:   rgba(76,175,80,0.08);
+  color:        var(--color-success);
+}
+
+.toast.toast-error {
+  border-color: rgba(244,67,54,0.4);
+  background:   rgba(244,67,54,0.08);
+  color:        #ef9a9a;
+}
+
+.toast.toast-info {
+  border-color: rgba(66,165,245,0.4);
+  background:   rgba(66,165,245,0.08);
+  color:        var(--color-info);
+}
+
+.toast.toast-warning {
+  border-color: rgba(255,193,7,0.4);
+  background:   rgba(255,193,7,0.08);
+  color:        var(--color-warning);
+}
+
+.toast-icon {
+  font-size:   15px;
+  flex-shrink: 0;
+}
+
+.toast-msg {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.toast.toast-success .toast-msg { color: var(--color-success); }
+.toast.toast-error   .toast-msg { color: #ef9a9a; }
+.toast.toast-info    .toast-msg { color: var(--color-info); }
+.toast.toast-warning .toast-msg { color: var(--color-warning); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ============================================================
+   SECTION 10 — CURSOR & ACCESSIBILITY
+   ============================================================ */
+
+/* Ensure all interactive elements show pointer cursor */
+button, [role="button"], .btn-primary, .btn-ghost,
+.fab-menu-item, .lb-tab, .upgrade-btn, .card.interactive,
+.modal-close, .tab-btn, .pet-card, .crate-card {
+  cursor: pointer;
+}
+
+[disabled], .disabled, .cannot-afford {
+  cursor: not-allowed !important;
 }
