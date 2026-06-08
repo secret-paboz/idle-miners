@@ -91,6 +91,8 @@ async function handleDelegatedClick(e) {
   const dimBtn = e.target.closest("[data-dim]");
   if (dimBtn && !dimBtn.disabled) {
     const { switchDimension } = await import("../economy.js");
+    const { flashDimSwitch }  = await import("../ui/ui-mine.js");
+    flashDimSwitch();
     const result = switchDimension(dimBtn.dataset.dim);
     if (result.success) {
       renderMinePanel();
