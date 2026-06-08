@@ -778,3 +778,14 @@ body {
     padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
 }
+
+/* Income rate pulse — fires when rate value changes */
+@keyframes ratePulse {
+  0%   { opacity: 1;   transform: scale(1);    }
+  30%  { opacity: 0.6; transform: scale(1.12); }
+  100% { opacity: 0.9; transform: scale(1);    }
+}
+
+.hud-stat-rate.rate-pulse {
+  animation: ratePulse 0.4s var(--anim-smooth) forwards;
+}
