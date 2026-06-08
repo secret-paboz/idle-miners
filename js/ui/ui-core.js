@@ -244,8 +244,6 @@ function renderLbSkeleton() {
 }
 
 function renderLbRows(rows, category) {
-  const myNick = state?.nickname || ""; // CHANGED: was window.__gameState
-
   // ── Podium (top 3) ──────────────────────────────────────
   const podium = document.getElementById("leaderboard-podium");
   if (podium) {
@@ -279,8 +277,8 @@ function renderLbRows(rows, category) {
       `;
     } else {
       table.innerHTML = rows.slice(3).map((row, i) => {
-        const rank  = i + 4;
-        const isMe  = myNick && row.nickname === myNick;
+        const rank = i + 4;
+        const isMe = row.isCurrentPlayer === true;
         return `
           <div class="lb-row ${isMe ? "is-me" : ""}">
             <div class="lb-rank-badge">${rank}</div>
@@ -299,7 +297,7 @@ function renderLbRows(rows, category) {
   const yourRankEl  = document.getElementById("lb-your-rank");
   const yourRankVal = document.getElementById("lb-your-rank-value");
   if (yourRankEl && yourRankVal) {
-    const myIdx = myNick ? rows.findIndex(r => r.nickname === myNick) : -1;
+    const myIdx = rows.findIndex(r => r.isCurrentPlayer === true);
     if (myIdx !== -1) {
       yourRankVal.textContent  = `#${myIdx + 1}`;
       yourRankEl.style.display = "flex";
