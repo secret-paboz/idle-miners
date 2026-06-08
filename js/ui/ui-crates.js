@@ -39,6 +39,9 @@ const TIMER_CONFIG = [
   { stateKey: "lastWeeklyTime", ringId: "ring-weekly", valId: "val-timer-weekly", btnId: "btn-claim-weekly", slotId: "timer-weekly", cooldown: COOLDOWNS.weekly },
 ];
 
+// Track previous ready state to detect the moment a crate becomes claimable
+const _prevReady = {};
+
 export function renderCrateTimers() {
   const now = Date.now();
 
@@ -48,18 +51,29 @@ export function renderCrateTimers() {
     const ready     = elapsed >= cooldown;
     const remaining = ready ? 0 : Math.ceil((cooldown - elapsed) / 1000);
     const progress  = ready ? 1 : elapsed / cooldown;
+    const justReady = ready && !_prevReady[slotId];
+    _prevReady[slotId] = ready;
 
     // Slot class
     const slot = document.getElementById(slotId);
     if (slot) {
       slot.classList.toggle("ready",   ready);
       slot.classList.toggle("waiting", !ready);
+
+      // Fire "just became ready" burst animation
+      if (justReady) {
+        slot.classList.remove("crate-just-ready");
+        void slot.offsetWidth; // reflow to re-trigger
+        slot.classList.add("crate-just-ready");
+        setTimeout(() => slot.classList.remove("crate-just-ready"), 700);
+      }
     }
 
-    // Ring fill
+    // Ring fill — smooth transition while counting down, instant snap when ready
     const ring = document.getElementById(ringId);
     if (ring) {
-      ring.style.strokeDashoffset = RING_CIRC * (1 - Math.min(progress, 1));
+      ring.style.transition = ready ? "none" : "stroke-dashoffset 0.9s linear";
+      ring.style.strokeDashoffset = ready ? 0 : RING_CIRC * (1 - Math.min(progress, 1));
     }
 
     // Timer value text
@@ -71,7 +85,15 @@ export function renderCrateTimers() {
     if (btn) {
       btn.disabled = !ready;
       btn.classList.toggle("disabled", !ready);
-      btn.textContent = ready ? "Claim" : "Waiting";
+      if (justReady) {
+        btn.textContent = "Claim";
+        btn.classList.remove("btn-just-ready");
+        void btn.offsetWidth;
+        btn.classList.add("btn-just-ready");
+        setTimeout(() => btn.classList.remove("btn-just-ready"), 600);
+      } else {
+        btn.textContent = ready ? "Claim" : "Waiting";
+      }
     }
   });
 }
@@ -176,7 +198,7 @@ function showCrateReward(crateData, loot) {
   card.style.setProperty("--reward-color", crateData?.color || "#ffc107");
   card.innerHTML = `
     <div class="crate-reward-inner">
-      <div class="crate-reward-icon-wrap">
+      <div class="crate-reward-icon-wrap reward-icon-bounce">
         <i class="${info.icon}"></i>
       </div>
       <div class="crate-reward-text">
