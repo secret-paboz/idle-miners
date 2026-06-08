@@ -107,6 +107,7 @@ function startGame() {
   renderGMPanel();
   switchTab("mine");
   initTabs();
+  initKeyboardShortcuts();
   updateFabGmVisibility();
   startGameLoop();
   startAutoSave();
