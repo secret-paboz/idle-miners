@@ -39,6 +39,53 @@ import {
 } from "./ui-core.js";
 
 // ============================================================
+// SECTION 0 — HELPERS
+// ============================================================
+
+/** Ripple effect on any button element */
+function addRipple(el, e) {
+  if (!el) return;
+  const existing = el.querySelector(".ripple");
+  if (existing) existing.remove();
+
+  const rect   = el.getBoundingClientRect();
+  const size   = Math.max(rect.width, rect.height);
+  const x      = (e?.clientX ?? rect.left + rect.width  / 2) - rect.left - size / 2;
+  const y      = (e?.clientY ?? rect.top  + rect.height / 2) - rect.top  - size / 2;
+
+  const ripple = document.createElement("span");
+  ripple.className = "ripple";
+  ripple.style.cssText = `
+    position:absolute; border-radius:50%; pointer-events:none;
+    width:${size}px; height:${size}px; left:${x}px; top:${y}px;
+    background:rgba(255,255,255,0.18);
+    transform:scale(0); animation:rippleAnim 0.5s ease forwards;
+  `;
+  el.style.position = "relative";
+  el.style.overflow = "hidden";
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 520);
+}
+
+// Inject ripple keyframe once
+if (!document.getElementById("ripple-style")) {
+  const s = document.createElement("style");
+  s.id = "ripple-style";
+  s.textContent = `@keyframes rippleAnim {
+    to { transform: scale(2.2); opacity: 0; }
+  }`;
+  document.head.appendChild(s);
+}
+
+/** Trigger dimension fade on #content briefly */
+function flashDimSwitch() {
+  const content = document.getElementById("content");
+  if (!content) return;
+  content.classList.add("dim-switching");
+  setTimeout(() => content.classList.remove("dim-switching"), 180);
+}
+
+// ============================================================
 // SECTION 1 — MINE PANEL
 // ============================================================
 
@@ -117,6 +164,8 @@ function renderDimensionSelector() {
   }).join("");
 }
 
+export { flashDimSwitch };
+
 export function renderBoosterBadges() {
   const container = document.getElementById("booster-badges");
   if (!container) return;
@@ -173,6 +222,15 @@ export function renderBoosterBadges() {
 
 function renderUpgradeButtons() {
   const { cash } = state;
+
+  // ── Attach ripple once per button ──
+  ["btn-upgrade-pickaxe", "btn-upgrade-backpack"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.rippleAttached) {
+      el.addEventListener("pointerdown", e => addRipple(el, e));
+      el.dataset.rippleAttached = "1";
+    }
+  });
 
   // ── Pickaxe ──
   const pCost   = pickaxeCost(state.pickaxeLevel);
@@ -235,6 +293,14 @@ export function animateMiningTick(oreMined, oreType) {
     const oreId   = state.currentOreId || "dirt";
     const oreName = ORE_TYPES[oreId]?.name || "Ore";
     appendMiningLog("+" + formatNumber(oreMined) + " " + oreName, "ore", oreId);
+
+    // Subtle bar shimmer on each mine tick
+    const barFill = document.getElementById("ore-bar-fill");
+    if (barFill) {
+      barFill.classList.remove("tick-flash");
+      void barFill.offsetWidth;
+      barFill.classList.add("tick-flash");
+    }
   }
 }
 
