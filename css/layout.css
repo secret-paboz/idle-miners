@@ -6,6 +6,13 @@
    SECTION 1 — APP SHELL
    ============================================================ */
 
+/* PC background — fills dead space outside the 480px column */
+body {
+  background-color: var(--bg-outside);
+  background-image: radial-gradient(circle at 1px 1px, #1c1c1c 1px, transparent 0);
+  background-size:  24px 24px;
+}
+
 #app {
   display:        flex;
   flex-direction: column;
@@ -14,6 +21,9 @@
   margin:         0 auto;
   position:       relative;
   overflow:       hidden;
+  border-left:    1px solid var(--border);
+  border-right:   1px solid var(--border);
+  box-shadow:     0 0 60px rgba(0,0,0,0.8);
 }
 
 /* ============================================================
@@ -222,9 +232,10 @@
   padding-bottom: 84px; /* space for FAB button */
 }
 
-#content::-webkit-scrollbar       { width: 3px; }
+#content::-webkit-scrollbar       { width: 5px; }
 #content::-webkit-scrollbar-track { background: transparent; }
 #content::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 4px; }
+#content::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ============================================================
    SECTION 4 — PANELS
@@ -233,14 +244,22 @@
 .panel {
   display:   none;
   padding:   16px 14px;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn var(--anim-normal) var(--anim-smooth) both;
 }
 
 .panel.active { display: block; }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Dimension switch fade — applied to #content when dimension changes */
+#content {
+  transition: filter var(--anim-fast) var(--anim-smooth);
+}
+#content.dim-switching {
+  filter: brightness(0.6);
 }
 
 /* ============================================================
@@ -268,7 +287,31 @@
 }
 
 #btn-fab-menu:hover {
-  box-shadow: 0 6px 28px var(--accent-glow);
+  box-shadow:    0 6px 28px var(--accent-glow);
+  transform:     scale(1.06);
+}
+
+/* Tooltip on hover (PC) */
+#btn-fab-menu::after {
+  content:        attr(title);
+  position:       absolute;
+  right:          calc(100% + 10px);
+  top:            50%;
+  transform:      translateY(-50%);
+  background:     var(--bg-card);
+  border:         1px solid var(--border-bright);
+  color:          var(--text-primary);
+  font-size:      11px;
+  font-weight:    500;
+  padding:        4px 9px;
+  border-radius:  var(--radius-sm);
+  white-space:    nowrap;
+  opacity:        0;
+  pointer-events: none;
+  transition:     opacity var(--anim-fast) ease;
+}
+#btn-fab-menu:hover::after {
+  opacity: 1;
 }
 
 #btn-fab-menu.is-open {
