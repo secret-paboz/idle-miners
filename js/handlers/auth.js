@@ -16,6 +16,7 @@ import { renderPetsPanel } from "../ui/ui-pets.js";
 import { renderCratesPanel, animateCrateOpen } from "../ui/ui-crates.js";
 import { renderPrestigePanel } from "../ui/ui-prestige.js";
 import { renderSettingsPanel, renderGMPanel, showRegisterModal } from "../ui/ui-settings.js";
+import { stopColorCycle, startColorCycle, updateVantaFog } from "../ui/ui-vanta.js";
 
 
 export function bindDelegatedEvents() {
@@ -32,6 +33,10 @@ export async function handleAuthChange(direction) {
     const { startGameIfNeeded } = await import("../main.js");
     startGameIfNeeded();
 
+    // Lock fog to the player's current dimension
+    stopColorCycle();
+    updateVantaFog(state.dimension ?? "earth");
+
     renderHUD();
     renderSettingsPanel();
     renderGMPanel();
@@ -39,6 +44,7 @@ export async function handleAuthChange(direction) {
   } else {
     // SIGNED_OUT fired externally (e.g. token expired) — show login screen
     stopRealtimeSync();
+    startColorCycle();
     showLoginScreen({
       onGuest: () => {
         if (!state.nickname) loginAsGuest();
@@ -98,6 +104,7 @@ async function handleDelegatedClick(e) {
       renderMinePanel();
       renderHUD();
       applyDimensionTheme(dimBtn.dataset.dim);
+      updateVantaFog(dimBtn.dataset.dim);
     }
     return;
   }
@@ -189,6 +196,7 @@ async function handleLogout() {
       stopRealtimeSync();
       await logoutUser();
       showToast("Logged out.", "info", 2000);
+      startColorCycle();
       showLoginScreen({
         onGuest: () => {
           if (!state.nickname) loginAsGuest();
