@@ -29,6 +29,7 @@ import { bindSettingsEvents }    from "./handlers/settings.js";
 import { bindGMEvents }          from "./handlers/gm.js";
 import { bindDelegatedEvents, handleAuthChange } from "./handlers/auth.js";
 import { initKeyboardShortcuts } from "./handlers/keys.js";
+import { initVanta, startColorCycle, updateVantaFog } from "./ui/ui-vanta.js";
 
 // ============================================================
 // SECTION 1 — BOOT SEQUENCE
@@ -38,6 +39,9 @@ let gameStarted = false;
 
 async function boot() {
   showBootSpinner("Starting up...");
+
+  // Init Vanta fog immediately — canvas is visible before any auth check
+  initVanta(state.dimension ?? "earth");
 
   initSupabase();
   if (!window.supabaseClient) {
@@ -62,11 +66,14 @@ async function boot() {
       await cloudLoad();
       showToast("Cloud save loaded.", "info", 3000);
     }
+    // Lock fog to the player's dimension now that state is loaded
+    updateVantaFog(state.dimension ?? "earth");
     hideBootSpinner();
     startGame();
   } else {
-    // Not logged in — show login screen, game starts only after they proceed
+    // Not logged in — show login screen with cycling fog
     window.__gmVerified = false;
+    startColorCycle();
     hideBootSpinner();
     showLoginScreen({
       onGuest: () => {
@@ -103,6 +110,9 @@ export function startGameIfNeeded() {
 function startGame() {
   if (gameStarted) return;
   gameStarted = true;
+
+  // Lock fog to current dimension — stops cycle if coming from login screen
+  updateVantaFog(state.dimension ?? "earth");
 
   renderHUD();
   renderGMPanel();
