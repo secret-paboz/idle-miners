@@ -7,28 +7,15 @@
    SECTION 1 — TOAST NOTIFICATIONS
    ============================================================ */
 
+/* Toast positioning — appearance defined in components.css */
 .toast {
   position:       fixed;
   bottom:         calc(var(--tabbar-height) + 14px);
   left:           50%;
   transform:      translateX(-50%) translateY(16px) scale(0.96);
-  background:     var(--bg-card);
-  border:         1px solid var(--border-bright);
-  border-radius:  var(--radius-xl);
-  padding:        9px 16px;
-  font-size:      13px;
-  font-weight:    500;
-  white-space:    nowrap;
-  max-width:      90vw;
-  overflow:       hidden;
-  text-overflow:  ellipsis;
   opacity:        0;
   pointer-events: none;
   z-index:        999;
-  display:        flex;
-  align-items:    center;
-  gap:            8px;
-  box-shadow:     0 4px 20px rgba(0,0,0,0.5);
   transition:     opacity var(--anim-fast) ease,
                   transform var(--anim-normal) var(--anim-bounce);
 }
@@ -317,7 +304,7 @@
   margin-bottom:         4px;
   background:            var(--bg-card);
   border:                1px solid var(--border);
-  transition:            border-color var(--transition);
+  transition:            border-color var(--transition), background var(--transition);
 }
 
 .lb-row.current-player {
@@ -612,13 +599,13 @@
 .gm-modal-title i { color: #ffd700; }
 
 .gm-modal-close {
-  width:           44px;
-  height:          44px;
+  width:           32px;
+  height:          32px;
   border-radius:   50%;
   background:      var(--bg-card);
   border:          1px solid var(--border);
   color:           var(--text-secondary);
-  font-size:       16px;
+  font-size:       14px;
   cursor:          pointer;
   display:         flex;
   align-items:     center;
@@ -645,6 +632,7 @@
    ============================================================ */
 
 .stats-modal-overlay {
+  display:         none;
   position:        fixed;
   inset:           0;
   background:      rgba(0,0,0,0.65);
@@ -653,6 +641,10 @@
   align-items:     flex-end;
   justify-content: center;
   animation:       fadeIn 0.2s ease;
+}
+
+.stats-modal-overlay.visible {
+  display: flex;
 }
 
 .stats-modal {
@@ -759,8 +751,6 @@
   cursor:      pointer;
   font:        inherit;
   padding:     0;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
 }
 
 /* ============================================================
