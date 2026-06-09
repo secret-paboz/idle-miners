@@ -6,7 +6,15 @@
    SECTION 1 — APP SHELL
    ============================================================ */
 
-/* PC background — fills dead space outside the 480px column */
+/* ── Vanta fog canvas — fullscreen, behind everything ── */
+#vanta-bg {
+  position:   fixed;
+  inset:      0;
+  z-index:    -1;
+  background: var(--bg-primary); /* fallback if Vanta fails to load */
+}
+
+/* PC background — dot grid only visible in dead space outside the 480px column */
 body {
   background-color: var(--bg-outside);
   background-image: radial-gradient(circle at 1px 1px, #1c1c1c 1px, transparent 0);
@@ -14,16 +22,17 @@ body {
 }
 
 #app {
-  display:        flex;
-  flex-direction: column;
-  height:         100dvh;
-  max-width:      480px;
-  margin:         0 auto;
-  position:       relative;
-  overflow:       hidden;
-  border-left:    1px solid var(--border);
-  border-right:   1px solid var(--border);
-  box-shadow:     0 0 60px rgba(0,0,0,0.8);
+  display:          flex;
+  flex-direction:   column;
+  height:           100dvh;
+  max-width:        480px;
+  margin:           0 auto;
+  position:         relative;
+  overflow:         hidden;
+  border-left:      1px solid var(--border);
+  border-right:     1px solid var(--border);
+  box-shadow:       0 0 60px rgba(0,0,0,0.8);
+  background-color: transparent;
 }
 
 /* ============================================================
@@ -34,7 +43,9 @@ body {
   position:      sticky;
   top:           0;
   z-index:       100;
-  background:    var(--bg-secondary);
+  background:    rgba(20,20,20,0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-bright);
   box-shadow:    0 4px 16px rgba(0,0,0,0.5);
   display:       flex;
