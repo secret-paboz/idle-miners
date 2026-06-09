@@ -26,11 +26,11 @@
 }
 
 .card-title {
-  font-size:      12px;
-  font-weight:    600;
-  color:          var(--text-muted);
+  font-size:      11px;
+  font-weight:    700;
+  color:          var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   margin-bottom:  10px;
 }
 
@@ -301,6 +301,7 @@
 
 /* ============================================================
    SECTION 9 — TOASTS (typed with icons)
+   Positioning + show/hide state lives in modals.css
    ============================================================ */
 
 .toast {
@@ -308,14 +309,16 @@
   align-items:   center;
   gap:           9px;
   padding:       10px 14px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   font-size:     13px;
   font-weight:   500;
   background:    var(--bg-card);
   border:        1px solid var(--border-bright);
   box-shadow:    0 4px 20px rgba(0,0,0,0.5);
-  animation:     toastIn var(--anim-normal) var(--anim-bounce) both;
   max-width:     320px;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
   cursor:        default;
 }
 
@@ -358,10 +361,7 @@
 .toast.toast-info    .toast-msg { color: var(--color-info); }
 .toast.toast-warning .toast-msg { color: var(--color-warning); }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.95); }
-  to   { opacity: 1; transform: translateY(0)    scale(1); }
-}
+
 
 /* ============================================================
    SECTION 10 — CURSOR & ACCESSIBILITY
