@@ -32,9 +32,17 @@
   <link rel="stylesheet" href="css/panels.css">
   <link rel="stylesheet" href="css/modals.css">
   <link rel="stylesheet" href="css/settings.css">
+
+  <!-- ── Vanta.js FOG (Three.js must load first) ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.fog.min.js"></script>
 </head>
 
 <body class="dim-earth">
+
+<!-- Vanta.js fog canvas — sits behind everything -->
+<div id="vanta-bg"></div>
+
 <div id="app">
 
   <!-- ============================================================
