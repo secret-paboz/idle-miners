@@ -99,7 +99,9 @@
 /* Sell button */
 #btn-sell {
   padding:       12px;
-  background:    linear-gradient(135deg, #43a047, #2e7d32);
+  background:    linear-gradient(135deg,
+                   color-mix(in srgb, var(--color-success) 85%, #000),
+                   color-mix(in srgb, var(--color-success) 65%, #000));
   color:         #fff;
   font-weight:   700;
   font-size:     15px;
@@ -112,12 +114,12 @@
   gap:           2px;
 }
 
-#btn-sell:hover  { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(67,160,71,0.4); }
+#btn-sell:hover  { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(76,175,80,0.4); }
 #btn-sell:active { transform: scale(0.97); transition-duration: 0.08s; }
 
 #btn-sell.pulse {
   animation: sellPulse 1.5s ease-in-out infinite;
-  box-shadow: 0 0 18px rgba(67,160,71,0.5);
+  box-shadow: 0 0 18px rgba(76,175,80,0.5);
 }
 
 #btn-sell-amount {
@@ -133,8 +135,8 @@
 }
 
 @keyframes sellPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(67,160,71,0.4); }
-  50%       { box-shadow: 0 0 24px rgba(67,160,71,0.8); }
+  0%, 100% { box-shadow: 0 0 10px rgba(76,175,80,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(76,175,80,0.8); }
 }
 
 /* Upgrade buttons */
@@ -191,6 +193,13 @@
   grid-template-columns: repeat(3, 1fr);
   gap:                   7px;
   margin-top:            10px;
+}
+
+/* Narrow phones — drop to 2 columns so cards aren't crushed */
+@media (max-width: 340px) {
+  #dimension-selector {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .dim-card {
@@ -960,6 +969,8 @@
   align-items:    flex-end;
   gap:            6px;
   flex-shrink:    0;
+  min-width:      0;
+  max-width:      55%;
 }
 
 /* Stat row: big number + label + bonus */
@@ -1300,7 +1311,7 @@
    ============================================================ */
 
 .mining-log-feed {
-  max-height:   180px;
+  max-height:   260px;
   overflow-y:   auto;
   display:      flex;
   flex-direction: column;
@@ -1400,6 +1411,19 @@
 .pets-bonus-chip.no-bonus {
   color:   var(--text-muted);
   opacity: 0.5;
+}
+
+/* Empty state — no pets owned yet */
+.pets-bonus-summary:empty,
+.pets-bonus-summary.is-empty {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         14px 12px;
+  color:           var(--text-muted);
+  font-size:       12px;
+  font-style:      italic;
+  min-height:      44px;
 }
 
 /* Ore bar tick shimmer */
