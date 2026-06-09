@@ -178,12 +178,11 @@ body {
 
 .hud-xp-track {
   flex:          1;
-  max-width:     80px;
+  min-width:     40px;
   height:        4px;
   background:    var(--border);
   border-radius: 2px;
   overflow:      hidden;
-  flex-shrink:   0;
 }
 
 .hud-xp-fill {
@@ -199,7 +198,7 @@ body {
   color:       var(--accent);
   white-space: nowrap;
   flex-shrink: 0;
-  min-width:   28px;
+  min-width:   34px;
   text-align:  center;
 }
 
@@ -590,25 +589,7 @@ body {
   scrollbar-color: var(--border) transparent;
 }
 
-.lb-row {
-  display:       flex;
-  align-items:   center;
-  gap:           10px;
-  padding:       8px 10px;
-  border-radius: var(--radius-md);
-  margin-bottom: 3px;
-  transition:    background var(--transition);
-  animation:     lbRowIn 0.3s ease both;
-}
-
-.lb-row:hover { background: var(--bg-card); }
-
-/* Highlight the current player's row */
-.lb-row.is-me {
-  background:  var(--accent-dim);
-  border:      1px solid rgba(245,166,35,0.25);
-  box-shadow:  0 0 12px rgba(245,166,35,0.07);
-}
+/* ── Leaderboard row animations (grid layout in modals.css) ── */
 
 @keyframes lbRowIn {
   from { opacity: 0; transform: translateX(-8px); }
@@ -624,144 +605,6 @@ body {
 .lb-row:nth-child(6) { animation-delay: 0.24s; }
 .lb-row:nth-child(7) { animation-delay: 0.28s; }
 .lb-row:nth-child(8) { animation-delay: 0.32s; }
-
-.lb-rank-badge {
-  width:         26px;
-  height:        26px;
-  border-radius: 6px;
-  display:       flex;
-  align-items:   center;
-  justify-content: center;
-  font-size:     12px;
-  font-weight:   700;
-  background:    var(--bg-card);
-  color:         var(--text-muted);
-  flex-shrink:   0;
-}
-
-.lb-row.is-me .lb-rank-badge {
-  background: var(--accent-dim);
-  color:      var(--accent);
-}
-
-.lb-row-name {
-  flex:        1;
-  font-size:   12px;
-  font-weight: 500;
-}
-
-.lb-row.is-me .lb-row-name {
-  color:       var(--accent);
-  font-weight: 600;
-}
-
-.lb-you-tag {
-  font-size:     9px;
-  font-weight:   700;
-  letter-spacing: 0.5px;
-  background:    var(--accent-dim);
-  color:         var(--accent);
-  padding:       1px 5px;
-  border-radius: 10px;
-  margin-left:   4px;
-}
-
-.lb-row-value {
-  font-size:   13px;
-  font-weight: 600;
-  color:       var(--text-secondary);
-}
-
-.lb-row.is-me .lb-row-value { color: var(--accent); }
-
-/* Skeleton loading rows */
-.lb-skeleton {
-  display:       flex;
-  align-items:   center;
-  gap:           10px;
-  padding:       8px 10px;
-  border-radius: var(--radius-md);
-  margin-bottom: 3px;
-}
-
-.lb-skel {
-  background:      linear-gradient(90deg,
-    var(--bg-card) 25%,
-    var(--bg-card-hover) 50%,
-    var(--bg-card) 75%);
-  background-size: 200% 100%;
-  animation:       lbShimmer 1.4s infinite;
-  border-radius:   4px;
-}
-
-@keyframes lbShimmer {
-  0%   { background-position:  200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Your rank — pinned footer */
-.lb-your-rank {
-  display:       flex;
-  align-items:   center;
-  gap:           8px;
-  padding:       8px 14px;
-  background:    var(--bg-secondary);
-  border-top:    1px solid var(--border);
-  flex-shrink:   0;
-}
-
-.lb-your-rank i { font-size: 12px; color: var(--accent); }
-
-.lb-your-rank-label {
-  flex:      1;
-  font-size: 11px;
-  color:     var(--text-muted);
-}
-
-.lb-your-rank-value {
-  font-size:   14px;
-  font-weight: 700;
-  color:       var(--accent);
-}
-
-/* Last updated timestamp */
-.lb-updated {
-  font-size:  9px;
-  color:      var(--text-muted);
-  text-align: right;
-  padding:    4px 14px 6px;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-/* Empty state */
-.lb-empty-state {
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  justify-content: center;
-  padding:        32px 20px;
-  gap:            10px;
-}
-
-.lb-empty-state-icon {
-  font-size: 36px;
-  opacity:   0.25;
-}
-
-.lb-empty-state-title {
-  font-size:   15px;
-  font-weight: 600;
-  color:       var(--text-secondary);
-}
-
-.lb-empty-state-sub {
-  font-size:  12px;
-  color:      var(--text-muted);
-  text-align: center;
-  max-width:  200px;
-}
 
 /* ============================================================
    SECTION 8 — SAFE AREA (iPhone notch support)
