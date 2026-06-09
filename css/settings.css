@@ -8,6 +8,24 @@
 
 .settings-section { margin-bottom: 22px; }
 
+/* Button stack in Save & Data card */
+.settings-btn-stack {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+/* Danger variant of ghost button */
+.btn-ghost--danger {
+  color:        var(--color-error);
+  border-color: var(--color-error);
+}
+
+.btn-ghost--danger:hover {
+  background: rgba(244,67,54,0.08);
+  color:      var(--color-error);
+}
+
 .settings-logged-in {
   display:         flex;
   align-items:     center;
@@ -66,6 +84,27 @@
   color:         var(--text-secondary);
   margin-bottom: 16px;
 }
+
+/* About card */
+.settings-about {
+  font-size:   13px;
+  color:       var(--text-muted);
+  line-height: 2;
+}
+
+.settings-about-title {
+  color:         var(--text-primary);
+  font-weight:   600;
+  margin-bottom: 4px;
+}
+
+.settings-about-link {
+  color:           var(--accent);
+  text-decoration: none;
+  transition:      opacity var(--transition);
+}
+
+.settings-about-link:hover { opacity: 0.8; }
 
 /* ============================================================
    SECTION 2 — AUTH FORMS (Login / Register)
